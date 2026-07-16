@@ -1,5 +1,9 @@
 # WorkOS plugin marketplace
 
+**New teammate? Start with the [Setup Guide](SETUP.md)** — the full 15-minute Day-1
+walkthrough (folder, Team shortcut, plugin install, first run, and what's yours to
+customize).
+
 Install the WorkOS skill family (the AE daily driver) into Claude / Cowork:
 
 1. **Settings → Customize → Plugins → Add marketplace** → paste `kylerw/workos-plugins` → Sync

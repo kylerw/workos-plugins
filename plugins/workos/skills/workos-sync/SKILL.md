@@ -101,6 +101,11 @@ board computes (no pass stores or refreshes them).
 ### S1. Day-task roll — COMPUTED here, COMMITTED in S7 (idempotent by construction)
 
 `tasks.json → dayTask`:
+**The day-task's `date` is ALWAYS the surface-provided today — never tomorrow.** An
+evening run does not "open tomorrow's day" (C3: no time-of-day reasoning; live defect
+2026-07-16 — an afternoon first-run dated the day-task next-day and the board showed
+STALE minutes after generation). S6's queue *targets* the next business day; it still
+lives under today's day-task.
 - **date ≠ today:** prepare the roll in memory — the closing pointer line, exact template:
   `- {today} day-task {dayTask.date} closed: {N} queue items done · {M} carried forward`
   (an item is "done" iff its `taskId` maps to a lane task closed in this pass or earlier;
@@ -339,4 +344,7 @@ lock. In an unattended run, board vocabulary is reported in the run output and s
 - Unbounded harvests: every source is delta-since-`lastFullSync` and capped; the only
   exception is S4's per-brief allowance, which has its own caps.
 - Dropping carried-forward queue items silently (S1/S6).
-- Prose questions — C11 governs every question in both passes, including mid-flow.
+- Prose questions — C11 governs every question in both passes, including mid-flow, and
+  every question goes through the platform's structured-question tool (submittable
+  options); a prose-rendered "1. … / 2. …" list is not compliant (live finding
+  2026-07-16).

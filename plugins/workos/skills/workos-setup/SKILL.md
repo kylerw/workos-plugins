@@ -36,7 +36,10 @@ plugin's skill folder. Never resolve `assets/` in the memory root or project fol
 2. **`init {account}`** — scaffold or back-fill one account (§B).
 3. **`doctor`** ("check my setup") — diagnose, never modify (§C).
 
-**"Today" comes from the surface-provided date.** Every question follows C11 (structured
+**"Today" comes from the surface-provided date.** Every question is asked through the
+platform's structured-question tool so the options are SUBMITTABLE — a prose-rendered
+"1. … / 2. …" list is not C11-compliant (live finding 2026-07-16, both setup and sync).
+Every question follows C11 (structured
 options, default first, ≤4, escape hatch).
 
 ---
@@ -115,12 +118,27 @@ account's opps if the user has one handy, HiNotes recents **only if bridged** �
 into `Account_Context.md` / `Contacts.md` with provenance (`source/confidence/
 last_verified`), approved before writing. Skipping is fine; capture fills these over time.
 
-### A6. Close: what exists now + what's next
+### A6. Close: instructions, task, what's next
 
-Report what was created vs already present, write the config, and end with the two
-follow-ons (structured): set up the scheduled tasks ("sync my day" weekday mornings; the
-weekly next-steps sweep on the team's cadence day) — pointing at the Day-1 guide's exact
-clicks — or stop here.
+1. **Generate BOTH instruction artifacts, unprompted** (live gap 2026-07-16 — this step
+   was improvised until it was asked for):
+   - the root `CLAUDE.md` (Claude Code surface; `@imports core.md`, folder map,
+     write-routing), and
+   - the **Cowork project-instructions paste text** — short: memory root, config lives in
+     core.md, the three workos skills with their invocation vocabulary (sync's manual
+     words: sync my day / tidy / build my board / rebuild my board; legacy
+     kickoff/wrap/start-my-day/close-out vocabulary ROUTES to workos-sync — never to
+     retired skills), the capture-skills residual role (account truth until
+     workos-capture ships), and the filing-rules pointer.
+   Tell the user: copy your EXISTING project instructions to a note first (instant
+   rollback), then paste the new text into the Cowork project's instructions field.
+2. **Scheduled task, by exact recipe — never improvised, never a pair:** offer (C11) to
+   "create a scheduled task — do NOT run it now — prompt exactly
+   `sync my day (scheduled, unattended)`, weekdays 7:00 AM, enabled." ONE task; legacy
+   kickoff/wrap slots are deleted or left dead, never re-enabled (live near-miss: a
+   doctor offered to re-enable BOTH holdovers = two full syncs daily). Optional second
+   offer where the user wants it: the weekly next-steps sweep on the team's cadence day.
+3. Report what was created vs already present, write the config, close.
 
 ---
 
@@ -170,7 +188,10 @@ is "issues found," never green-with-asterisks** (C13):
 6. **Team/ publication:** shortcut present? user's subfolder writable? manager-decision
    file recorded? Each absent one maps to the Day-1 guide step or the pending Adam item.
 7. **State layer:** `state/` exists; JSON parses; exactly one writer's lock present or none
-   (stale lock → name the recovery step from the recorded spike design). **A lock whose
+   (stale lock → name the recovery step from the recorded spike design). `state/` missing
+   entirely → the finding says exactly: *"state/ is the engine's operational baseline —
+   the first `sync my day` scaffolds it"* — never "only relevant if you use the board"
+   (live mis-framing 2026-07-16). **A lock whose
    `startedAt` predates `lastFullSync`/`lastTidy` is an ORPHAN** (a pass claimed release
    and failed — live defect 2026-07-16): name it, and offer the one-step fix (delete
    `state/.pass-lock.json`) as a question (C11) — the ONE doctor finding with an offered

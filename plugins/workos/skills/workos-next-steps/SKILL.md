@@ -50,7 +50,9 @@ single-line update notice to this run's output. Unreachable → skip silently (C
 
 **Every question in every mode follows C11** — including ad-hoc gap questions mid-flow
 (meeting outcomes, close-date resolutions, on-track/at-risk calls): reframe as structured
-numbered options with an escape hatch, never prose asks. "Push, closed-won, or closed-lost?"
+numbered options with an escape hatch, never prose asks, and ask through the platform's
+structured-question tool so the options are SUBMITTABLE (a prose-rendered "1. … / 2. …"
+list is not compliant — live finding 2026-07-16). "Push, closed-won, or closed-lost?"
 is a picker, not a sentence.
 
 **Bundle location:** resolve every `assets/` path in this file relative to THIS skill's

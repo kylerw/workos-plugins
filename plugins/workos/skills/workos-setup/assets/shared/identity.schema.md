@@ -19,3 +19,12 @@ that hardcodes any of them fails review.
 Runtime rule: a configured capability is still **probed before first use each session**
 ("presence is not capability"); a probe failure downgrades to the missing-value behavior
 for that run and is reported by `doctor`.
+
+**User-space guarantee (ownership is by file):** the engine consumes ONLY the keys above,
+from the generated block in `core.md` — which is wholly engine-owned and regenerated
+whole-file by `setup`. Everything personal (voice, identity prose, email triage
+preferences, personal tooling such as a memory system) lives in **`user.md`**, which the
+engine NEVER writes, parses as config, validates, or requires to exist. The root
+`CLAUDE.md` (also engine-generated) imports both, so personal context still loads every
+session. Nothing a user puts in `user.md` can break the engine; nothing the engine
+regenerates can clobber `user.md`.

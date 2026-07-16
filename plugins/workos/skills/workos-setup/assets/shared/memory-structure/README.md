@@ -6,7 +6,11 @@ nothing here is created by hand.
 
 ```
 <memory root>/                      (path+name from identity config)
-├── core.md                        identity, voice, the config block setup generates
+├── core.md                        ENGINE-OWNED: generated config block + engine rules;
+│                                  setup regenerates it whole — no personal prose here
+├── user.md                        USER-OWNED: voice, identity notes, personal tooling —
+│                                  the engine never writes, parses, or requires it
+├── CLAUDE.md                      engine-generated; @imports core.md + user.md
 ├── Accounts/{Account}/            one folder per tracked account — a folder existing here
 │   │                              IS the definition of "tracked"; stubs in this directory
 │   ├── CLAUDE.md                  @import stub (account-CLAUDE.md, {Account Name} filled)

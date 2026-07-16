@@ -91,8 +91,20 @@ and the record is still explicit.
    user's subfolder (`Team/updates/{user_name}`); if not, note it as a Day-1 guide step and
    leave unset (the publish gate stays off until it exists).
 
-Write the config block into `core.md` after the confirmations (draft-before-write; schema:
-`assets/shared/identity.schema.md`).
+**Write the three-file config layer after the confirmations** (draft-before-write; schema:
+`assets/shared/identity.schema.md`). Ownership is by FILE, never by section:
+
+- **`core.md` — wholly engine-owned.** The generated config block plus generated engine
+  boilerplate (write-routing table, operating invariants) and NOTHING personal. Setup
+  regenerates it **whole-file** — which is exactly why no user prose may live in it.
+- **`user.md` — wholly user-owned.** If absent, create a short commented stub ("yours —
+  voice, identity notes, personal tooling, anything; the engine never writes or parses
+  this file"). **If present, never touch it — not on init, not on regeneration, ever.**
+- **Brownfield split (gated, C5/C11):** an existing `core.md` (or root `CLAUDE.md`)
+  carrying personal prose — voice rules, identity narrative, personal tooling like a
+  memory system — gets a **split offer**: show exactly which sections move to `user.md`
+  and what the regenerated engine files will say, apply only on approval. Existing
+  personal content is MOVED verbatim, never rewritten, never dropped.
 
 ### A3. Scaffold the root structure
 
@@ -122,8 +134,10 @@ last_verified`), approved before writing. Skipping is fine; capture fills these 
 
 1. **Generate BOTH instruction artifacts, unprompted** (live gap 2026-07-16 — this step
    was improvised until it was asked for):
-   - the root `CLAUDE.md` (Claude Code surface; `@imports core.md`, folder map,
-     write-routing), and
+   - the root `CLAUDE.md` (Claude Code surface) — engine-generated and
+     regeneration-safe: it `@imports core.md` AND `@imports user.md` (personal content
+     lives there, so regenerating this file clobbers nothing), then the folder map and
+     account-folder handoff, and
    - the **Cowork project-instructions paste text** — short: memory root, config lives in
      core.md, the three workos skills with their invocation vocabulary (sync's manual
      words: sync my day / tidy / build my board / rebuild my board; legacy
@@ -175,7 +189,11 @@ is "issues found," never green-with-asterisks** (C13):
    **and type-conformant to the schema** (e.g. `fiscal_q1_start_month` is an integer 1–12 —
    a stored "January" is a finding; live catch 2026-07-16); name the missing/malformed ones
    and which skill degrades without them. The fix is always the setup question flow, never
-   a hand-edit (C2).
+   a hand-edit (C2). **Ownership boundary: `core.md` is all-generated — validate it
+   strictly (personal prose inside it = a finding: offer the A2 split). `user.md` is user
+   space — NEVER validated, parsed, or reported on beyond "present/absent". Root
+   `CLAUDE.md` should import both (`@core.md` + `@user.md`); a missing user.md import is
+   a one-line finding.**
 3. **Integrations:** probe each configured one with a harmless read (C13) — "configured
    but not responding" is a finding, not a crash.
 4. **Salesforce tier sanity:** `mcp` tier → the probe read works; `manual` tier → say what

@@ -1,0 +1,15 @@
+{
+  "name": "workos-plugins",
+  "owner": {
+    "name": "WorkOS"
+  },
+  "description": "WorkOS — the AE daily-driver skill family for Cowork and Claude Code",
+  "plugins": [
+    {
+      "name": "workos",
+      "source": "./plugins/workos",
+      "description": "WorkOS v1: workos-setup (init + doctor), workos-sync (daily driver + board), workos-next-steps (weekly sweep + locked-format lines)",
+      "version": "2026-07-rc17"
+    }
+  ]
+}

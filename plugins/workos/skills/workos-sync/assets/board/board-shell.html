@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WorkOS — Today</title>
+<style>
+  :root{color-scheme:light;
+    --ink:#21212b;--muted:#71717f;--line:#eceae4;--line2:#e0ded6;--warm:#f2f0eb;
+    --blue:#3694fc;--eblue:#025afb;--indigo:#6100ff;--teal:#36ead0;--emerald:#00e2a0;--coral:#ff5b8a;
+    --coraltint:#f8ccd9;--ambertint:#fff2c9;--amberink:#8a6a00;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  body{margin:0;background:var(--warm);color:var(--ink);font-family:var(--font);font-size:14px;
+       line-height:1.5;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+  .wrap{max-width:680px;margin:0 auto;padding:12px 12px 52px}
+  button{font:inherit;cursor:pointer}
+  button:disabled{opacity:.55;cursor:default}
+  button:focus-visible{outline:2px solid var(--eblue);outline-offset:2px}
+
+  /* HERO */
+  .hero{position:relative;overflow:hidden;border-radius:24px;padding:22px 20px 30px;margin-bottom:16px;color:#fff;
+    background:
+      radial-gradient(120% 140% at 88% -20%, rgba(54,234,208,.5) 0%, rgba(54,234,208,0) 46%),
+      radial-gradient(130% 130% at 110% 130%, rgba(97,0,255,.75) 0%, rgba(97,0,255,0) 50%),
+      linear-gradient(115deg,#191924 0%,#10225f 26%,#025afb 56%,#3694fc 78%,#5f57ff 100%);
+    box-shadow:0 24px 54px -30px rgba(16,34,95,.7)}
+  .wave{position:absolute;left:0;right:0;bottom:-1px;width:100%;height:44px;display:block;pointer-events:none}
+  .hero-top{position:relative;z-index:2;display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+  .brand{flex:1 1 240px;min-width:0}
+  h1{margin:0;font-size:24px;font-weight:600;letter-spacing:-.02em;line-height:1.3}
+  #day{font-size:15px;font-weight:400;letter-spacing:0;color:rgba(255,255,255,.72);margin-left:2px;white-space:nowrap}
+  .badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+         border-radius:20px;padding:4px 10px;margin-left:8px;vertical-align:2px;white-space:nowrap}
+  .badge.ro{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.32);color:rgba(255,255,255,.92)}
+  .badge.stale{background:#ffb020;color:#21212b}
+  .meta{margin-top:7px;font-size:11px;color:rgba(255,255,255,.68)}
+  .actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+  .actions button{border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.13);color:#fff;
+    border-radius:13px;padding:10px 16px;font-size:13px;font-weight:600;transition:transform .15s,background .15s}
+  .actions button:hover{background:rgba(255,255,255,.22);transform:translateY(-1px)}
+  .actions button:active{transform:translateY(0)}
+  .actions button.primary{background:#fff;border-color:#fff;color:var(--ink);box-shadow:0 8px 20px -8px rgba(0,0,0,.45)}
+  .actions button:focus-visible{outline-color:#fff}
+
+  /* ATTENTION / APPROVALS STRIPS */
+  .strip{position:relative;overflow:hidden;background:#fff;border:1px solid #f0e0ab;border-radius:16px;
+         padding:12px 16px 12px 21px;margin:0 0 10px;font-size:12.5px;font-weight:500;color:#6b5200;
+         box-shadow:0 14px 30px -26px rgba(138,106,0,.55)}
+  .strip::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;
+                 background:linear-gradient(180deg,#ffb020,var(--coral))}
+  .strip div+div{margin-top:6px}
+  .strip button{border:1px solid #e8d9a2;background:var(--ambertint);color:var(--amberink);border-radius:10px;
+                padding:5px 12px;font-size:12px;font-weight:700;transition:background .15s}
+  .strip button:hover{background:#ffe9a8}
+
+  /* SECTIONS */
+  section{margin:22px 0}
+  h2{display:flex;align-items:center;gap:10px;margin:0 2px 12px;font-size:10.5px;font-weight:700;
+     letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+  h2::after{content:"";flex:1;height:1px;background:var(--line2)}
+  #nbd{white-space:nowrap}
+  ul{list-style:none;margin:0;padding:0}
+
+  /* CARDS */
+  li.card{position:relative;overflow:hidden;display:flex;gap:12px;align-items:flex-start;background:#fff;
+    border:1px solid var(--line);border-radius:18px;padding:14px 14px 14px 19px;margin:0 0 11px;
+    box-shadow:0 2px 4px rgba(33,33,43,.03),0 18px 36px -28px rgba(33,33,43,.32)}
+  li.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px}
+  li.card.high::before{background:linear-gradient(180deg,var(--coral),var(--indigo))}
+  li.card.notable::before{background:linear-gradient(180deg,var(--blue),var(--teal))}
+  li.card.high{box-shadow:0 2px 4px rgba(33,33,43,.04),0 20px 42px -26px rgba(97,0,255,.38)}
+  li.card.cancelled{opacity:.55;background:var(--warm)}
+  li.card.cancelled .title{text-decoration:line-through;color:var(--muted)}
+  .rank{flex:none;font-size:11.5px;font-weight:700;color:var(--ink);background:var(--warm);border-radius:10px;
+        padding:6px 10px;min-width:34px;text-align:center;white-space:nowrap;margin-top:1px}
+  .rank:empty{display:none}
+  .grow{flex:1;min-width:0}
+  .title{font-size:14.5px;font-weight:600;letter-spacing:-.012em;line-height:1.4}
+  .sub{margin-top:5px;font-size:12px;line-height:1.55;color:var(--muted)}
+  .chip{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.02em;padding:3px 10px;
+        border-radius:20px;margin:2px 6px 0 0;background:var(--warm);color:var(--muted);
+        border:1px solid var(--line2);vertical-align:middle}
+  .chip.overdue{background:var(--coraltint);color:#b3204e;border-color:transparent}
+  .chip.near{background:var(--ambertint);color:var(--amberink);border-color:transparent}
+  li.card > button{flex:none;border:1px solid var(--line2);background:#fff;color:var(--ink);border-radius:10px;
+    padding:7px 12px;font-size:12px;font-weight:600;margin-top:1px;white-space:nowrap;
+    transition:background .13s,border-color .13s}
+  li.card > button:hover{background:var(--emerald);border-color:var(--emerald)}
+  li.card > button:disabled{background:var(--emerald);border-color:var(--emerald);opacity:.65}
+  li.empty{border:1px dashed var(--line2);border-radius:16px;background:rgba(255,255,255,.55);
+           padding:18px 12px;text-align:center;font-size:12.5px;color:var(--muted)}
+
+  /* PROBE LINE */
+  #log{margin-top:24px;min-height:1rem;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+       font-size:10.5px;color:#a1a1ab;white-space:pre-wrap;word-break:break-word}
+
+  @media(min-width:640px){
+    .wrap{padding:22px 18px 64px}
+    .hero{border-radius:28px;padding:28px 30px 36px;margin-bottom:20px}
+    h1{font-size:27px}
+    #day{font-size:16px}
+    .title{font-size:15px}
+  }
+</style>
+</head>
+<body>
+
+<!-- Passes replace ONLY the JSON text inside the two marked <script> data elements below
+     (C9). The WORKOS:DATA markers locate them; the markers and the script open/close tags
+     stay byte-identical. Everything else in this file ships verbatim — the shell is never
+     regenerated by a pass. -->
+
+<!-- WORKOS:DATA tasks BEGIN -->
+<script type="application/json" id="workos-data-tasks">
+{ "generated": "2026-07-15T12:00:00Z", "generatedBy": "sync",
+  "lastFullSync": "2026-07-15T12:00:00Z", "lastTidy": "2026-07-15T14:00:00Z",
+  "pendingApprovals": [ { "id": "ap-1", "kind": "stale-drop", "target": "t-9", "summary": "drop stale task", "diff": "-t-9", "raisedBy": "sync", "raisedAt": "2026-07-15T12:00:00Z" } ],
+  "dayTask": { "id": "day-2026-07-15", "date": "2026-07-15", "context": "fixture day",
+    "queue": [
+      { "rank": 1, "taskId": "t-1", "title": "Send Acme Health proposal", "account": "Acme Health", "signal": "due-date", "due": "2026-07-14" },
+      { "rank": 2, "taskId": "t-2", "title": "Nudge Acme legal on redlines", "account": "Acme Health", "signal": "waiting-them" },
+      { "rank": 3, "title": "Book Globex discovery follow-up", "account": "Globex Care", "signal": "deal-advancing" } ] },
+  "attention": [ "harvest capped: teams (fixture example)" ],
+  "lanes": { "NICE": [
+    { "id": "t-1", "title": "Send Acme Health proposal", "signal": "due-date", "context": "requested 07/10", "due": "2026-07-14" },
+    { "id": "t-2", "title": "Nudge Acme legal on redlines", "signal": "waiting-them", "context": "sent 07/12" } ] } }
+</script>
+<!-- WORKOS:DATA tasks END -->
+
+<!-- WORKOS:DATA meetings BEGIN -->
+<script type="application/json" id="workos-data-meetings">
+{ "generated": "2026-07-15T12:00:00Z", "meetings": [
+  { "id": "m-1", "lane": "NICE", "start": "2026-07-15T14:00:00-05:00", "displayTime": "2:00p",
+    "title": "Acme Health — proposal walkthrough", "who": "Jane Doe (VP Clinical), Sam Lee (IT)",
+    "signals": { "revenue": true, "external": true, "youLead": true },
+    "prep": true, "recap": false, "objective": "walk the proposal", "brief": {}, "briefPending": true },
+  { "id": "m-2", "lane": "NICE", "start": "2026-07-16T09:30:00-05:00", "displayTime": "9:30a",
+    "title": "Globex Care intro", "who": "Pat Kim (Director Ops)",
+    "signals": { "external": true },
+    "prep": false, "recap": false, "objective": "", "brief": {}, "briefPending": false } ] }
+</script>
+<!-- WORKOS:DATA meetings END -->
+
+<div class="wrap">
+
+<header class="hero">
+  <svg class="wave" viewBox="0 0 1000 44" preserveAspectRatio="none" aria-hidden="true"><path d="M0,24 C160,4 300,42 500,24 C700,6 840,42 1000,20 L1000,44 L0,44 Z" fill="rgba(255,255,255,0.10)"></path><path d="M0,32 C180,14 320,46 520,32 C720,16 860,44 1000,28 L1000,44 L0,44 Z" fill="rgba(255,255,255,0.07)"></path></svg>
+  <div class="hero-top">
+    <div class="brand">
+      <h1>Today <span id="day"></span><span id="robadge" class="badge ro" hidden>read-only view</span></h1>
+      <div class="meta" id="meta"></div>
+    </div>
+    <div class="actions" id="passbtns" hidden>
+      <button id="tidy">Tidy</button>
+      <button id="fullsync" class="primary">Full sync</button>
+    </div>
+  </div>
+</header>
+
+<div class="strip" id="attention" hidden></div>
+<div class="strip" id="approvals" hidden></div>
+
+<section><h2><span>Day queue</span></h2><ul id="queue"></ul></section>
+<section><h2><span>Meetings — today</span></h2><ul id="mtg-today"></ul></section>
+<section><h2><span>Meetings — next business day (<span id="nbd"></span>)</span></h2><ul id="mtg-next"></ul></section>
+
+<div id="log"></div>
+
+</div>
+
+<script id="workos-derive">
+"use strict";
+// Render-time derivations ONLY (schema/C6): overdue, nearDate, emphasis, staleness are
+// computed here against the viewer's clock and never stored in state.
+var WORKOS = (function () {
+  function pad(n) { return ("0" + n).slice(-2); }
+  function dayStr(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function addDays(ymd, n) {
+    var p = ymd.split("-").map(Number);
+    return dayStr(new Date(p[0], p[1] - 1, p[2] + n));
+  }
+  function dow(ymd) { var p = ymd.split("-").map(Number); return new Date(p[0], p[1] - 1, p[2]).getDay(); }
+  function dueStatus(due, today) {
+    if (!due) return null;
+    if (due < today) return "overdue";
+    if (due <= addDays(today, 2)) return "near";
+    return "ok";
+  }
+  function nextBusinessDay(today) {
+    var d = addDays(today, 1);
+    if (dow(d) === 6) return addDays(d, 2); // Sat -> Mon
+    if (dow(d) === 0) return addDays(d, 1); // Sun -> Mon
+    return d;
+  }
+  // Known signal vocabulary only (schema extension rule: unknown fields are IGNORED)
+  var SIGNAL_KEYS = ["revenue", "external", "youLead", "decision", "risk"];
+  function emphasis(signals) {
+    var n = 0, i;
+    if (!signals) return "none";
+    for (i = 0; i < SIGNAL_KEYS.length; i++) if (signals[SIGNAL_KEYS[i]] === true) n++;
+    return n >= 3 ? "high" : n >= 1 ? "notable" : "none";
+  }
+  function meetingDay(m) { return String(m.start || "").slice(0, 10); }
+  function isStale(generatedISO, nowMs) {
+    var t = Date.parse(generatedISO);
+    return isFinite(t) ? (nowMs - t) > 86400000 : true;
+  }
+  return { dayStr: dayStr, addDays: addDays, dueStatus: dueStatus,
+           nextBusinessDay: nextBusinessDay, emphasis: emphasis,
+           meetingDay: meetingDay, isStale: isStale };
+})();
+if (typeof module !== "undefined" && module.exports) module.exports = WORKOS;
+</script>
+
+<script id="workos-render">
+"use strict";
+(function () {
+  if (typeof document === "undefined") return;
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function read(id) { try { return JSON.parse($(id).textContent); } catch (e) { return null; } }
+  var log = function (m) { $("log").textContent = m; };
+
+  var tasks = read("workos-data-tasks"), meetings = read("workos-data-meetings");
+  if (!tasks || !meetings) { log('board data failed to parse — say "rebuild my board"'); return; }
+
+  try {
+    // Schema-shape coercion: a malformed pass write must degrade, never blank the board.
+    if (!tasks.dayTask || typeof tasks.dayTask !== "object") tasks.dayTask = {};
+    if (!Array.isArray(tasks.dayTask.queue)) tasks.dayTask.queue = [];
+    if (!Array.isArray(tasks.attention)) tasks.attention = [];
+    if (!Array.isArray(tasks.pendingApprovals)) tasks.pendingApprovals = [];
+    if (!Array.isArray(meetings.meetings)) meetings.meetings = [];
+
+    // Bridge (fact #9 + live-test 2026-07-16): global sendPrompt -> cowork.sendPrompt.
+    // Detection POLLS for ~5s — the live test showed the bridge can be absent at script
+    // time — and applyBridgeState re-asserts BOTH states so a re-executed script can
+    // never strand the badge and the buttons on screen together. runScheduledTask is
+    // reported in the probe line but never fired: the live test showed it silently
+    // no-ops (no error, no effect) — a button that does nothing is worse than none.
+    function detectSend() {
+      if (typeof sendPrompt === "function") return function (m) { sendPrompt(m); };
+      if (typeof window !== "undefined" && window.cowork && typeof window.cowork.sendPrompt === "function")
+        return function (m) { window.cowork.sendPrompt(m); };
+      return null;
+    }
+    var send = detectSend();
+    var doneButtons = [];
+    function applyBridgeState() {
+      $("robadge").hidden = !!send;
+      $("passbtns").hidden = !send;
+      for (var i = 0; i < doneButtons.length; i++) doneButtons[i].hidden = !send;
+    }
+    function bridgeReport() {
+      var ck = (typeof window !== "undefined" && window.cowork)
+        ? "cowork:{" + Object.keys(window.cowork).join(",") + "}" : "no window.cowork";
+      return (send ? "bridge: sendPrompt" : "bridge: none (read-only)") + " · " + ck;
+    }
+    // sendPrompt auto-sends (fact #9) — every button disarms briefly so a double-tap
+    // can't post twice.
+    function guard(btn, fn) {
+      return function () {
+        if (btn.disabled) return;
+        btn.disabled = true;
+        setTimeout(function () { btn.disabled = false; }, 2000);
+        fn();
+      };
+    }
+    function firePass(promptText) {
+      if (send) { send(promptText); log("sent: " + promptText); return; }
+      log("no bridge on this surface (read-only view)");
+    }
+
+    var today = WORKOS.dayStr(new Date());
+    var nbd = WORKOS.nextBusinessDay(today);
+
+    // Stale = generated >24h old, unparseable, OR the day-task is not today's (the
+    // overnight-sync-didn't-run case). A stale board keeps its pass buttons (refreshing
+    // is exactly what it needs) but never arms ✓-done on a superseded queue.
+    var stale = WORKOS.isStale(tasks.generated, Date.now()) ||
+                !!(tasks.dayTask.date && tasks.dayTask.date !== today);
+
+    $("day").textContent = tasks.dayTask.date ? "— " + tasks.dayTask.date : "";
+    $("meta").textContent = "generated " + (tasks.generated || "?") + " by " + (tasks.generatedBy || "?");
+    if (stale) $("meta").appendChild(el("span", "badge stale", "stale — run a sync"));
+
+    var att = tasks.attention;
+    if (att.length) {
+      $("attention").hidden = false;
+      att.forEach(function (a) { $("attention").appendChild(el("div", null, "⚠ " + a)); });
+    }
+
+    var ap = tasks.pendingApprovals.length;
+    if (ap) {
+      $("approvals").hidden = false;
+      $("approvals").textContent = ap + " approval" + (ap > 1 ? "s" : "") + " waiting — run Tidy to review";
+      var apBtn = el("button", null, "Tidy");
+      apBtn.style.marginLeft = ".6rem";
+      apBtn.hidden = true;
+      apBtn.onclick = guard(apBtn, function () { firePass("tidy"); });
+      $("approvals").appendChild(apBtn);
+      doneButtons.push(apBtn);
+    }
+
+    var q = tasks.dayTask.queue;
+    if (!q.length) $("queue").appendChild(el("li", "empty", "nothing staged — run Full sync"));
+    q.forEach(function (item) {
+      var li = el("li", "card");
+      li.appendChild(el("span", "rank", item.rank == null ? "" : String(item.rank)));
+      var body = el("div", "grow");
+      body.appendChild(el("div", "title", item.title || "(untitled)"));
+      var sub = el("div", "sub");
+      if (item.account) sub.appendChild(el("span", "chip", item.account));
+      if (item.signal) sub.appendChild(el("span", "chip", item.signal));
+      if (item.due) {
+        var ds = WORKOS.dueStatus(item.due, today);
+        sub.appendChild(el("span", "chip " + (ds === "overdue" || ds === "near" ? ds : ""),
+          (ds === "overdue" ? "overdue " : "due ") + item.due));
+      }
+      body.appendChild(sub);
+      li.appendChild(body);
+      if (!stale) {
+        var btn = el("button", null, "✓ done");
+        btn.hidden = true;
+        btn.onclick = guard(btn, function () {
+          btn.disabled = true; // a done-tap is one-shot; stays disarmed
+          var msg = "Mark done: " + item.title + (item.taskId ? " (" + item.taskId + ")" : "");
+          firePass(msg);
+        });
+        li.appendChild(btn);
+        doneButtons.push(btn);
+      }
+      $("queue").appendChild(li);
+    });
+
+    function renderMeetings(ulId, day) {
+      var list = meetings.meetings
+        .filter(function (m) { return WORKOS.meetingDay(m) === day; })
+        .sort(function (a, b) { return String(a.start).localeCompare(String(b.start)); });
+      if (!list.length) { $(ulId).appendChild(el("li", "empty", "none")); return; }
+      list.forEach(function (m) {
+        var cls = "card " + WORKOS.emphasis(m.signals) + (m.cancelled === true ? " cancelled" : "");
+        var li = el("li", cls);
+        li.appendChild(el("span", "rank", m.displayTime || ""));
+        var body = el("div", "grow");
+        body.appendChild(el("div", "title", m.title || "(untitled)"));
+        if (m.who) body.appendChild(el("div", "sub", m.who));
+        var flags = el("div", "sub");
+        if (m.prep === true) flags.appendChild(el("span", "chip", "prep"));
+        if (m.briefPending === true) flags.appendChild(el("span", "chip", "brief pending"));
+        if (m.cancelled === true) flags.appendChild(el("span", "chip", "cancelled"));
+        if (flags.childNodes.length) body.appendChild(flags);
+        li.appendChild(body);
+        $(ulId).appendChild(li);
+      });
+    }
+    $("nbd").textContent = nbd;
+    renderMeetings("mtg-today", today);
+    renderMeetings("mtg-next", nbd);
+
+    var tidyBtn = $("tidy"), syncBtn = $("fullsync");
+    tidyBtn.onclick = guard(tidyBtn, function () { firePass("tidy"); });
+    syncBtn.onclick = guard(syncBtn, function () { firePass("sync my day"); });
+
+    // Poll for late bridge injection (live-test finding: the bridge can appear after
+    // script time). Ends with the probe line so every render self-reports its surface.
+    var tries = 0;
+    (function pollBridge() {
+      if (!send) send = detectSend();
+      applyBridgeState();
+      if (!send && ++tries < 20) { setTimeout(pollBridge, 250); return; }
+      log(bridgeReport());
+    })();
+  } catch (e) {
+    log('board render failed: ' + e.message + ' — say "rebuild my board"');
+  }
+})();
+</script>
+</body>
+</html>

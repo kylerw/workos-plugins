@@ -5,7 +5,7 @@ inbox, stages your day on a board, and captures your commitments into each accou
 files — everything reviewed by you before it's saved. Two things it will **never** do:
 write to Salesforce (you always paste), or send email by itself (you always send).
 
-If anything on this page confuses you, that's a bug in the page — tell Kyler or AJ.
+If anything on this page confuses you, that's a bug in the page — tell whoever sent you this link.
 
 ---
 
@@ -20,11 +20,11 @@ If anything on this page confuses you, that's a bug in the page — tell Kyler o
 
 This connects you to the shared leadership folder (weekly updates, engine version).
 
-1. Open the **Strat 3 Provider Sales Team** SharePoint site → **Documents → WorkOS →
+1. Open your **Team SharePoint site** → **Documents → WorkOS →
    Team**.
 2. Click the **⋯** next to the `Team` folder → **"Add shortcut to OneDrive."**
 3. A shortcut appears at the top level of your OneDrive ("My Files"), named something
-   like **"Strat 3 Provider Sales Team Team."** **Move it into your WorkOS folder**, then
+   like **"{Site Name} Team."** **Move it into your WorkOS folder**, then
    **rename it to exactly `Team`**.
 
 Done right, `WorkOS/Team/` opens to the shared folder. (If you skip this, everything
@@ -100,7 +100,7 @@ behave differently, this file is almost always the answer.
   you act through chat. Tappable buttons are on the roadmap.
 - **"STALE — RUN A SYNC" badge** — the board is older than your day; say "tidy."
 
-## I. Already have a working setup? (brownfield — AJ, this is you)
+## I. Already have a working setup? (brownfield)
 
 Run the same `init my workspace`. It detects a mature root and **will not bulldoze it**:
 existing files are read-only inputs, everything is additive-only, and anything it wants
@@ -113,4 +113,4 @@ and does nothing without your approval.
 - **`/workos-setup check my setup`** — a health report ending in `ok / findings /
   skipped` counts, with the shortest fix list. "Salesforce: manual tier" is normal for
   most of the team, not an error.
-- Send the doctor output to Kyler or AJ — it includes your engine version.
+- Send the doctor output to whoever sent you this link — it includes your engine version.

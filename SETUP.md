@@ -58,8 +58,13 @@ still works — you'll just see a "Team/ not set up" note in health checks until
 13. Say **yes** when it offers the scheduled task (your 7:00 AM sync). Its prompt ends
     with `(scheduled, unattended)` — leave that in; it's how the skill knows nobody is
     watching.
-14. At the end it hands you **project instructions** — paste them into the Cowork
-    project's instructions field (project settings).
+14. **The last thing init hands you is your project instructions** — a text block it
+    generates for you. Open your WorkOS **project's settings → instructions field** and
+    paste it in. This is what loads your config and your `user.md` into every chat in
+    the project — skip it and each new chat starts blind.
+    *Done when: the project's instructions field shows the pasted text.*
+    (Already had instructions in that field? Copy the old ones to a note first —
+    pasting replaces them.)
 
 ## F. Yours to customize — `user.md` (know this one)
 

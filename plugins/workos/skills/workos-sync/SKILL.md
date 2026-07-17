@@ -149,10 +149,12 @@ cap reached → one `attention[]` line ("harvest capped: {what was left}") — n
 - **New-task proposals** from harvest + dialogue. Schema discipline: unique ids;
   `due-date`/`meeting-prep` carry `due`; `waiting-them`/`deal-advancing`/`admin` don't;
   never store `overdue`.
-- **Dedupe seam:** before proposing a task for a commitment, check that account's
-  `Account_Notes.md` Open Commitments for entries dated **since `lastFullSync`** (not just
-  today — the overnight seam) — reference, never duplicate. Account truth is
-  `workos-capture`'s; state holds the operational pointer.
+- **Dedupe seam:** before proposing a task for a commitment, check **ALL entries** in
+  that account's `Account_Notes.md` Open Commitments (the section is small and bounded;
+  a date filter here created a duplicate hole for backdated captures — reviewed
+  2026-07-16) — reference, never duplicate. Capture stamps bullets with the CAPTURE
+  date, so recent entries sit last. Account truth is `workos-capture`'s; state holds the
+  operational pointer.
 - Deletions, rewrites, unsuppressions → `pendingApprovals` entries.
 
 ### S4. Meetings + briefs (`meetings.json`)

@@ -23,7 +23,7 @@ You run the user's day: close what's open, stage what's next, keep the board tru
 passes — **sync** (expensive, ~daily) and **tidy** (cheap, any number of times). The whole
 behavioral model: *close whatever day-task is open, flush, open today's, stage the next
 business day.* Contracts (by reference — their text in `assets/shared/`, never restated
-here): C2 · C3 · C4 · C5 (including its state-store clause) · C6 · C7 · C11 · C13.
+here): C2 · C3 · C4 · C5 (including its state-store clause) · C6 · C7 · C11 · C13 · C14.
 
 **Bundle location:** resolve every `assets/` path in this file relative to THIS skill's
 own folder — the folder containing this SKILL.md. Under direct .skill upload that is
@@ -216,8 +216,16 @@ disappearance. Challenge low-leverage items in one line.
    header + bulleted list per section, blank lines between sections — never one
    paragraph** (live-test friction 2026-07-16: the gate rendered as a wall of text).
    Options: "1. Accept all as shown / 2. Adjust named
-   items / 3. Add an outcome I forgot / 4. Stop — apply nothing from this pass." Loop on
-   2/3 until accepted (heartbeat the lock each round). Option 4 leaves state exactly as
+   items / 3. Add an outcome I forgot / 4. Stop — apply nothing from this pass." **C14:
+   every proposal renders with its stable identifier (`appr-…`, task id); option-2
+   drill-downs echo `{id} — {original one-line action}` verbatim, never a re-summarized
+   nickname. "Accept all" covers non-destructive proposals only — each destructive item
+   (file delete/move) then gets its own per-item gate with its full finding +
+   proposedAction re-shown beside the question.** Loop on 2/3 until accepted — each
+   round re-renders the FULL gate (revised items in full; unchanged items at minimum as
+   their verbatim `{id} — {one-line action}` lines) so everything option 1 approves is
+   in the current turn (C14; heartbeat the lock each round). Option 4 leaves state
+   exactly as
    the pass found it apart from Step 0.5's baseline scaffolding (which is inert).
 2. **Ownership check (Step 0.4), then write** `state/*.json` — including committing S1's
    prepared roll (append the closing journal pointer, replace `dayTask` with today's) —
@@ -226,7 +234,21 @@ disappearance. Challenge low-leverage items in one line.
 3. **Journal pointers:** one line per durable outcome —
    `- {date} {outcome} → {where truth landed}`. Account truth (commitments, strategy) →
    offer `workos-capture`; deal movement → offer `workos-next-steps` (single-opp). Never
-   write those files here.
+   write those files here. **Backfill (SYNC passes only — never Tidy, whose read-set
+   bars account folders and journal; runs whenever `{memory_root}/journal/` is writable
+   this session): for each account touched this pass, plus any account whose
+   `Account_Notes.md` mtime is newer than the last sync (a file listing, not a content
+   harvest), scan the FULL Open Commitments section (bounded and small — S3's own
+   no-date-filter rationale; a date filter here re-opens the reviewed backdated-capture
+   hole) and `02_Meetings/` folders dated since `lastFullSync`'s date minus one day. A
+   pointer is missing when no line in that capture-month's journal references the
+   note's `[[link]]` (meeting captures) or the bullet's `[YYYY-MM-DD]` stamp + account
+   (log captures — the meeting-note link is optional enrichment). Append missing
+   pointers (idempotent — only when absent; capture-dated; normal pointer grammar); a
+   failed append is a loud SKIP into `attention[]`. When backfills happened, one
+   close-summary line: "backfilled {N} journal pointers from account-mounted captures"
+   (#37 — account-mounted capture legitimately cannot reach `journal/`; this pass owns
+   it).**
 4. **Board rebuild:** the board is a **native artifact** — replace ONLY the JSON text
    inside each `<script type="application/json" id="workos-data-{tasks|meetings}">`
    element (the `WORKOS:DATA` marker pairs locate them; the markers and the script
@@ -248,7 +270,9 @@ disappearance. Challenge low-leverage items in one line.
 
 **Unattended:** no questions anywhere. Apply only what C5's state-store clause allows
 ungated (calendar/meeting updates, evidence-formed NEW tasks); closures and everything
-destructive → `pendingApprovals`. Write, stamp, rebuild the board, put counts in
+destructive → `pendingApprovals`. Run the S7.3 journal-pointer backfill (append-only
+pointers are C5-exempt bookkeeping; its count line goes in the run output). Write,
+stamp, rebuild the board, put counts in
 `attention[]` ("{N} approvals waiting"), summarize in the run output, release.
 
 ---
@@ -262,8 +286,12 @@ SKIP into `attention[]`; unconfigured → silently none). No mail, no account fo
 journal, no brief-building.
 
 1. Lock per Step 0.5.
-2. **Approvals:** attended → surface `pendingApprovals` in one structured pass (C11) and
-   apply what's approved (this is a state write — ownership check first). A "Mark done:"
+2. **Approvals:** attended → RE-RENDER each pendingApproval's full finding +
+   proposedAction in THIS chat, with its stable `appr-…` id, in the same turn as its
+   gate (C14 — a render in the earlier sync pass does not count; "as originally shown"
+   is banned phrasing). Destructive items gate PER ITEM (C14); non-destructive items
+   may share one structured pass (C11). Apply what's approved (this is a state write —
+   ownership check first). A "Mark done:"
    board-button message that triggered this run joins the same pass as a proposed closure
    (evidence: the user's tap; match by `taskId` when present, else by title — ambiguous
    title → one C11 question). Unattended → count into `attention[]`, touch nothing.
@@ -333,8 +361,9 @@ lock. In an unattended run, board vocabulary is reported in the run output and s
   prompt carries the "(scheduled, unattended)" marker.
 - Writing account files (`Account_Notes.md`, contexts, spheres, next-step logs) — capture
   and next-steps own those; sync reads them and appends journal *pointers* only.
-- Applying closures, deletions, rewrites, moves, or unsuppressions outside the
-  consolidated approval (C5).
+- Applying closures, deletions, rewrites, moves, or unsuppressions outside S7's/Tidy's
+  approval step (C5) — or wholesale-approving a destructive item that never got its
+  per-item gate (C14).
 - Storing `overdue`/`nearDate`, duplicating `prep`/`recap` as signal keys, or any
   importance/tier field (schema, C6).
 - Reading journals or next-step logs back as current deal-state; presenting any cached or

@@ -37,7 +37,8 @@ one writer of any resulting log entry.
 under `state/` is bookkeeping, not a user artifact — calendar/harvest-derived updates and
 newly-formed additive entries may be written ungated; user-meaningful mutations (task
 closures, deletions, rewrites, unsuppressions, file moves/deletions) queue as
-`pendingApprovals` and apply only inside an attended run's single consolidated approval.
+`pendingApprovals` and apply only inside an attended run's approval step (consolidated
+display; destructive items decided per item — C14).
 Append-only journal POINTER lines are exempt bookkeeping.
 
 **C6 · no-shadow-store** — Never store a copy of an authoritative source's current state,
@@ -82,4 +83,19 @@ verified mechanically on every change (CI enforces).
 never hard-fail on a missing tool. A configured integration is probed before first use each
 session; a check that cannot run reports a loud SKIP, and a summary containing a SKIP never
 reads as green.
+
+**C14 · render-before-gate** — "As shown" refers ONLY to content rendered in the SAME
+assistant turn that fires the gate question: render the content, then invoke the
+structured-question tool in that same turn, option labels carrying the items' stable
+identifiers (state ids like `appr-YYYYMMDD-NN`, task ids, opp numbers) verbatim — never
+re-summarized nicknames. A render in any earlier message of this chat, however recent,
+does not count; every revision and every chained/auto-invoked path re-renders in full
+before asking again. "Rendered" means, by operation: file/artifact writes — the exact
+text being written; state mutations — every user-meaningful item as `{id} + full
+proposed action` (before → after for rewrites); delete/move — the exact source,
+destination, and affected item. Destructive operations (file delete/move) are decided
+per item, never wholesale, even when displayed inside a consolidated pass. Self-check,
+answered audibly in the gate turn itself ("gating {N} items, all rendered above"): is
+everything this approval writes rendered in THIS turn, at its required fidelity? Any
+"no" → render now, then ask.
 <!-- END CONTRACTS -->

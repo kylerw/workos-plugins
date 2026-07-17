@@ -19,7 +19,7 @@ description: >
 Turn what just happened with a customer into durable account files — a touch, a
 commitment (either direction), or a full consolidated meeting note — shown to the user
 before a single byte is written. Facts, then a clean write. Contracts (by reference —
-their text ships in `assets/shared/contracts.md`): C2 · C4 · C5 · C7 · C11 · C13.
+their text ships in `assets/shared/contracts.md`): C2 · C4 · C5 · C7 · C11 · C13 · C14.
 
 **Bundle location:** resolve every `assets/` path in this file relative to THIS skill's
 own folder — the folder containing this SKILL.md. Under direct .skill upload that is
@@ -115,6 +115,11 @@ file: create vs append, the exact path, the complete proposed content (including
 account folder when Step 0.3 confirmed one: "this will create `Accounts/{name}/` and its
 `Account_Notes.md`").
 
+**Chained invocation changes nothing (C14):** when capture is invoked from another
+skill's tail (sync/tidy close, a board flow) or any non-interactive lead-in, the full
+bundle render is still mandatory — the gate question NEVER appears in a message that
+does not contain the bundle it approves.
+
 1. **Meeting note** (meeting intent only) — the consolidated narrative, linking
    `[[{Account}]]` and the note's own folder name verbatim as
    `[[{YYYY-MM-DD}_{short label}]]`.
@@ -127,14 +132,18 @@ account folder when Step 0.3 confirmed one: "this will create `Accounts/{name}/`
    link.
 3. **Next-step line** (when warranted) — the locked format is owned by
    `workos-next-steps`: hand the already-confirmed fields over in-session (its delegate
-   procedure) and use the line it returns. `workos-next-steps` unavailable in this
+   procedure) and use the line it returns, **with its returned change entry rendered in
+   the bundle directly beneath the line — both are part of what approval writes (C14)**. `workos-next-steps` unavailable in this
    session → render from `assets/shared/locked-next-step-format.md` yourself and
    **mechanically verify ≤254 characters** (count with a command per fact #8; no way to
    count → mark the line "count unverified — verify before pasting").
 
 Present the whole bundle in one structured approval (C11): "1. Save as shown / 2. Adjust
 — tell me what / 3. Drop the next-step line, save the rest / 4. Stop — save nothing."
-Any adjustment invalidates prior approval — re-present the revised bundle. On 3, write
+Any adjustment invalidates prior approval — apply the change to the bundle and
+RE-PRESENT THE FULL REVISED BUNDLE with the gate question in the same turn (C14);
+never describe the change instead of showing the changed bundle, never save a "revised"
+bundle against an earlier render. Run C14's self-check every round before asking. On 3, write
 items 1–2 and the journal pointer exactly as approved and skip the next-step line
 entirely, including the workos-next-steps log offer. Nothing below happens without an
 explicit approval of the exact bundle being written.
@@ -148,7 +157,9 @@ reading the target first:**
    pick a label that differs from every existing `{YYYY-MM-DD}_*` folder for this
    account/date; if the target folder or note file already exists anyway, never overwrite
    silently — one question (C11): "1. Replace the existing note / 2. Save under a new
-   label / 3. Append as a dated addendum / 4. Stop."**
+   label / 3. Append as a dated addendum / 4. Stop." Options 1–3 change the manifest —
+   re-present the affected bundle item with its new path/operation and re-gate (C14)
+   before writing.**
 2. **Commitments** → into the `## Open Commitments` section of
    `{memory_root}/Accounts/{account}/Account_Notes.md`, as the section's last line
    (immediately before the next `##` header, or end-of-section — "append" NEVER means
@@ -158,10 +169,19 @@ reading the target first:**
 3. **Journal pointer, LAST — only after the writes above are verified by read-back**
    (append-only bookkeeping, C5-exempt) → `{memory_root}/journal/{YYYY-MM}.md`:
    `- {date} captured {touch|meeting} [[{Account}]] → {saved path}` — or the touch-only
-   form from LOG step 2 when nothing else was written.
+   form from LOG step 2 when nothing else was written. **Account-mounted session (no
+   `{memory_root}/journal/` in scope): never invent a folder outside the account's
+   documented layout. A meeting or commitment capture loud-skips the pointer in the
+   close output — "journal pointer skipped (account-mounted); the next root sync
+   backfills it" (sync scans Account_Notes + `02_Meetings/`). A PURE TOUCH leaves no
+   account file for sync to find — say instead: "this touch has NO durable record from
+   an account project — re-log it from the WorkOS root chat to keep it," and never
+   promise a backfill for it.**
 4. **Next-step line: presented as text ready to paste (C7)** — say plainly it needs
-   manual pasting. Offer the `workos-next-steps` handoff to append its running per-opp
-   log entry (fields handed over as already-confirmed — the user does not re-approve).
+   manual pasting. Then append the bundle's already-approved change entry to the per-opp
+   log YOURSELF (next-steps §C: the caller is the one writer) — no new approval needed
+   because the entry was in the approved bundle; an entry that was NOT in the bundle is
+   never written.
 
 **Confirm honestly** — each path written (verified by read-back), the commitment lines
 as saved, the paste-ready next-step line. A write that failed is reported as failed,

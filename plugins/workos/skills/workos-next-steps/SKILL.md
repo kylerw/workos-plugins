@@ -24,7 +24,7 @@ ritual leadership actually asks for. No summaries. No commentary. Precision.
 
 **Contracts** are referenced by exact name: `identity-config`, `salesforce-read-only-and-optional`,
 `no-shadow-store` (including its identity clause and `next-step-history` clause),
-`draft-before-write`, `structured-options`, `no-customer-data-in-repo`.
+`draft-before-write`, `structured-options`, `render-before-gate`, `no-customer-data-in-repo`.
 **Injected resources** (single source `shared/`, copied into this bundle's `assets/` at
 build): `assets/locked-next-step-format.md`, `assets/team-update-template.md`.
 All examples in this file are fictional per `no-customer-data-in-repo`.
@@ -142,7 +142,11 @@ Present the sweep table: every row, its bucket/class/flags, the **actual propose
 (not a description of one), Notes blocks, close-date proposals, the email preview, and the
 persistence diff. Structured options per `structured-options`: accept all as-is · adjust
 named rows · drop named rows · stop. **One approval pass for the whole sweep** — this is
-the `draft-before-write` gate for everything below. (The Team/ publish gate in A6 stays its
+the `draft-before-write` gate for everything below. **Any adjustment invalidates the
+pass: re-render each adjusted row in full (`{OppNumber} — {Opp Name}`, the revised
+line/Notes block) with the gate question in the same turn before persisting
+(`render-before-gate`) — "one approval pass" means one gate per content-version of the
+sweep, never an approval against a stale render.** (The Team/ publish gate in A6 stays its
 own question — the plan requires that one to be asked every time.)
 
 ### A6. Emit three outputs, then persist
@@ -157,8 +161,10 @@ own question — the plan requires that one to be asked every time.)
    applicable) · changed steps (one line each) · close-date decisions · material changes
    (old → new) · new next-quarter opps · at-risk renewal status · unresolved items. Draft
    only; the user sends.
-3. **Team/ publish gate (one question, last):** "Publish this week's update to `Team/`?"
-   Renders `assets/team-update-template.md` from the sweep data to
+3. **Team/ publish gate (one question, last):** FIRST render the complete update — the
+   exact file body, `assets/team-update-template.md` filled from the sweep data — then
+   ask in the same turn (`render-before-gate`): "Publish this week's update to `Team/`?"
+   On yes, write that rendered body to
    `{memory_root}/Team/updates/{user_name}/{YYYY-WW}_update.md` (write-your-own-subfolder
    only; overwrite the same week's file, never another week's). **If the manager-decision
    file is absent or unresolved, skip this gate and say why** — the email is the fallback
@@ -195,7 +201,14 @@ record of observations and approved lines** — never read back as current deal-
    (`AccountId = {Id}`, resolved per §E). `manual` tier → enumerate
    `01_Opportunities/{OppNumber}_{Label}/` folder names as the local opp registry,
    cross-checked against anything pasted. Multiple → structured options (user's own opps
-   first); ownership rule as in A1.
+   first); ownership rule as in A1. **Opp display rule (`render-before-gate`): wherever
+   an opp is referenced — pickers, confirmations, sweep tables, log lines, delegate-mode
+   included — and its name is known, render `{OppNumber} — {Opp Name}` (+ stage when
+   already in hand), never a bare number; Name comes from the same §A1 SOQL row or the
+   opp folder label, no extra query. Pickers additionally: the first line discloses
+   scope — "{N} open opps found for this account ({filter})" — so an absent expected
+   opp is diagnosable at a glance, and the not-tied-to-an-opp escape option is always
+   kept.**
 3. **Gather context (silently, gated by `{integrations}`):** `Account_Notes.md` Open
    Commitments + Strategy Notes; `Contacts.md` for canonical names/titles (never guessed);
    `Sphere_of_Influence.md` for who should be named; hinotes (only if configured)
@@ -207,7 +220,9 @@ record of observations and approved lines** — never read back as current deal-
    with titles. If CloseDate cannot be confirmed at all, the output is marked
    `draft — close-date unverified, not approved for paste`.
 5. **Generate (§D) and present the line + change entry together; on acceptance, append a
-   §A6-format entry** (Outcome: changed; Observed from this run's intake).
+   §A6-format entry** (Outcome: changed; Observed from this run's intake). Any
+   adjustment → re-present the revised line + change entry in the same turn as the new
+   gate (`render-before-gate`) before appending.
 
 ---
 

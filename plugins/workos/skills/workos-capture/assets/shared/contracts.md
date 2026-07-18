@@ -39,7 +39,9 @@ newly-formed additive entries may be written ungated; user-meaningful mutations 
 closures, deletions, rewrites, unsuppressions, file moves/deletions) queue as
 `pendingApprovals` and apply only inside an attended run's approval step (consolidated
 display; destructive items decided per item — C14).
-Append-only journal POINTER lines are exempt bookkeeping.
+Append-only journal POINTER lines are exempt bookkeeping, as is the engine version beacon
+(`Team/_engine/latest-version.txt` — monotonic bump only, per `shared/version-check.md`;
+added 2026-07-17, #29).
 
 **C6 · no-shadow-store** — Never store a copy of an authoritative source's current state,
 and never store a derived value next to its source (scores/signals compute at render time).

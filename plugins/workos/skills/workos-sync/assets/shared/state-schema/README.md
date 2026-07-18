@@ -4,7 +4,8 @@ Machine-written JSON under `{memory_root}/state/`. One writer per run (C4, lock 
 docs/spikes/spike-4-single-writer.md). Derived values (scores, importance levels) are
 computed at render time and never stored (C6). **Extension rule:** power-user extensions may
 add fields; engine skills and the board ignore unknown fields; CI validates the baseline
-only. Fixtures: `ci/fixtures/state/` — `ci/validate-state.sh` enforces everything below.
+only. Fixtures: `ci/fixtures/state/` — `ci/validate-state.sh` enforces the four state
+files; `.pass-lock.json` is protocol, validated live (doctor step 7, spike 4).
 
 ## tasks.json
 ```json
@@ -46,5 +47,9 @@ Draft: `{ "id": "", "to": "", "subject": "", "body": "", "source": "", "pendingR
 `{ "tasks": [], "meetings": [] }` — a suppressed id MUST NOT appear in any lane or the
 meetings list.
 
-## .pass-lock.json (transient — see spike 4)
-`{ "pass": "sync|tidy|sweep", "startedAt": "ISO", "surface": "cowork|claude-code" }`
+## .pass-lock.json (persistent file, transient meaning — see spike 4)
+Live: `{ "pass": "sync|tidy|sweep", "startedAt": "ISO", "surface": "cowork|claude-code",
+"runId": "..." }`. Released: the same object plus `"released": true, "releasedAt": "ISO"`.
+Tombstone ⇔ `released` is exactly `true`; anything else is a live lock. A tombstone reads
+as FREE at acquire and is the file's healthy resting state; nothing in the engine deletes
+it (#30: delete is unreliable on the scheduled surface).

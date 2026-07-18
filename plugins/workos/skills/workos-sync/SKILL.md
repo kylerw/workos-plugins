@@ -55,44 +55,64 @@ board computes (no pass stores or refreshes them).
    marker "(scheduled, unattended)"** — `workos-setup` puts that marker in the scheduled
    task it creates; the Day-1 guide mandates it. No marker → attended. Unattended runs
    never ask questions, never apply pendingApprovals, never delete or move files; they do
-   only what C5's state-store clause allows ungated, queue everything else, and report
+   only what C5's state-store clause allows ungated (incl. the engine version beacon —
+   `assets/shared/version-check.md`), queue everything else, and report
    into `attention[]` + the run output.
 4. **The lock (C4 — acquired BEFORE any state/ write, including baseline scaffolding):**
    read `state/.pass-lock.json`.
-   - Absent → write `{pass, startedAt: now, surface, runId}` where `runId` is a token
+   - Absent, or a tombstone (`released: true`, any writer) → write
+     `{pass, startedAt: now, surface, runId}` where `runId` is a token
      unique to this run (e.g. `{pass}-{now}-{4 random alphanumerics}`), re-read once;
-     `runId` isn't yours → yield.
-   - Present, `startedAt` < 30 min → do not write state. Attended: one question (C11):
+     `runId` isn't yours → yield. (Overwriting a tombstone is a normal acquire — no
+     recovery message; the tombstone is the lock's healthy resting state.)
+   - LIVE (anything not `released: true`), `startedAt` < 30 min → do not write state.
+     Attended: one question (C11):
      "1. Wait and retry / 2. Read-only run / 3. Take over — the other session is dead."
      Unattended: exit; report only in the run output (no state or board writes).
-   - Present, ≥ 30 min → announce "recovering a stale lock from {startedAt}", overwrite
-     with your own `runId`.
+   - Live, ≥ 30 min → announce the recovery from the lock's OWN metadata — "recovering a
+     stale lock ({pass} pass on {surface}, last alive {startedAt})" — "last alive", not
+     "started": heartbeats rewrite `startedAt` — and never a guess at which run left it
+     (live attribution wart 2026-07-17); then overwrite with your own `runId`.
+   - Present but UNPARSEABLE (truncated/garbage JSON — e.g. an interrupted rewrite; the
+     file is rewritten every run now, so this WILL eventually happen) → treat as stale:
+     announce "recovering a corrupt lock", overwrite with your own fresh lock. (A live
+     pass whose lock was mangled loses ownership and yields at its next ownership
+     check — safe.)
    - **Heartbeat — both modes:** rewrite `startedAt` (same `runId`) after every user
      answer AND after each completed S-phase, so neither a parked question nor a long
-     unattended harvest looks stale.
+     unattended harvest looks stale. **Heartbeat only a lock you still own:** re-read
+     first; the file isn't your own LIVE lock → don't write, take the ownership check's
+     yield path (a heartbeat must never resurrect a lock another run recovered or
+     tombstoned).
    - **Ownership check:** immediately before every state write batch — and after any
-     user-interaction gap — re-read the lock; `runId` mismatch → yield and report, write
-     nothing further.
-   - **Release (delete) the lock as the pass's final action** — after the close summary,
-     no questions after release. On any error you survive: release before exiting.
-     The platform may surface this delete as a scary "permanently delete files"
-     permission prompt — that prompt IS the lock release (Day-1 guide tells users to
-     allow it). **Release is verified, never assumed: after the delete, attempt to read
-     the lock file — released ⇔ the file is GONE.** Still present (denied prompt,
-     silent tool failure, sync lag) → say exactly that: "lock release FAILED — the file
-     persists; it will read as stale and self-recover after 30 minutes." (Live defect
-     2026-07-16: an unattended run reported "released successfully" while the file
-     persisted — doctor caught it four minutes later.)
+     user-interaction gap — re-read the lock; anything but your own LIVE lock (your
+     `runId` AND not `released: true`) → yield and report, write nothing further.
+   - **Release (tombstone, never delete) the lock as the pass's final action** — after
+     the close summary, no questions after release. On any error you survive: release
+     before exiting. **Release only what you still own:** re-read the lock FIRST — it
+     holds your live `runId` → rewrite `.pass-lock.json` in place to that object plus
+     `"released": true, "releasedAt": now`; anything else (another run's lock or
+     tombstone — they stale-recovered over you) → write NOTHING and report "lock no
+     longer mine — {what the file holds}; leaving it alone." The rewrite is an ordinary
+     write, which works on every surface where delete is intermittent (platform fact
+     #14; the old end-of-sync "permanently delete files" prompt disappears with the
+     delete). Never delete the file. **Release is verified, never assumed: re-read
+     after the write — released ⇔ the file holds YOUR `runId` with `released: true`.**
+     Anything else → say exactly what was read: "lock release FAILED — {what the file
+     holds}; it will read as stale and self-recover after 30 minutes." (Live defect
+     2026-07-16: an unattended run reported "released successfully" while the old
+     delete had failed — doctor caught it four minutes later.)
 5. **State baseline (first state write — under the lock):** if `state/` lacks any of
    `tasks.json` / `meetings.json` / `drafts.json` / `suppressed.json`, create the missing
    ones as empty shapes per the schema (machine bookkeeping, ungated). First-ever run (no
    `lastFullSync` anywhere): harvest window = **the last 3 business days**, said in the
    close summary; open today's day-task without a flush (nothing to flush).
 6. **Version notice:** if `team_publish_folder` is configured, compare the bundle's
-   `assets/shared/VERSION` against `Team/_engine/latest-version.txt`; mismatch → one line
-   in `attention[]` and the close summary. Configured but unreachable → attention entry
-   ("Team/ unreachable"). Not configured → skip, silently (an unconfigured surface is not
-   a degradation).
+   `assets/shared/VERSION` against `Team/_engine/latest-version.txt` per
+   `assets/shared/version-check.md`: behind → the one-line notice in `attention[]` and the
+   close summary; ahead → the self-heal beacon bump, its one line in the close summary.
+   Configured but unreachable → attention entry ("Team/ unreachable"). Not configured →
+   skip, silently (an unconfigured surface is not a degradation).
 
 ---
 
@@ -285,7 +305,7 @@ calendar is configured and its first-use probe succeeds (configured-but-failing 
 SKIP into `attention[]`; unconfigured → silently none). No mail, no account folders, no
 journal, no brief-building.
 
-1. Lock per Step 0.5.
+1. Lock per Step 0.4.
 2. **Approvals:** attended → RE-RENDER each pendingApproval's full finding +
    proposedAction in THIS chat, with its stable `appr-…` id, in the same turn as its
    gate (C14 — a render in the earlier sync pass does not count; "as originally shown"

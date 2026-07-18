@@ -200,20 +200,28 @@ is "issues found," never green-with-asterisks** (C13):
    that means (pasted reports are the intake — expected, not an error).
 5. **Engine version:** per `assets/shared/version-check.md` — INSTALLED = this bundle's
    VERSION (the authoritative fact); LATEST = `Team/_engine/latest-version.txt` (unreachable
-   → "latest: unknown"). A version recorded in core.md only marks when setup last ran — if
-   the bundle is newer than core.md's record, say "config written by {M}; bundle is {N} —
-   fine unless release notes say config fields changed", never "update available".
+   → "latest: unknown"); installed ahead of latest → report "beacon behind; your next sync
+   heals it" — never write it here (doctor diagnoses; sync owns the bump). A version
+   recorded in core.md only marks when setup last ran — if the bundle is newer than
+   core.md's record, say "config written by {M}; bundle is {N} — fine unless release notes
+   say config fields changed", never "update available".
 6. **Team/ publication:** shortcut present? user's subfolder writable? manager-decision
    file recorded? Each absent one maps to the Day-1 guide step or the pending Adam item.
-7. **State layer:** `state/` exists; JSON parses; exactly one writer's lock present or none
-   (stale lock → name the recovery step from the recorded spike design). `state/` missing
+7. **State layer:** `state/` exists; JSON parses; the writer's lock is a released
+   tombstone (`released: true` — FREE, healthy), absent (also fine), or one live lock
+   (stale live lock → name the recovery step from the recorded spike design, quoting the
+   lock's own `{pass}/{surface}` and `{startedAt}` as "last alive" — heartbeats rewrite
+   it). `state/` missing
    entirely → the finding says exactly: *"state/ is the engine's operational baseline —
    the first `sync my day` scaffolds it"* — never "only relevant if you use the board"
-   (live mis-framing 2026-07-16). **A lock whose
+   (live mis-framing 2026-07-16). **A LIVE lock whose
    `startedAt` predates `lastFullSync`/`lastTidy` is an ORPHAN** (a pass claimed release
-   and failed — live defect 2026-07-16): name it, and offer the one-step fix (delete
-   `state/.pass-lock.json`) as a question (C11) — the ONE doctor finding with an offered
-   action, because a future pass blocks on it.
+   and failed — live defect 2026-07-16): name it, and offer the one-step fix (add
+   `released: true, releasedAt: now` to the existing lock object — an ordinary write,
+   works on every surface where delete does not) as a question (C11) — the ONE doctor
+   finding with an offered action, because a future pass blocks on it. On approval,
+   re-read first: still the exact lock reported → write the tombstone; anything else
+   changed underneath → abort and re-report, never repair a lock you didn't diagnose.
 8. **Scheduled tasks (live-test gap 2026-07-16 — doctor previously never looked):**
    **match by PROMPT CONTRACT, never by task name** — a conforming sync task is one
    whose prompt contains both `sync my day` and the literal `(scheduled, unattended)`

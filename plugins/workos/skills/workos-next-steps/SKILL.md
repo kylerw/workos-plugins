@@ -45,8 +45,9 @@ the values — never hand-edited, per `identity-config`):
 **"Today" always comes from the surface-provided current date — never inferred or recalled.**
 
 **Version notice (weekly sweep only):** per `assets/shared/version-check.md` — compare the
-bundle's VERSION against `Team/_engine/latest-version.txt` silently; on mismatch, append the
-single-line update notice to this run's output. Unreachable → skip silently (C13).
+bundle's VERSION against `Team/_engine/latest-version.txt` silently; behind → append the
+single-line update notice to this run's output; ahead → apply the self-heal beacon bump and
+its one line. Unreachable → skip the notice silently; `doctor` is the loud surface.
 
 **Every question in every mode follows C11** — including ad-hoc gap questions mid-flow
 (meeting outcomes, close-date resolutions, on-track/at-risk calls): reframe as structured

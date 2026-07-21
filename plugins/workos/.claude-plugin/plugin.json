@@ -1,5 +1,5 @@
 {
   "name": "workos",
-  "version": "2026-07-rc23",
+  "version": "2026-07-rc24",
   "description": "WorkOS v1 (Bronze): workos-setup (init my workspace / check my setup), workos-sync (sync my day / tidy / build my board), workos-next-steps (weekly sweep, single-opp, delegate). Built from the private WorkOS engine repo; all examples fictional; no customer data by contract."
 }

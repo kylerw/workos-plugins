@@ -87,9 +87,26 @@ and the record is still explicit.
    (Salesforce owner-column spelling may differ from directory displayName — say so if the
    user edits).
 2. `fiscal_q1_start_month` — one question, once.
-3. `team_publish_folder` — if the shared `Team/` shortcut exists in the root, confirm the
+3. `timezone` — one question, once (C11): with `ms365` in the active set, read the
+   mailbox timezone (probe, C13) and offer its IANA equivalent as the default option —
+   preselect ONLY when the mailbox value maps uniquely to one IANA zone (CLDR
+   windowsZones mapping, region from the mailbox locale); ambiguous, regionless, or
+   unrecognized → candidates WITHOUT a preselected default; alternates derived from that
+   mailbox/locale, plus 'somewhere else — I'll type it'. No mailbox zone readable → NO
+   pre-selected default: the user picks or types (a fabricated zone is worse than asking
+   — a wrong-but-confident zone silently mis-files screenshot correlation). IANA form
+   always; never derived from `user.md`.
+4. `team_publish_folder` — if the shared `Team/` shortcut exists in the root, confirm the
    user's subfolder (`Team/updates/{user_name}`); if not, note it as a Day-1 guide step and
    leave unset (the publish gate stays off until it exists).
+5. `intake_sources` — optional, one question (C11), default is skip: "Configure
+   file-intake sources (screenshots / downloads folders)? 1. Skip for now (default —
+   asked again next init; correlation and intake stay off) / 2. Add my screenshots
+   folder / 3. Add screenshots + downloads." On 2/3 collect each path (or mounted
+   folder name on a managed surface) as typed — never guessed — and record entries
+   with `kind`; each entry's `label` derives from the folder name (unique-ified,
+   confirmed in the same pass); the escape option "my screenshots aren't named like the
+   default" collects a `pattern` template (the schema's literal-token grammar).
 
 **Write the three-file config layer after the confirmations** (draft-before-write; schema:
 `assets/shared/identity.schema.md`). Ownership is by FILE, never by section:
@@ -112,9 +129,23 @@ From `assets/shared/` templates and the memory-structure layout: `Accounts/`, `s
 `journal/`, `lanes/` — **create only what's missing** (additive, idempotent). `state/`
 gets the four baseline files as empty shapes per
 `assets/shared/state-schema/README.md` (`tasks.json`, `meetings.json`, `drafts.json`,
-`suppressed.json`) so the daily driver never bootstraps blind. Present the
-create-list first (C5). Never create `Team/` (it's a shortcut the user adds) and never
-scaffold empty `Prep/`/`Archive/` folders.
+`suppressed.json`) so the daily driver never bootstraps blind.
+`{library_path}` (default `Library`) gets the collateral taxonomy — `INDEX.md` from
+`assets/shared/memory-structure/Library-INDEX.md` (its top comment carries the anti-mirror
+rule: local copies ONLY for files you open and modify; everything else is an INDEX row
+with a link) plus `Templates/ · Pricing/ · Competitive/ · Partner/ ·
+Thought-Leadership/` — same additive rules, created only when missing. If the folder
+EXISTS, split on its `INDEX.md`: no `INDEX.md` → one C11 question — "1. Adopt — create
+INDEX.md here / 2. Different folder name (records `library_path`; user-nominated only —
+setup never auto-discovers candidate folders) / 3. Skip for now (session-only — asked
+again next init run)"; a CONFORMING `INDEX.md` → adopt silently, no question; a
+NONCONFORMING `INDEX.md` → never overwrite, apply the doctor rules (decidable
+header-insert offer, else a named finding) — the same three-case split doctor uses.
+Present the create-list first (C5). Never
+create `Team/` (it's a shortcut the user adds) and never scaffold empty
+`Prep/`/`Archive/` folders — that ban covers ON-DEMAND per-meeting folders (they're
+created when a meeting needs them); Library's subfolders are FIXED taxonomy scaffolded
+once, the same class as `journal/` and `lanes/`.
 
 ### A4. Seed the first accounts — top 3–5, not the book
 
@@ -182,9 +213,21 @@ last_verified`), approved before writing. Skipping is fine; capture fills these 
 Run every check; print one line each; **a check that cannot run prints SKIP and the summary
 is "issues found," never green-with-asterisks** (C13):
 
-1. **Memory root:** config resolves; root reachable; the canonical folders exist; OneDrive
-   hydration spot-check (read one file; if placeholders/failures → name the "Always keep on
-   this device" fix).
+1. **Memory root:** config resolves; root reachable; the canonical folders exist
+   (`{library_path}` is OPTIONAL taxonomy — judged only by its own sub-bullet below,
+   never by the canonical-folders requirement); OneDrive hydration spot-check (read one
+   file; if placeholders/failures → name the "Always keep on this device" fix).
+   - **Library (optional):** resolve `{library_path}` (default `Library`). No folder, or
+     a folder without `INDEX.md` → one info line ('run `init my workspace` to add the
+     Library taxonomy'), NOT a finding. `INDEX.md` present → the TEMPLATE-HEADER PRESENCE
+     check: exactly one occurrence of
+     `| Title | Canonical URL | last_verified | why_kept |` immediately followed by its
+     delimiter row, outside comments (line-ending/whitespace-normalized compare). Header
+     entirely ABSENT but file present → finding WITH the one decidable C11-gated offer:
+     insert header + delimiter at the top (below the comment block if present, above
+     existing rows — additive). Any messier malformation (wrong location, duplicates,
+     mangled delimiter) → finding that NAMES the expected two lines, NO repair offer
+     (never overwrite user content).
 2. **Config completeness:** every `identity.schema.md` key present or explicitly defaulted
    **and type-conformant to the schema** (e.g. `fiscal_q1_start_month` is an integer 1–12 —
    a stored "January" is a finding; live catch 2026-07-16); name the missing/malformed ones
@@ -218,8 +261,10 @@ is "issues found," never green-with-asterisks** (C13):
    `startedAt` predates `lastFullSync`/`lastTidy` is an ORPHAN** (a pass claimed release
    and failed — live defect 2026-07-16): name it, and offer the one-step fix (add
    `released: true, releasedAt: now` to the existing lock object — an ordinary write,
-   works on every surface where delete does not) as a question (C11) — the ONE doctor
-   finding with an offered action, because a future pass blocks on it. On approval,
+   works on every surface where delete does not) as a question (C11) — an offered-action
+   finding (the gated offered-action pattern — used only where a future pass otherwise
+   blocks, or a create-only scaffold leaves no other remedy: the scheduled-task and
+   Library-header offers follow it), because a future pass blocks on it. On approval,
    re-read first: still the exact lock reported → write the tombstone; anything else
    changed underneath → abort and re-report, never repair a lock you didn't diagnose.
 8. **Approvals-queue audit (#50) — STATE-BASED:** for every id with a `raised` pointer in

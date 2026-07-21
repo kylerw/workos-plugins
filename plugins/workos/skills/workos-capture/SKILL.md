@@ -70,10 +70,15 @@ the shared template when absent) per `assets/shared/contact-resolution.md` (#40)
      what's owed, any due hint ("this week", "by 08/15").
    - Participant names resolve per `assets/shared/contact-resolution.md` before
      drafting; pre-gate confirmations (its step 6) run before THE GATE.
-2. **A pure touch** (no commitment, no next step) writes NO account file: its durable
-   record is the journal line itself, which carries the sentence —
-   `- {date} touch [[{Account}]]: {what happened}` — and the gate says so plainly
-   ("journal note only"). Never improvise a section or file for a touch. Per
+   - An event TIME given (not just a date) → run SCREENSHOT CORRELATION (section
+     below) before THE GATE.
+2. **A pure touch** (no commitment, no next step, no screenshot attached) writes NO
+   account file: its durable record is the journal line itself, which carries the
+   sentence — `- {date} touch [[{Account}]]: {what happened}` — and the gate says so
+   plainly ("journal note only"). Never improvise a section or file for a touch.
+   **Carve-out:** attaching ≥1 screenshot in SCREENSHOT CORRELATION upgrades the touch to
+   a lightweight meeting record (a durable `02_Meetings/{YYYY-MM-DD}_{short label}/`
+   folder) — it is no longer a pure touch, and the gate says so plainly. Per
    `assets/shared/contact-resolution.md`, a PURE TOUCH (journal-only, no account file
    written) runs resolution for rendering but never offers the registry append and skips
    pre-gate confirmations — resolution questions belong to flows with a durable write to
@@ -84,11 +89,15 @@ the shared template when absent) per `assets/shared/contact-resolution.md` (#40)
 
 1. **Identify the meeting:** if not already named — with `ms365` configured and probing
    (C13): the most recent PAST calendar event with an external attendee, within the last
-   7 days; without it (or probe failing — loud skip): ask (C11) for account, date, and a
-   short meeting label. Confirm account, time, attendees before pulling anything.
+   7 days; without it (or probe failing — loud skip): ask (C11) for account, date, a short
+   meeting label, and the meeting window — start AND end (or start + duration, default
+   30 min), since correlation needs a full window. Confirm account, time, attendees before
+   pulling anything.
    Resolve every attendee per `assets/shared/contact-resolution.md`; its pre-gate
    confirmations run before THE GATE.
    Resolve the account per Step 0.3.
+   The confirmed meeting window (start/end) feeds SCREENSHOT CORRELATION (section
+   below), run before THE GATE.
 2. **Pull sources — priority gong → teams-transcript → hinotes** (probe before first use,
    C13; configured-but-failing = a loud named skip in the output; unconfigured = silently
    absent, never mentioned):
@@ -118,6 +127,88 @@ the shared template when absent) per `assets/shared/contact-resolution.md` (#40)
 
 ---
 
+## SCREENSHOT CORRELATION — both intents, before THE GATE
+
+**Ordering:** a flow that is ALREADY durable (meeting; log with a commitment/next step)
+runs contact-resolution's pre-gate confirmations FIRST, then correlation. A bare TIMED
+TOUCH runs the correlation PICK first — the pick decides durability: ≥1 selected → the
+touch upgrades (LOG step 2's screenshot carve-out) and contact confirmations run BEFORE
+the rename proposals;
+zero selected → it stays a pure touch, confirmations stay skipped.
+
+**Preconditions — checked in order:** (1) date-only log → skip silently, before any probe
+(a date-only log correlates nothing); (2) `timezone` unset → a loud skip naming the setup
+timezone question (an offset-less filename needs the key; never a guessed zone); (3) no
+screenshots-kind `intake_sources` entry configured → a loud skip naming setup's
+intake-sources question ("no intake sources configured — setup's intake-sources question
+adds them", per the schema; a downloads-kind entry may exist) — and when both 2 and 3 hold,
+ONE combined loud line naming both setup questions; (4) per-source probes (C13: configured
+path first, then mounted-folder name) — correlation proceeds with the sources that resolve,
+ONE loud line per failed source (path unreachable → try the mount name; several mounts
+share the name → ask; all fallbacks fail → that source is unreachable, with
+surface-appropriate remediation: "add the folder to this project" on a managed surface ·
+"check the path / run where the folder exists" on a filesystem surface). Capture is
+attended-only, so correlation may always ask.
+
+1. **Window:** meeting = [start − 5 min, end + 5 min]; log = [time − 15 min,
+   time + 15 min], and ONLY when the user gave a time — a date-only log correlates
+   nothing (skip silently). Comparisons are between RESOLVED INSTANTS — a cross-midnight
+   window includes next-day timestamps, and the destination folder date is ALWAYS the
+   meeting's/log's start date.
+2. **Scan** EVERY resolving screenshots-kind source and union the hits (immediate children
+   only, regular files, window endpoints inclusive; when >1 source resolves, each hit shows
+   its source label). Only filenames matching the source's timestamp pattern participate —
+   a LITERAL TOKEN TEMPLATE, not regex, not glob: literal text plus the tokens YYYY MM DD
+   HH MM SS, case-sensitive, matched against the basename (extension ignored). Default:
+   `Screenshot YYYY-MM-DD HHMMSS`. A template missing any token → treated as the default
+   with one loud line. Non-matching files are ignored. Read each matching name as a local
+   wall-clock instant per `timezone` and compare inside the window. A
+   fall-back-DST-ambiguous timestamp matches BOTH candidate instants — include it flagged
+   "(DST-ambiguous)"; a nonexistent-hour timestamp (spring-forward gap) has NO valid
+   instant — one structured question: 1. Interpret with the pre-transition offset /
+   2. Post-transition offset / 3. I'll type the corrected time / 4. Exclude this file.
+3. **Pick:** hits page in groups of ≤3, ONE structured question per page (C11) — the
+   platform's multi-select counts as one decision where the question tool supports it;
+   where it doesn't, one hit per question. Every page carries "none on this page / done".
+   After the last page: one confirmation line — "proceeding with {N} selected". Options
+   render `{filename} · {HH:MM:SS} · {size}` (+ the DATE whenever the window spans two
+   dates · + source label when >1 source · dimensions only when cheaply available).
+   Same-second twins stay distinguishable by filename. No hits → one line stating the
+   window used ("no captures 14:55–15:35 — check the log time if that looks wrong"),
+   move on.
+4. **Rename:** propose a semantic name per selected file
+   (`{YYYY-MM-DD}_{short label}_{topic}.{source ext}`); the user approves or edits each in
+   the same flow. Proposed names sanitize `\ / : * ? " < > |` and any path separator to
+   `-` before entering the gate. Sanitization + bundle-uniqueness validate the FINAL
+   APPROVED basename (user edits included): empty, dot-only, reserved device names, control
+   characters, leading/trailing dots or spaces, or >120 chars → re-prompt. The semantic
+   name replaces the STEM only — the source file's extension is preserved verbatim (a
+   capture source may hold jpg/webp; never relabel bytes as .png). Names must be UNIQUE
+   within the bundle — a duplicate proposal re-prompts before the gate (distinct from the
+   on-disk collision question in step 5).
+5. **Bundle items (C14):** each selected file becomes a manifest item — COPY, never
+   move (the source is a system capture target):
+   `{source path} → Accounts/{Account}/02_Meetings/{YYYY-MM-DD}_{short label}/
+   screenshots/{approved name}` — the destination folder is the meeting-note folder
+   VERBATIM (the same `{YYYY-MM-DD}_{short label}` tokens the write uses, never
+   re-derived; for a meeting it IS the note's folder). Canonicalize source and destination
+   — identical or nested paths reject the item (a screenshots source must never be inside
+   `Accounts/`). Rendered exactly in THE GATE and written in the write order below, copy
+   verified by byte-size match (binary — not a content read-back). Immediately before each
+   copy, revalidate the gated item (source size/mtime unchanged; destination state still as
+   gated) — changed → back to the gate, never a stale-approval write. Destination collision
+   → the collision question (1. Replace / 2. New name / 3. Skip this file), re-gated (C14);
+   the collision option 1 renders as `OVERWRITE {existing name · size · modified} with COPY
+   from {source}` (C14 — destructive, per-item).
+   **For a LOG:** selecting ≥1 screenshot upgrades the log to a lightweight meeting
+   record — the pick flow confirms a `{short label}` derived from the log's one-sentence
+   what-happened, and the write creates `02_Meetings/{YYYY-MM-DD}_{short label}/
+   screenshots/` (folder + images only; no Notes.md required). A pure touch that attaches
+   screenshots is thereby no longer a pure touch; the gate says so plainly ("attaching
+   screenshots creates a durable meeting-record folder"). Zero selections → the touch
+   stays journal-only, unchanged.
+6. Unselected files stay put — intake maintenance owns them later.
+
 ## THE GATE — one approval, then write (C5)
 
 Draft the full bundle, write nothing. The bundle is an explicit manifest — for every
@@ -127,6 +218,8 @@ account folder when Step 0.3 confirmed one: "this will create `Accounts/{name}/`
 A confirmed contact row (contact-resolution step 6) is its own manifest item — the
 exact row, the target section, and any header rewrite or file creation the mechanics
 require (`Contacts.md` absent → created from the shared template, rendered here).
+A manifest item may also be a FILE COPY — rendered as `source → destination` (C14), with
+no "proposed content" body (the bytes are the source file's).
 
 **Chained invocation changes nothing (C14):** when capture is invoked from another
 skill's tail (sync/tidy close, a board flow) or any non-interactive lead-in, the full
@@ -159,8 +252,9 @@ Any adjustment invalidates prior approval — apply the change to the bundle and
 RE-PRESENT THE FULL REVISED BUNDLE with the gate question in the same turn (C14);
 never describe the change instead of showing the changed bundle, never save a "revised"
 bundle against an earlier render. Run C14's self-check every round before asking. On 3, write
-items 1–2 and the journal pointer exactly as approved and skip the next-step line
-entirely, including the workos-next-steps log offer. Nothing below happens without an
+ALL approved items except the next-step line (meeting note, commitments, contact rows,
+screenshots, journal pointer) exactly as approved and skip the next-step line entirely,
+including the workos-next-steps log offer. Nothing below happens without an
 explicit approval of the exact bundle being written.
 
 **On approval, write IN ORDER — stop on the first failure, report precisely what was and
@@ -183,7 +277,10 @@ reading the target first:**
    file — never rewrite, reorder, or re-template existing content.
 3. **Contacts.md row** (only when the bundle carried one) → per the contact-resolution
    mechanics; read-back verified like every write here.
-4. **Journal pointer, LAST — only after the writes above are verified by read-back**
+4. **Screenshots** (only when the bundle carried them) → the approved copies into the
+   meeting folder's `screenshots/`, each verified by byte-size match (size-verified
+   copies — binary, not a content read-back); the SOURCE files are never touched.
+5. **Journal pointer, LAST — only after the writes above are verified by read-back**
    (append-only bookkeeping, C5-exempt) → `{memory_root}/journal/{YYYY-MM}.md`:
    `- {date} captured {touch|meeting} [[{Account}]] → {saved path}` — or the touch-only
    form from LOG step 2 when nothing else was written. **Account-mounted session (no
@@ -194,7 +291,7 @@ reading the target first:**
    account file for sync to find — say instead: "this touch has NO durable record from
    an account project — re-log it from the WorkOS root chat to keep it," and never
    promise a backfill for it.**
-5. **Next-step line: presented as text ready to paste (C7)** — say plainly it needs
+6. **Next-step line: presented as text ready to paste (C7)** — say plainly it needs
    manual pasting. Then append the bundle's already-approved change entry to the per-opp
    log YOURSELF (next-steps §C: the caller is the one writer) — no new approval needed
    because the entry was in the approved bundle; an entry that was NOT in the bundle is
@@ -213,6 +310,8 @@ never as success; a partial completion names exactly which items landed.
 - Writing `state/` (C4 — sync reads capture's files as evidence), Salesforce (C7), or
   another skill's files; scaffolding account structure (setup's job — offer
   "init {account}").
+- Moving, renaming, or deleting anything in a screenshots SOURCE folder — correlation
+  COPIES; the source's contents and count are never changed by capture.
 - Overwriting an existing meeting note without the collision question.
 - Inventing transcript content, contact names, titles, or account folders (names
   resolve per `assets/shared/contact-resolution.md` — email is the join key, an email

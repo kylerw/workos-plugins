@@ -19,6 +19,10 @@ nothing here is created by hand.
 ├── state/                         machine-written JSON (task store, meetings, drafts,
 │                                  suppressed) — one writer per run (C4); board reads it
 ├── journal/{YYYY-MM}.md           append-only pointers to where truth landed
+├── Library/                       generic cross-account collateral — INDEX.md pointer
+│                                  table + Templates/Pricing/Competitive/Partner/
+│                                  Thought-Leadership; pointer-first, never a mirror
+│                                  (optional — `library_path`)
 ├── lanes/                         lane-state prose
 └── Team/                          shared OneDrive shortcut — publication surface, not
                                    memory (write your own subfolder only)

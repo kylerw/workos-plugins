@@ -231,6 +231,8 @@ record of observations and approved lines** — never read back as current deal-
 
 - Reuse every intake field the caller hands over as already-confirmed — never re-resolve or
   re-confirm. Fill genuine gaps only, from the cheapest tier-appropriate source.
+- A handed-over name in an unconfirmed/as-given form is restructured out per §D — never
+  emitted, never re-asked (the caller owns the confirmation).
 - Skip research sweeps — the caller owns context gathering.
 - **Return `{line, change_entry, validation}` and write NOTHING.** The caller must present
   the line and change entry together at its single `draft-before-write` gate, and the
@@ -258,8 +260,12 @@ record of observations and approved lines** — never read back as current deal-
 - The future action date appears **inside** the sentence and is **after today** —
   rollover rule: a future MM/DD numerically smaller than today's is next year if within
   ~90 days (12/18 → 01/08 is valid).
-- Names **with titles** for every contact referenced (from `Contacts.md` or confirmed by
-  the user — never guessed).
+- Names **with titles** for every contact referenced — resolved per
+  `assets/shared/contact-resolution.md` (`Contacts.md` is the registry; never guessed).
+  **An unresolved name BLOCKS the line:** resolve via the pre-gate confirmation or
+  restructure without the name — the unconfirmed decoration never enters a paste-ready
+  line, and an as-given never-confirmed name counts as unresolved (resolution STATUS,
+  not visible decoration, is the test).
 - The new line **differs materially** from the prior step — not just the leading date.
 
 **Sequencing judgment (silent):** momentum, executive ownership, friction removal vs
@@ -278,7 +284,8 @@ escalation. CCS phases are never labeled in the output.
 
 **Enforcement checklist (silent; regenerate on any failure):** leading date = today ·
 initials present · single sentence · mechanically-printed N ≤ 254 (or explicitly marked
-unverified) · titles for all contacts · future date inside the sentence, after today
+unverified) · titles for all contacts (resolved names only — an unconfirmed form OR an
+as-given never-confirmed name is a failure) · future date inside the sentence, after today
 (rollover rule) · differs materially from prior · close-date check passed (§A3.1 / §B4) ·
 prior step's three-state provenance recorded.
 
@@ -298,7 +305,9 @@ Salesforce account merges retire Ids.
 
 - Treating a stale screenshot or remembered conversation as the prior step when a fresher
   tier-appropriate source exists (at `manual` tier, this week's pasted report is fresh).
-- Fabricating names, titles, Notes-block content, or a prior step for a blank field.
+- Fabricating names, titles, Notes-block content, or a prior step for a blank field —
+  names resolve per `assets/shared/contact-resolution.md`, and an unresolved name never
+  ships in a paste-ready line.
 - Updating another owner's opportunity without explicit ownership confirmation.
 - Claiming a Salesforce write happened, or that a line was "submitted" — lines are
   `approved for paste` until the user confirms otherwise.

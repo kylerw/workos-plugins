@@ -29,7 +29,9 @@ the plugin's skill folder. Never resolve `assets/` in the memory root or project
 **Write-routing (the three-owner rule):** account truth (commitments, strategy,
 meeting records) is THIS skill's lane — it writes `Account_Notes.md`, `02_Meetings/`,
 and journal pointers. It NEVER writes `state/` (C4 — sync's next pass reads what capture
-wrote as evidence), never Salesforce (C7), never another skill's files.
+wrote as evidence), never Salesforce (C7), never another skill's files — with ONE named exception: the
+single gate-approved `Contacts.md` row/header append (or `Contacts.md` creation from
+the shared template when absent) per `assets/shared/contact-resolution.md` (#40).
 
 ## Step 0 — every capture
 
@@ -66,10 +68,16 @@ wrote as evidence), never Salesforce (C7), never another skill's files.
      bullet stamp (see THE GATE).
    - If a commitment was made, either direction: owner (`me` = I owe / `them` = they owe),
      what's owed, any due hint ("this week", "by 08/15").
+   - Participant names resolve per `assets/shared/contact-resolution.md` before
+     drafting; pre-gate confirmations (its step 6) run before THE GATE.
 2. **A pure touch** (no commitment, no next step) writes NO account file: its durable
    record is the journal line itself, which carries the sentence —
    `- {date} touch [[{Account}]]: {what happened}` — and the gate says so plainly
-   ("journal note only"). Never improvise a section or file for a touch.
+   ("journal note only"). Never improvise a section or file for a touch. Per
+   `assets/shared/contact-resolution.md`, a PURE TOUCH (journal-only, no account file
+   written) runs resolution for rendering but never offers the registry append and skips
+   pre-gate confirmations — resolution questions belong to flows with a durable write to
+   attach them to.
 3. Proceed to THE GATE.
 
 ## MEETING — recorded consolidation
@@ -78,6 +86,8 @@ wrote as evidence), never Salesforce (C7), never another skill's files.
    (C13): the most recent PAST calendar event with an external attendee, within the last
    7 days; without it (or probe failing — loud skip): ask (C11) for account, date, and a
    short meeting label. Confirm account, time, attendees before pulling anything.
+   Resolve every attendee per `assets/shared/contact-resolution.md`; its pre-gate
+   confirmations run before THE GATE.
    Resolve the account per Step 0.3.
 2. **Pull sources — priority gong → teams-transcript → hinotes** (probe before first use,
    C13; configured-but-failing = a loud named skip in the output; unconfigured = silently
@@ -114,6 +124,9 @@ Draft the full bundle, write nothing. The bundle is an explicit manifest — for
 file: create vs append, the exact path, the complete proposed content (including a new
 account folder when Step 0.3 confirmed one: "this will create `Accounts/{name}/` and its
 `Account_Notes.md`").
+A confirmed contact row (contact-resolution step 6) is its own manifest item — the
+exact row, the target section, and any header rewrite or file creation the mechanics
+require (`Contacts.md` absent → created from the shared template, rendered here).
 
 **Chained invocation changes nothing (C14):** when capture is invoked from another
 skill's tail (sync/tidy close, a board flow) or any non-interactive lead-in, the full
@@ -136,7 +149,9 @@ does not contain the bundle it approves.
    the bundle directly beneath the line — both are part of what approval writes (C14)**. `workos-next-steps` unavailable in this
    session → render from `assets/shared/locked-next-step-format.md` yourself and
    **mechanically verify ≤254 characters** (count with a command per fact #8; no way to
-   count → mark the line "count unverified — verify before pasting").
+   count → mark the line "count unverified — verify before pasting"), and apply
+   next-steps §D (outbound block) — an unresolved name never ships in the line
+   (restructure or drop the line).
 
 Present the whole bundle in one structured approval (C11): "1. Save as shown / 2. Adjust
 — tell me what / 3. Drop the next-step line, save the rest / 4. Stop — save nothing."
@@ -166,7 +181,9 @@ reading the target first:**
    end-of-file). File absent → create it from the shared template. Section absent in an
    existing file → append a `## Open Commitments` header + the bullet at the END of the
    file — never rewrite, reorder, or re-template existing content.
-3. **Journal pointer, LAST — only after the writes above are verified by read-back**
+3. **Contacts.md row** (only when the bundle carried one) → per the contact-resolution
+   mechanics; read-back verified like every write here.
+4. **Journal pointer, LAST — only after the writes above are verified by read-back**
    (append-only bookkeeping, C5-exempt) → `{memory_root}/journal/{YYYY-MM}.md`:
    `- {date} captured {touch|meeting} [[{Account}]] → {saved path}` — or the touch-only
    form from LOG step 2 when nothing else was written. **Account-mounted session (no
@@ -177,7 +194,7 @@ reading the target first:**
    account file for sync to find — say instead: "this touch has NO durable record from
    an account project — re-log it from the WorkOS root chat to keep it," and never
    promise a backfill for it.**
-4. **Next-step line: presented as text ready to paste (C7)** — say plainly it needs
+5. **Next-step line: presented as text ready to paste (C7)** — say plainly it needs
    manual pasting. Then append the bundle's already-approved change entry to the per-opp
    log YOURSELF (next-steps §C: the caller is the one writer) — no new approval needed
    because the entry was in the approved bundle; an entry that was NOT in the bundle is
@@ -197,7 +214,9 @@ never as success; a partial completion names exactly which items landed.
   another skill's files; scaffolding account structure (setup's job — offer
   "init {account}").
 - Overwriting an existing meeting note without the collision question.
-- Inventing transcript content, contact names, titles, or account folders; treating a
+- Inventing transcript content, contact names, titles, or account folders (names
+  resolve per `assets/shared/contact-resolution.md` — email is the join key, an email
+  handle is never a name source); treating a
   fuzzy account match as certain without confirmation; blending an unverified
   same-day recording.
 - Consulting a recording source that isn't in `{integrations}` (C13), silently swallowing

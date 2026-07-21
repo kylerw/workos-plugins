@@ -27,6 +27,8 @@ nothing here is created by hand.
 Scaffolding rules (`setup` enforces): additive-only and idempotent — never overwrite or
 relocate existing content; existing documents are read-only inputs, never migration targets;
 `_`-prefixed folders under `Accounts/` are excluded from account matching.
+Contacts.md is append-friendly: bulk writers merge by email/name and never drop a
+gate-confirmed row (#40).
 
 Onboarding gotcha (Day-1 guide, mandatory): mark the memory root **"Always keep on this
 device"** — OneDrive files-on-demand placeholders break reads in ways that look like data

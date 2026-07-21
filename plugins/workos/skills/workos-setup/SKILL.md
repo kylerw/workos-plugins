@@ -222,7 +222,23 @@ is "issues found," never green-with-asterisks** (C13):
    finding with an offered action, because a future pass blocks on it. On approval,
    re-read first: still the exact lock reported → write the tombstone; anything else
    changed underneath → abort and re-report, never repair a lock you didn't diagnose.
-8. **Scheduled tasks (live-test gap 2026-07-16 — doctor previously never looked):**
+8. **Approvals-queue audit (#50) — STATE-BASED:** for every id with a `raised` pointer in
+   the current + prior month's journal (**latest pointer per id governs** when an id has
+   several), classify against current STATE — the queue is authority, the journal is the
+   audit trail (schema §pendingApprovals):
+   - **Healthy** (no finding): live in `pendingApprovals` with no exit pointer · OR an
+     `applied`/`retired` exit and not pending · OR a `declined` exit AND a matching
+     `suppressed.approvals` entry (hygiene kinds).
+   - **"approvals queue shrank without a recorded resolution (stale-bundle run? — see the
+     scheduled-task check)":** no exit pointer, not pending, no suppression.
+   - **"crashed decline (half-recorded)":** a declined-hygiene exit without its suppression
+     entry, or a suppression entry without its declined exit.
+   - **"exit recorded but item still queued (crashed pass — item remains live)":** any exit
+     pointer while the id is still in `pendingApprovals`.
+   Additionally: any `suppressed.approvals` entry whose kind is not
+   `hygiene-move`/`hygiene-drop` is a finding — "non-hygiene suppression entry —
+   hand-edited?" (merge-purge ignores it; schema §pendingApprovals).
+9. **Scheduled tasks (live-test gap 2026-07-16 — doctor previously never looked):**
    **match by PROMPT CONTRACT, never by task name** — a conforming sync task is one
    whose prompt contains both `sync my day` and the literal `(scheduled, unattended)`
    marker (same contract, `weekly next steps`, for the next-steps task if opted in).

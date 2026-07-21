@@ -41,7 +41,10 @@ board computes (no pass stores or refreshes them).
    `{sfdc_tier}` via `core.md`. **"Today"/"now" come only from the surface-provided
    date/time** — used for dating and computing "next business day" (weekends skipped;
    v1 does not model holidays — if the user says it's a holiday, believe them), never for
-   deciding what the pass does (C3).
+   deciding what the pass does (C3). **Capture {today}/{now} ONCE here; every use this
+   pass (ids, journal month, day-task date, `raisedAt`) uses the captured values — only
+   lock heartbeats use live now.** (Midnight/month rollover mid-run otherwise splits id
+   dates from journal months.)
 2. **Mode:** trigger word wins. Sync vocabulary: sync my day / full sync / kickoff / start
    my day / wrap / close out (legacy words are triggers only — same single pass, C3).
    Tidy vocabulary: tidy / tidy the board. Board vocabulary: build my board / rebuild my
@@ -104,7 +107,10 @@ board computes (no pass stores or refreshes them).
      delete had failed — doctor caught it four minutes later.)
 5. **State baseline (first state write — under the lock):** if `state/` lacks any of
    `tasks.json` / `meetings.json` / `drafts.json` / `suppressed.json`, create the missing
-   ones as empty shapes per the schema (machine bookkeeping, ungated). First-ever run (no
+   ones as empty shapes per the schema (machine bookkeeping, ungated). Files present but
+   missing baseline keys gain them at first write, EXCEPT `suppressed.approvals`, which is
+   initialized only when the first decline appends to it (schema no-migration rule).
+   First-ever run (no
    `lastFullSync` anywhere): harvest window = **the last 3 business days**, said in the
    close summary; open today's day-task without a flush (nothing to flush).
 6. **Version notice:** if `team_publish_folder` is configured, compare the bundle's
@@ -158,7 +164,11 @@ close summary — never silent. Unconfigured sources are never mentioned at all.
 is bounded by its 2-day window and doesn't count toward the total. Hard total across
 inbox+sent+teams+notes: **60 items**, filled in that priority order, newest-first within
 each source — when the total hits, later sources truncate first. Hydrate at most **5
-accounts** per pass, chosen by harvest-mention count (ties → most recent mention). Any
+accounts** per pass, chosen by harvest-mention count (ties → most recent mention).
+Reads for contact-resolution are exempt from the hydration cap the same way S4's per-brief
+allowance is — per account touched PLUS the accounts of existing unconfirmed markers in
+state (bounded by the marker list; `Contacts.md` + `Sphere_of_Influence.md` only); an
+account whose files weren't read this pass renders the unconfirmed form, never a guess. Any
 cap reached → one `attention[]` line ("harvest capped: {what was left}") — never silent.
 
 ### S3. Reconcile tasks — build proposals, apply nothing yet
@@ -175,7 +185,18 @@ cap reached → one `attention[]` line ("harvest capped: {what was left}") — n
   2026-07-16) — reference, never duplicate. Capture stamps bullets with the CAPTURE
   date, so recent entries sit last. Account truth is `workos-capture`'s; state holds the
   operational pointer.
-- Deletions, rewrites, unsuppressions → `pendingApprovals` entries.
+- **Names entering task titles/summaries resolve per
+  `assets/shared/contact-resolution.md`** — including a re-run over EXISTING
+  unconfirmed markers in state (its step 8; confirmation queues one `task-rewrite`
+  pendingApprovals item PER affected task id, target = that task id). Attended: its
+  pre-gate confirmations run before S7's gate. Unattended: unconfirmed form + the
+  aggregate attention line, never a question.
+- Deletions, rewrites, unsuppressions → `pendingApprovals` entries — entered via the
+  schema's durable-queue merge + dedupe rules (WHICH proposals queue is unchanged).
+  **Before any finding becomes a `pendingApprovals` entry, consult `suppressed.approvals`**
+  (canonical-key match, hygiene kinds): a match is SKIPPED before it reaches the gate,
+  counted into the aggregate line "{N} findings suppressed by earlier declines"
+  (merge-purge remains the backstop).
 
 ### S4. Meetings + briefs (`meetings.json`)
 
@@ -196,7 +217,8 @@ cap reached → one `attention[]` line ("harvest capped: {what was left}") — n
   meetings, ask nothing.
 - **Briefs — budget: at most 5 full briefs per pass** (beyond that: `briefPending`,
   named in `attention[]`). Each brief carries `builtAt` and nine fields:
-  attendees (names + roles, enriched from that account's `Contacts.md`) · objective ·
+  attendees (names + roles, resolved per `assets/shared/contact-resolution.md` against
+  that account's `Contacts.md`) · objective ·
   account state (tier-appropriate: `mcp` = queried at build time, stamped by `builtAt`;
   `manual` = latest from `Account_Notes.md` + next-step logs, phrased "as of {date} per
   account notes" — never presented as live) · last touchpoint · open to them · open to us ·
@@ -215,8 +237,12 @@ account's `01_Opportunities/*/` working folders (`Decks/`, `Pricing/`,
 only — never read or edit file contents.** Flag a folder holding more than one version of
 the same deliverable **or ~5+ files sharing a base name** → propose a specific keep/drop
 list (keep current + last major → `Archive/`; drop minors). **Both the moves and the
-deletions are user-meaningful → `pendingApprovals`,** surfaced in S7's gate. Clean folders
-produce no output.
+deletions are user-meaningful → `pendingApprovals`** (merge + dedupe per the schema;
+kind `hygiene-move`/`hygiene-drop`, target = folder + deliverable base name), surfaced
+in S7's gate — but first consult `suppressed.approvals` (canonical-key match, hygiene
+kinds): a match is SKIPPED before it enters the gate, counted into the aggregate line
+"{N} findings suppressed by earlier declines" (merge-purge remains the backstop). Clean
+folders produce no output.
 
 ### S6. Stage the next business day — `dayTask.queue` (schema shape)
 
@@ -229,8 +255,13 @@ disappearance. Challenge low-leverage items in one line.
 ### S7. Close — one gate, then write, then release
 
 **Attended:**
-1. Assemble everything into ONE consolidated approval (C11): proposed closures (with
+1. **Re-validate every EXISTING `pendingApprovals` item before assembling the gate:**
+   hygiene kinds → list the target folder (this directory read is sanctioned, S5 scope);
+   task kinds → check the task id. A finding that no longer validates → RETIRED (journaled
+   per the schema's raise/exit ordering, named in the close summary), never shown at the
+   gate. Then assemble everything into ONE consolidated approval (C11): proposed closures (with
    evidence) · new tasks · the queue · prep-selection changes · hygiene keep/drop lists ·
+   confirmed contact rows/header changes (contact-resolution) ·
    **the full `pendingApprovals` backlog** (this is sync's surfacing step — a user who
    never runs tidy still sees it here). **Format the gate like the close summary: a
    header + bulleted list per section, blank lines between sections — never one
@@ -239,9 +270,12 @@ disappearance. Challenge low-leverage items in one line.
    items / 3. Add an outcome I forgot / 4. Stop — apply nothing from this pass." **C14:
    every proposal renders with its stable identifier (`appr-…`, task id); option-2
    drill-downs echo `{id} — {original one-line action}` verbatim, never a re-summarized
-   nickname. "Accept all" covers non-destructive proposals only — each destructive item
+   nickname, and offer DECLINE per named item (C14-rendered; the §1 exits apply —
+   hygiene declines suppress, others just remove). "Accept all" covers non-destructive
+   proposals only — each destructive item
    (file delete/move) then gets its own per-item gate with its full finding +
-   proposedAction re-shown beside the question.** Loop on 2/3 until accepted — each
+   proposedAction re-shown beside the question — outcomes: **apply / decline / leave
+   pending** (leave pending keeps it queued untouched for a later pass).** Loop on 2/3 until accepted — each
    round re-renders the FULL gate (revised items in full; unchanged items at minimum as
    their verbatim `{id} — {one-line action}` lines) so everything option 1 approves is
    in the current turn (C14; heartbeat the lock each round). Option 4 leaves state
@@ -249,13 +283,22 @@ disappearance. Challenge low-leverage items in one line.
    the pass found it apart from Step 0.5's baseline scaffolding (which is inert).
 2. **Ownership check (Step 0.4), then write** `state/*.json` — including committing S1's
    prepared roll (append the closing journal pointer, replace `dayTask` with today's) —
-   stamp `generated`, `generatedBy: sync`, `lastFullSync`; refresh `attention[]` (loud
+   stamp `generated`, `generatedBy: sync`, `lastFullSync`; **`pendingApprovals` is written as a MERGE per the schema — never rebuilt from this
+   pass** (purge suppression matches; each item's raise/exit pointer from step 3 is
+   appended and verified BEFORE this state write — the step numbering is presentation,
+   not ordering); a gate-approved `Contacts.md` row/header append (contact-resolution mechanics) executes
+   AFTER the state writes, read-back verified (ownership re-check per Step 0.4
+   immediately before this write, same as a state batch) — refresh `attention[]` (loud
    SKIPs, caps, version notice, approvals still queued).
 3. **Journal pointers:** one line per durable outcome —
-   `- {date} {outcome} → {where truth landed}`. Account truth (commitments, strategy) →
+   `- {date} {outcome} → {where truth landed}`. Approval RAISES add `- {date} approval {id} raised: {one-line summary}`; approval exits add `- {date} approval {id} {applied|declined|retired}: {one-line
+   summary}` (schema grammar + ordering — each raise pointer verified BEFORE its item enters
+   `pendingApprovals`, each exit pointer BEFORE the item's removal; a failed append is a
+   loud SKIP that cancels that raise / keeps that item queued; doctor's queue audit reads
+   these). Account truth (commitments, strategy) →
    offer `workos-capture`; deal movement → offer `workos-next-steps` (single-opp). Never
-   write those files here. **Backfill (SYNC passes only — never Tidy, whose read-set
-   bars account folders and journal; runs whenever `{memory_root}/journal/` is writable
+   write those files here. **Backfill (SYNC passes only — never Tidy — Tidy appends
+   approval pointers only, never scans; runs whenever `{memory_root}/journal/` is writable
    this session): for each account touched this pass, plus any account whose
    `Account_Notes.md` mtime is newer than the last sync (a file listing, not a content
    harvest), scan the FULL Open Commitments section (bounded and small — S3's own
@@ -290,20 +333,23 @@ disappearance. Challenge low-leverage items in one line.
 
 **Unattended:** no questions anywhere. Apply only what C5's state-store clause allows
 ungated (calendar/meeting updates, evidence-formed NEW tasks); closures and everything
-destructive → `pendingApprovals`. Run the S7.3 journal-pointer backfill (append-only
+destructive → `pendingApprovals` (merge-append per the schema). Run the S7.3 journal-pointer backfill (append-only
 pointers are C5-exempt bookkeeping; its count line goes in the run output). Write,
 stamp, rebuild the board, put counts in
-`attention[]` ("{N} approvals waiting"), summarize in the run output, release.
+`attention[]` ("{N} approvals waiting"; also "{N} findings suppressed by earlier declines"
+whenever N>0), summarize in the run output, release.
 
 ---
 
 ## TIDY — the cheap pass
 
-**Read-set, exactly:** config · the lock · `tasks.json` · `meetings.json` · the board's
-current data blocks · at most ONE calendar query (today + next business day) — only if
+**Read-set, exactly:** config · the lock · `tasks.json` · `meetings.json` ·
+`suppressed.json` · the board's current data blocks · the exact files/folders named by
+approvals being applied OR re-validated this pass · at most ONE calendar query (today + next business day) — only if
 calendar is configured and its first-use probe succeeds (configured-but-failing → loud
 SKIP into `attention[]`; unconfigured → silently none). No mail, no account folders, no
-journal, no brief-building.
+journal READS (the approval EXIT appends of step 2 excepted — Tidy never raises), no
+brief-building.
 
 1. Lock per Step 0.4.
 2. **Approvals:** attended → RE-RENDER each pendingApproval's full finding +
@@ -311,7 +357,10 @@ journal, no brief-building.
    gate (C14 — a render in the earlier sync pass does not count; "as originally shown"
    is banned phrasing). Destructive items gate PER ITEM (C14); non-destructive items
    may share one structured pass (C11). Apply what's approved (this is a state write —
-   ownership check first). A "Mark done:"
+   ownership check first). Per-item outcomes: apply / decline / leave pending — plus retired when the finding no
+   longer validates (schema exits). Declines and retires land in the same write batch as
+   applies; every exit appends its journal pointer (an APPEND-ONLY journal write — the
+   one Tidy journal exception; S7.3's backfill scan stays sync-only). A "Mark done:"
    board-button message that triggered this run joins the same pass as a proposed closure
    (evidence: the user's tap; match by `taskId` when present, else by title — ambiguous
    title → one C11 question). Unattended → count into `attention[]`, touch nothing.
@@ -380,10 +429,14 @@ lock. In an unattended run, board vocabulary is reported in the run output and s
 - Asking any question, applying any approval, or deleting/moving anything in a run whose
   prompt carries the "(scheduled, unattended)" marker.
 - Writing account files (`Account_Notes.md`, contexts, spheres, next-step logs) — capture
-  and next-steps own those; sync reads them and appends journal *pointers* only.
+  and next-steps own those; sync reads them and appends journal *pointers* only — EXCEPT
+  the single gate-approved `Contacts.md` row/header append (or `Contacts.md` creation
+  from the shared template when absent) per `assets/shared/contact-resolution.md` (#40).
 - Applying closures, deletions, rewrites, moves, or unsuppressions outside S7's/Tidy's
   approval step (C5) — or wholesale-approving a destructive item that never got its
   per-item gate (C14).
+- Rebuilding `pendingApprovals` from the current pass's findings — it is a durable
+  queue: merge, dedupe, three explicit journaled exits only (#50).
 - Storing `overdue`/`nearDate`, duplicating `prep`/`recap` as signal keys, or any
   importance/tier field (schema, C6).
 - Reading journals or next-step logs back as current deal-state; presenting any cached or
@@ -392,8 +445,9 @@ lock. In an unattended run, board vocabulary is reported in the run output and s
 - Regenerating the board shell outside the BOARD entry point, emitting the board as a
   file-opened artifact (dead buttons — no bridge), or claiming an artifact/file write
   succeeded without checking (C9).
-- Unbounded harvests: every source is delta-since-`lastFullSync` and capped; the only
-  exception is S4's per-brief allowance, which has its own caps.
+- Unbounded harvests: every source is delta-since-`lastFullSync` and capped; the
+  exceptions are S4's per-brief allowance and S2's contact-resolution file reads, each
+  with its own caps/bounds.
 - Dropping carried-forward queue items silently (S1/S6).
 - Prose questions — C11 governs every question in both passes, including mid-flow, and
   every question goes through the platform's structured-question tool (submittable

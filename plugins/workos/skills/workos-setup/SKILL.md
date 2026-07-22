@@ -1,18 +1,18 @@
 ---
 name: workos-setup
 description: >
-  The WorkOS on-ramp and health check. Three jobs: initialize a new user's workspace
+  The WorkOS on-ramp and health check. Four jobs: initialize a new user's workspace
   ("init my workspace" — scaffolds the memory root, builds the per-person identity config
   from connected tools with minimal questions, seeds the first accounts; say "in floor
   mode" to force the O365-only team floor for testing/simulation, or "let me pick
   integrations" to choose), initialize or back-fill one account ("init {account}" —
   additive-only scaffolding of the standard folder taxonomy, never overwrites anything),
-  and diagnose ("check my setup", "doctor", "is my WorkOS healthy" — probes every
-  configured integration, verifies the memory root, reports installed vs latest engine
-  version). Existing files are read-only inputs, never migration targets: nothing is
-  bulk-moved, ever. Works from Cowork at the Office 365 floor; Salesforce/HiNotes/Graph
-  light up when connected. Draft-before-write throughout. DO NOT attempt without loading —
-  it enforces the config schema, invocation modes, and the brownfield rules.
+  seed voice.md alone ("seed my voice file"), and diagnose ("check my setup", "doctor",
+  "is my WorkOS healthy" — probes every configured integration, verifies the memory root,
+  reports installed vs latest engine version). Existing files are read-only, never
+  bulk-moved. Works from Cowork at the Office 365 floor; Salesforce/HiNotes/Graph light up
+  when connected. Draft-before-write throughout. DO NOT attempt without loading — it
+  enforces the config schema, invocation modes, and the brownfield rules.
 ---
 
 # setup — the WorkOS on-ramp (L1) + doctor
@@ -35,6 +35,10 @@ plugin's skill folder. Never resolve `assets/` in the memory root or project fol
 1. **`init my workspace`** — first run for a new user (§A).
 2. **`init {account}`** — scaffold or back-fill one account (§B).
 3. **`doctor`** ("check my setup") — diagnose, never modify (§C).
+4. **`seed my voice file`** — runs §A2's voice.md seed step alone: no memory root, identity
+   config, or account work. Seeds `voice.md` from the template when absent, adds
+   `@voice.md` to the root CLAUDE.md import line beside `@user.md` when missing; both
+   steps idempotent (skip when already present).
 
 **"Today" comes from the surface-provided date.** Every question is asked through the
 platform's structured-question tool so the options are SUBMITTABLE — a prose-rendered
@@ -108,15 +112,25 @@ and the record is still explicit.
    confirmed in the same pass); the escape option "my screenshots aren't named like the
    default" collects a `pattern` template (the schema's literal-token grammar).
 
-**Write the three-file config layer after the confirmations** (draft-before-write; schema:
+**Write the four-file config layer after the confirmations** (draft-before-write; schema:
 `assets/shared/identity.schema.md`). Ownership is by FILE, never by section:
 
 - **`core.md` — wholly engine-owned.** The generated config block plus generated engine
-  boilerplate (write-routing table, operating invariants) and NOTHING personal. Setup
+  boilerplate (write-routing table, operating invariants, and the **ad-hoc voice hook** — the
+  voice spec §4 fourth emit point: one line telling the model to run the
+  `voice pass per assets/shared/voice-contract.md` on any ad-hoc paste-ready chat output,
+  surface = plain-text-paste when the text is pasted onward, in-chat otherwise) and NOTHING
+  personal. Setup
   regenerates it **whole-file** — which is exactly why no user prose may live in it.
 - **`user.md` — wholly user-owned.** If absent, create a short commented stub ("yours —
   voice, identity notes, personal tooling, anything; the engine never writes or parses
   this file"). **If present, never touch it — not on init, not on regeneration, ever.**
+- **`voice.md` — wholly user-owned, engine-seeded once.** If absent, seed it verbatim
+  from the fenced block in `assets/shared/voice-contract.md` §5 (copy the fenced
+  block only, never the whole asset). **If present, never touch it — not on init, not on
+  regeneration, ever** (same rule as `user.md`: the user moves their own Voice content
+  in; the engine only leaves the template pointer). This bullet plus §A6's import-line
+  addition are Mode 4's full behavior.
 - **Brownfield split (gated, C5/C11):** an existing `core.md` (or root `CLAUDE.md`)
   carrying personal prose — voice rules, identity narrative, personal tooling like a
   memory system — gets a **split offer**: show exactly which sections move to `user.md`
@@ -166,9 +180,10 @@ last_verified`), approved before writing. Skipping is fine; capture fills these 
 1. **Generate BOTH instruction artifacts, unprompted** (live gap 2026-07-16 — this step
    was improvised until it was asked for):
    - the root `CLAUDE.md` (Claude Code surface) — engine-generated and
-     regeneration-safe: it `@imports core.md` AND `@imports user.md` (personal content
-     lives there, so regenerating this file clobbers nothing), then the folder map and
-     account-folder handoff, and
+     regeneration-safe: it `@imports core.md`, `@imports user.md`, AND `@imports voice.md`
+     (personal content lives there, so regenerating this file clobbers nothing) — the
+     `voice.md` import is additive/idempotent, added beside `@user.md` only when missing,
+     never duplicated — then the folder map and account-folder handoff, and
    - the **Cowork project-instructions paste text** — short: memory root, config lives in
      core.md, the workos skills (sync's vocabulary: sync my day / tidy / build my board /
      rebuild my board; next-steps: run my weekly next steps; capture: log a call /
@@ -189,7 +204,9 @@ last_verified`), approved before writing. Skipping is fine; capture fills these 
    unattended)`, scheduled the PREVIOUS BUSINESS DAY at 5:00 PM, enabled" (due
    Thursday → runs Wednesday 5:00 PM; due Monday → Friday 5:00 PM). Never at the daily
    sync's minute — two unattended runs contending on the C4 lock means the loser exits,
-   silently costing that day's run.
+   silently costing that day's run. Whichever task(s) the platform creates, capture any
+   id or reference it returns or displays into `scheduled_task_ids` (`sync`/`sweep`) at
+   the config write below — an id the platform never reveals stays absent, never guessed.
 3. Report what was created vs already present, write the config, then OFFER the board (C11 — live gap 2026-07-17: the first non-founder install ended with no board offer): "1. Build my board now / 2. Skip — say 'build my board' any time." On 1, hand off to workos-sync's BOARD entry point. Then close.
 
 ---
@@ -238,12 +255,18 @@ is "issues found," never green-with-asterisks** (C13):
 2. **Config completeness:** every `identity.schema.md` key present or explicitly defaulted
    **and type-conformant to the schema** (e.g. `fiscal_q1_start_month` is an integer 1–12 —
    a stored "January" is a finding; live catch 2026-07-16); name the missing/malformed ones
-   and which skill degrades without them. The fix is always the setup question flow, never
-   a hand-edit (C2). **Ownership boundary: `core.md` is all-generated — validate it
+   and which skill degrades without them. **`scheduled_task_ids`/`board_queue_tool` are
+   type-conformance-only: checked when present, never flagged for being absent** (their
+   schema rows name absence as the rung simply not existing yet). The fix is always the
+   setup question flow, never a hand-edit (C2). **Ownership boundary: `core.md` is all-generated — validate it
    strictly (personal prose inside it = a finding: offer the A2 split). `user.md` is user
    space — NEVER validated, parsed, or reported on beyond "present/absent". Root
    `CLAUDE.md` should import both (`@core.md` + `@user.md`); a missing user.md import is
-   a one-line finding.**
+   a one-line finding. `voice.md` (optional equipment, never required — same
+   presence/absent-only treatment as `user.md`): present AND imported → one ok line.
+   Absent → INFO, never a finding — `voice.md not seeded — say "seed my voice file"
+   (optional equipment)`. Present but NOT imported → a finding, one-line fix: add
+   `@voice.md` to the root CLAUDE.md import line beside `@user.md`.**
 3. **Integrations:** probe each configured one with a harmless read (C13) — "configured
    but not responding" is a finding, not a crash.
 4. **Salesforce tier sanity:** `mcp` tier → the probe read works; `manual` tier → say what

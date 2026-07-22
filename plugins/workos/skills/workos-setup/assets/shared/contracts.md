@@ -24,7 +24,7 @@ Cadence lives in scheduled-task configuration, not in skill logic.
 **C4 · single-writer-state** — Exactly one pass writes `state/` at a time. A starting pass
 checks for a running sibling; the locking mechanism and stale-lock recovery follow the
 Phase 0 spike's recorded design. `state/` files have exactly one writer per run; artifacts
-and other skills read, never write.
+and other skills read, never write. **Board-click exception (#73):** the board artifact may CREATE unique-named files under `state/board-queue/` only (create-only — never modify, delete, or touch any other `state/` path; shape and naming per the schema README's board-queue contract); draining them is pass-only work under this lock.
 
 **C5 · draft-before-write** — A human approves content before it is written, published, or
 staged for an external surface — shown the actual artifact, not a description of it.
@@ -43,7 +43,7 @@ Append-only journal POINTER lines are exempt bookkeeping, as is the engine versi
 (`Team/_engine/latest-version.txt` — monotonic bump only, per `shared/version-check.md`;
 added 2026-07-17, #29). Parked sweep staging (`state/sweep.json`, #68) is ungated machine
 staging under this clause — the A5 finalize gate remains the sole approval for everything
-staged.
+staged. A durable board-click record (C4's board-queue exception) IS the approval for the reversible task mutation it names — the drain renders a receipt, not a second gate; destructive actions stay gated (C14).
 
 **C6 · no-shadow-store** — Never store a copy of an authoritative source's current state,
 and never store a derived value next to its source (scores/signals compute at render time).
@@ -98,7 +98,7 @@ before asking again. "Rendered" means, by operation: file/artifact writes — th
 text being written; state mutations — every user-meaningful item as `{id} + full
 proposed action` (before → after for rewrites); delete/move — the exact source,
 destination, and affected item. Destructive operations (file delete/move) are decided
-per item, never wholesale, even when displayed inside a consolidated pass. Self-check,
+per item, never wholesale, even when displayed inside a consolidated pass. **Board-click provenance (#73):** a validated `state/board-queue/` record constitutes the rendered-and-decided per-item approval for `complete|reopen|update` task mutations; the draining pass renders a receipt of what it applied in the same run. Queued `remove` actions re-gate per item at drain. Self-check,
 answered audibly in the gate turn itself ("gating {N} items, all rendered above"): is
 everything this approval writes rendered in THIS turn, at its required fidelity? Any
 "no" → render now, then ask.

@@ -228,7 +228,9 @@ does not contain the bundle it approves.
 
 1. **Meeting note** (meeting intent only) — the consolidated narrative, linking
    `[[{Account}]]` and the note's own folder name verbatim as
-   `[[{YYYY-MM-DD}_{short label}]]`.
+   `[[{YYYY-MM-DD}_{short label}]]`. Before emitting, run the
+   voice pass per assets/shared/voice-contract.md (in-chat as this output's destination)
+   and render its audible line with the output.
 2. **Commitment bullet(s)** — exactly the shared template's grammar
    (`assets/shared/memory-structure/Account_Notes.md`):
    `- [ ] [YYYY-MM-DD] (me/them) {what} — due: {MM/DD or "unspecified"} — {opp/context}`.
@@ -244,7 +246,9 @@ does not contain the bundle it approves.
    **mechanically verify ≤254 characters** (count with a command per fact #8; no way to
    count → mark the line "count unverified — verify before pasting"), and apply
    next-steps §D (outbound block) — an unresolved name never ships in the line
-   (restructure or drop the line).
+   (restructure or drop the line). Before emitting, run the
+   voice pass per assets/shared/voice-contract.md (plain-text-paste as this output's
+   destination) and render its audible line with the output.
 
 Present the whole bundle in one structured approval (C11): "1. Save as shown / 2. Adjust
 — tell me what / 3. Drop the next-step line, save the rest / 4. Stop — save nothing."

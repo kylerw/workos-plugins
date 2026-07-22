@@ -134,9 +134,11 @@ and persistence write — happens only at a later attended finalize (§A-entry r
    (regenerable staging), said in the run output. Same write batch: MERGE
    `lastUnattendedRun.sweep` = `{at, localDate (omit when unresolved), surface,
    version (assets/shared/VERSION verbatim, or "unstamped")}` preserving every other
-   key, and refresh the parked-sweep `attention[]` line in `tasks.json` (exact line per
-   workos-sync S7.2's derivation). The board is NOT rebuilt here — sync and tidy own
-   board rebuilds; the due-day morning sync surfaces the park (spec §6b).
+   key, and refresh the parked-sweep `attention[]` line in `tasks.json` as the typed
+   `{class: "action", text, source: "sweep"}` record (exact line per workos-sync S7.2's
+   derivation; class per the schema README's attention-class table). The board is NOT
+   rebuilt here — sync and tidy own board rebuilds; the due-day morning sync surfaces
+   the park (spec §6b).
 4. **Nothing leaves:** no paste block, no mail draft (an external mailbox write waits
    for the gate), no `Next_Step_Log.md` observation, no Team/ publish. Run output:
    the header line, rows parked, tier + coverage, unknowns count, replaced-park note
@@ -226,10 +228,15 @@ own question — the plan requires that one to be asked every time.)
    equivalent); if present, create the draft to `{manager_email}`; if not, emit copy-ready
    subject + body and continue. Structure: coverage summary (incl. partial-sweep label if
    applicable) · changed steps (one line each) · close-date decisions · material changes
-   (old → new) · new next-quarter opps · at-risk renewal status · unresolved items. Draft
-   only; the user sends.
-3. **Team/ publish gate (one question, last):** FIRST render the complete update — the
-   exact file body, `assets/team-update-template.md` filled from the sweep data — then
+   (old → new) · new next-quarter opps · at-risk renewal status · unresolved items. Before
+   emitting, run the voice pass per assets/shared/voice-contract.md (plain-text-paste as
+   this output's destination) and render its audible line with the output. The locked
+   next-step line itself is exempt — byte-identical before/after the voice pass
+   (locked-next-step-format.md stays sole authority). Draft only; the user sends.
+3. **Team/ publish gate (one question, last):** FIRST compose the complete update — the
+   exact file body, `assets/team-update-template.md` filled from the sweep data. Before
+   emitting, run the voice pass per assets/shared/voice-contract.md (in-chat as this
+   output's destination) and render its audible line with the output. Then render it and
    ask in the same turn (`render-before-gate`): "Publish this week's update to `Team/`?"
    On yes, write that rendered body to
    `{memory_root}/Team/updates/{user_name}/{YYYY-WW}_update.md` (write-your-own-subfolder

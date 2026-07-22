@@ -16,9 +16,21 @@ files; `.pass-lock.json` is protocol, validated live (doctor step 7, spike 4).
   "pendingApprovals": [ { "id": "", "kind": "", "target": "", "summary": "", "diff": "", "raisedBy": "", "raisedAt": "ISO", "lastSeenAt": "ISO" } ],
   "dayTask": { "id": "", "date": "YYYY-MM-DD", "context": "",
     "queue": [ { "rank": 1, "taskId": "?", "title": "", "account": "", "signal": "", "due": "YYYY-MM-DD?" } ] },
-  "attention": [ "one line per item: degraded tool, version notice, approvals waiting" ],
+  "attention": [ { "class": "system|action", "text": "one line", "source": "sync|sweep|tidy|intake" } ],
   "lanes": { "NICE": [ { "id": "", "title": "", "signal": "", "context": "", "due": "YYYY-MM-DD?" } ] } }
 ```
+Attention entry classes (CI-validated in `ci/state-rules.js`):
+
+| class | covers |
+|---|---|
+| `system` | beacon/version outcomes, integration-dark notices, stale-snapshot flags, surface facts, harvest caps |
+| `action` | parked-sweep line, approvals-pending count, intake-overdue, anything asking the user to act |
+
+**Note:** legacy plain strings remain valid during transition — the shell renders them as
+`action` (visibility-preserving — v1 rendered every line loud); each pass re-derives the
+whole array, so the transition self-heals at the first rc26 run. `class` rides attention's
+stored-derived status (C6 note, spec §4).
+
 `lastUnattendedRun` (optional; #67/#68/#52): a MAP keyed by unattended pass kind —
 `sync` (workos-sync) and `sweep` (workos-next-steps); intake is attended-only and never
 appears here. Each writer MERGES its own key and preserves every other key verbatim; it
@@ -106,6 +118,69 @@ derivations from `due`/`start` (C6); the board computes them, no pass refreshes 
   suppression — a declined closure re-raises only on new evidence.
   **retired** — at re-render, a finding that no longer validates (target gone, folder
   clean, task closed) → removed loudly, no suppression.
+
+## state/board-queue/ (#73 — the board-queue contract)
+
+One JSON file per board click, written under `state/board-queue/` as
+`bq-{ts-compact}-{4charrand}.json` (`ts-compact` = `ts` with punctuation stripped —
+`YYYYMMDDTHHMMSSZ` — so filename-ascending order matches `ts` order for the drain's
+tie-break rule; `4charrand` = 4 random alphanumeric characters, avoiding same-instant
+collisions):
+```json
+{ "ts": "ISO", "type": "task", "taskId": "", "lane": "", "action": "complete|reopen|update|remove",
+  "title": "", "payload": { "title": "?", "context": "?" } }
+```
+`action` is exactly one of `complete`, `reopen`, `update`, `remove` — anything else fails
+CI (`validateBoardQueueFile`, `ci/state-rules.js`). `payload` is optional; when present its
+`title`/`context` are optional strings (an `update` action's proposed new values).
+
+**Create-only contract:** the board artifact may CREATE unique-named files under
+`state/board-queue/` and touch NOTHING else under `state/` — no modify, no delete, no
+read-then-write, no path outside this directory. Every read, modify, or delete of a
+board-queue file — applying it, quarantining it, deleting it after — belongs to a pass
+(sync/tidy) running under the C4 lock; this is the board's one named exception to C4 (single-writer-state, contracts.md).
+
+**Drain:** sync and tidy read and apply `state/board-queue/*.json` inside the C4 lock and
+stamp `lastBoardDrain` on completion; the full algorithm (read order, malformed-file
+quarantine, journal-before-delete, receipt) lives in `skills/workos-sync/SKILL.md` — this
+file defines only the shape and the create-only write contract.
+
+`tasks.json` meta gains optional keys for the board-queue flow:
+- **`lastBoardDrain`** — the most recent drain's high-water `ts`: the max `ts` of the queue
+  files that drain CONSUMED — applied + raised to `pendingApprovals` + quarantined as
+  malformed, **not just applied** — so a `remove` whose visibility passes to the approvals
+  queue still lets the shell prune its mirror once. **SYNC** stamps it in the SAME write batch
+  as `lastFullSync`; **TIDY** stamps it in that pass's write batch and leaves `lastFullSync`
+  untouched. The shell prunes its localStorage optimistic mirror to entries with
+  `ts ≤ lastBoardDrain` on every data load (plus the supplementary prunes below).
+- **`taskIds`** — `{sync?, sweep?}` scheduled-task ids captured at `setup`; consumed by the
+  shell's `runScheduledTask` rung (pass controls only — never a task-mutation rung; an absent
+  id means that rung is absent, never a finding).
+- **`boardQueueTool`** — the probe-verified tool name rung 1 uses for its `state/board-queue/`
+  file-create; absent until the probe (#14) passes, at which point it's embedded into the
+  board build.
+
+**Build-embed-only board meta (NOT written to `state/tasks.json` by any pass):** the board
+build embeds `identity` (`identity.display_name` — the hero name, C2) and **`boardScope`**
+(string — the memory-root folder name) into the tasks data block from config, beside the
+embedded `taskIds`/`boardQueueTool`. `boardScope` namespaces the shell's localStorage keys as
+`wos.{boardScope}.*`; absent → the legacy `wos.*` keys (back-compat). These are read only by
+the shell, never validated as state fields.
+
+**Supplementary mirror prunes (shell-side, S7):** beyond `ts ≤ lastBoardDrain`, the shell also
+prunes a mirror entry whose task id no longer exists in `lanes`+`queue`, and any entry with
+`ts ≤ lastFullSync` (a full sync re-baselines truth). The `ts` compare carries an accepted
+cross-device clock-skew window — an entry inside that skew lingers one extra load, never a
+wrong commit (the durable board-queue file is the sole authority).
+
+**Pending-bar net-display (S5):** the pending bar counts NET mirror membership, not queue
+records — a `complete` then `reopen` on one task nets to zero displayed changes even though
+BOTH board-queue records persist and drain; the drain receipt shows both actions.
+
+Derived-field bans extend with Board v2 (#73): the scannable keys `window`, `score`, and
+`impLevel` join `overdue`, `nearDate`, `importance`, `tier`, `MIMP`, and `queueCursor` on the
+banned-stored-fields list — window membership and meeting importance/score are COMPUTED at
+render, never stored under these keys; `ci/validate-board.sh` scans embedded board data for them.
 
 ## meetings.json
 ```json

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>WorkOS — Today</title>
+<title>WorkOS — Mission Control</title>
 <style>
   :root{color-scheme:light;
     --ink:#21212b;--muted:#71717f;--line:#eceae4;--line2:#e0ded6;--warm:#f2f0eb;
@@ -19,7 +19,7 @@
   button:focus-visible{outline:2px solid var(--eblue);outline-offset:2px}
 
   /* HERO */
-  .hero{position:relative;overflow:hidden;border-radius:24px;padding:22px 20px 30px;margin-bottom:16px;color:#fff;
+  .hero{position:relative;overflow:hidden;border-radius:24px;padding:22px 20px 22px;margin-bottom:16px;color:#fff;
     background:
       radial-gradient(120% 140% at 88% -20%, rgba(54,234,208,.5) 0%, rgba(54,234,208,0) 46%),
       radial-gradient(130% 130% at 110% 130%, rgba(97,0,255,.75) 0%, rgba(97,0,255,0) 50%),
@@ -29,12 +29,13 @@
   .hero-top{position:relative;z-index:2;display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
   .brand{flex:1 1 240px;min-width:0}
   h1{margin:0;font-size:24px;font-weight:600;letter-spacing:-.02em;line-height:1.3}
-  #day{font-size:15px;font-weight:400;letter-spacing:0;color:rgba(255,255,255,.72);margin-left:2px;white-space:nowrap}
   .badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
          border-radius:20px;padding:4px 10px;margin-left:8px;vertical-align:2px;white-space:nowrap}
   .badge.ro{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.32);color:rgba(255,255,255,.92)}
-  .badge.stale{background:#ffb020;color:#21212b}
-  .meta{margin-top:7px;font-size:11px;color:rgba(255,255,255,.68)}
+  .badge.day{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.9);
+    letter-spacing:.04em;text-transform:none;margin-left:0}
+  .who{margin-top:7px;font-size:12.5px;color:rgba(255,255,255,.82);display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  #whoami{font-weight:600;color:#fff}
   .actions{display:flex;align-items:center;gap:8px;margin-left:auto}
   .actions button{border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.13);color:#fff;
     border-radius:13px;padding:10px 16px;font-size:13px;font-weight:600;transition:transform .15s,background .15s}
@@ -43,35 +44,68 @@
   .actions button.primary{background:#fff;border-color:#fff;color:var(--ink);box-shadow:0 8px 20px -8px rgba(0,0,0,.45)}
   .actions button:focus-visible{outline-color:#fff}
 
-  /* ATTENTION / APPROVALS STRIPS */
+  /* HEALTH LINE (hero) */
+  .health{position:relative;z-index:2;margin-top:13px;font-size:11.5px;color:rgba(255,255,255,.8);
+    background:rgba(0,0,0,.2);border-radius:12px;padding:8px 12px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .health .dot{font-size:11px;color:var(--emerald);line-height:1}
+  .health .dot.stale{color:#ffb020}
+  #hstatus{font-weight:600;color:#fff}
+  .expandbtn{background:transparent;border:0;color:rgba(255,255,255,.92);text-decoration:underline;
+    font-size:11px;padding:0 0 0 4px;cursor:pointer}
+  .syslist{position:relative;z-index:2;margin-top:8px;background:rgba(0,0,0,.18);border-radius:12px;padding:6px 12px;
+    font-size:11.5px;color:rgba(255,255,255,.86)}
+  .sysrow{padding:4px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+  .sysrow:last-child{border-bottom:0}
+
+  /* FIRST-RUN STRIP */
   .strip{position:relative;overflow:hidden;background:#fff;border:1px solid #f0e0ab;border-radius:16px;
-         padding:12px 16px 12px 21px;margin:0 0 10px;font-size:12.5px;font-weight:500;color:#6b5200;
+         padding:12px 16px 12px 21px;margin:0 0 12px;font-size:12.5px;font-weight:500;color:#6b5200;
          box-shadow:0 14px 30px -26px rgba(138,106,0,.55)}
   .strip::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;
                  background:linear-gradient(180deg,#ffb020,var(--coral))}
-  .strip div+div{margin-top:6px}
-  .strip button{border:1px solid #e8d9a2;background:var(--ambertint);color:var(--amberink);border-radius:10px;
-                padding:5px 12px;font-size:12px;font-weight:700;transition:background .15s}
-  .strip button:hover{background:#ffe9a8}
 
-  /* SECTIONS */
-  section{margin:22px 0}
-  h2{display:flex;align-items:center;gap:10px;margin:0 2px 12px;font-size:10.5px;font-weight:700;
-     letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
-  h2::after{content:"";flex:1;height:1px;background:var(--line2)}
-  #nbd{white-space:nowrap}
+  /* STAT TILES */
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:0 0 16px}
+  .tile{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px 8px;text-align:center;
+    box-shadow:0 2px 4px rgba(33,33,43,.03),0 14px 30px -26px rgba(33,33,43,.3)}
+  .tile b{display:block;font-size:22px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
+  .tile small{display:block;margin-top:3px;font-size:10px;color:var(--muted);line-height:1.3}
+  .tile.warn{border-color:#f0d38a;background:var(--ambertint)}
+  .tile.warn b,.tile.warn small{color:var(--amberink)}
+
+  /* TAB BAR (two groups) */
+  .tabs{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 14px}
+  .tablab{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-right:2px}
+  .tabsep{width:1px;align-self:stretch;min-height:18px;background:var(--line2);margin:0 4px}
+  .tab{border:1px solid var(--line2);background:#fff;color:var(--ink);border-radius:99px;padding:6px 13px;
+    font-size:12.5px;font-weight:600;transition:background .13s,border-color .13s}
+  .tab:hover{border-color:var(--blue)}
+  .tab.on{background:var(--eblue);border-color:var(--eblue);color:#fff}
+  .tab .n{margin-left:5px;opacity:.7;font-weight:700}
+
+  /* BODY SUBHEADERS */
+  .sh{display:flex;align-items:center;gap:10px;margin:18px 2px 11px;font-size:10px;font-weight:700;
+     letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .sh:first-child{margin-top:2px}
+  .sh::after{content:"";flex:1;height:1px;background:var(--line2)}
   ul{list-style:none;margin:0;padding:0}
 
   /* CARDS */
-  li.card{position:relative;overflow:hidden;display:flex;gap:12px;align-items:flex-start;background:#fff;
+  li.card{position:relative;overflow:hidden;display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;background:#fff;
     border:1px solid var(--line);border-radius:18px;padding:14px 14px 14px 19px;margin:0 0 11px;
     box-shadow:0 2px 4px rgba(33,33,43,.03),0 18px 36px -28px rgba(33,33,43,.32)}
   li.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px}
   li.card.high::before{background:linear-gradient(180deg,var(--coral),var(--indigo))}
   li.card.notable::before{background:linear-gradient(180deg,var(--blue),var(--teal))}
+  li.card.act::before{background:linear-gradient(180deg,#ffb020,var(--coral))}
+  li.card.q::before{background:linear-gradient(180deg,#9aa0ad,#c9cdd6)}
   li.card.high{box-shadow:0 2px 4px rgba(33,33,43,.04),0 20px 42px -26px rgba(97,0,255,.38)}
+  li.card.act{border-color:#f0e0ab}
   li.card.cancelled{opacity:.55;background:var(--warm)}
   li.card.cancelled .title{text-decoration:line-through;color:var(--muted)}
+  li.card.done .title{text-decoration:line-through;color:var(--muted)}
+  li.card.removed{opacity:.5}
+  li.card.removed .title{text-decoration:line-through}
   .rank{flex:none;font-size:11.5px;font-weight:700;color:var(--ink);background:var(--warm);border-radius:10px;
         padding:6px 10px;min-width:34px;text-align:center;white-space:nowrap;margin-top:1px}
   .rank:empty{display:none}
@@ -83,13 +117,50 @@
         border:1px solid var(--line2);vertical-align:middle}
   .chip.overdue{background:var(--coraltint);color:#b3204e;border-color:transparent}
   .chip.near{background:var(--ambertint);color:var(--amberink);border-color:transparent}
-  li.card > button{flex:none;border:1px solid var(--line2);background:#fff;color:var(--ink);border-radius:10px;
-    padding:7px 12px;font-size:12px;font-weight:600;margin-top:1px;white-space:nowrap;
-    transition:background .13s,border-color .13s}
-  li.card > button:hover{background:var(--emerald);border-color:var(--emerald)}
-  li.card > button:disabled{background:var(--emerald);border-color:var(--emerald);opacity:.65}
   li.empty{border:1px dashed var(--line2);border-radius:16px;background:rgba(255,255,255,.55);
            padding:18px 12px;text-align:center;font-size:12.5px;color:var(--muted)}
+
+  /* ROW ACTIONS (task mutations) */
+  .rowacts{flex:none;display:flex;gap:6px;margin-top:1px}
+  .actbtn{border:1px solid var(--line2);background:#fff;color:var(--ink);border-radius:10px;padding:7px 11px;
+    font-size:12px;font-weight:600;white-space:nowrap;transition:background .13s,border-color .13s}
+  .actbtn:hover{background:var(--emerald);border-color:var(--emerald)}
+  .actbtn:disabled{background:var(--emerald);border-color:var(--emerald);opacity:.6}
+  .editform{flex-basis:100%;display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+  .editin{flex:1 1 150px;min-width:0;border:1px solid var(--line2);border-radius:10px;padding:8px 10px;font:inherit;font-size:13px}
+  .editin:focus-visible{outline:2px solid var(--eblue);outline-offset:1px}
+
+  /* MEETING CARD ACTIONS + BRIEF */
+  .cardacts{display:flex;gap:14px;flex-wrap:wrap;margin-top:9px}
+  .linkbtn{border:0;background:transparent;color:var(--eblue);font-size:12px;font-weight:600;padding:2px 0;cursor:pointer}
+  .linkbtn:hover{text-decoration:underline}
+  .briefpanel{flex-basis:100%;margin-top:9px;border:1px dashed var(--line2);border-radius:12px;padding:8px 12px;
+    background:rgba(255,255,255,.6)}
+  .briefrow{display:flex;gap:10px;padding:5px 0;font-size:12px;line-height:1.5}
+  .briefrow+.briefrow{border-top:1px solid var(--line)}
+  .brieflabel{flex:none;width:112px;font-weight:700;color:var(--muted);font-size:10px;text-transform:uppercase;
+    letter-spacing:.03em;padding-top:2px}
+  .briefval{flex:1;min-width:0;color:var(--ink)}
+
+  /* LANE SEGMENT */
+  .seg{display:inline-flex;background:var(--warm);border:1px solid var(--line2);border-radius:12px;padding:3px;gap:3px;margin:2px 0 4px}
+  .segbtn{border:0;background:transparent;color:var(--muted);border-radius:9px;padding:6px 14px;font-size:12px;font-weight:600}
+  .segbtn.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(33,33,43,.12)}
+
+  /* PENDING BAR */
+  .pendbar{position:sticky;bottom:8px;z-index:5;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    margin:18px 0 0;background:rgba(97,0,255,.08);border:1px solid rgba(97,0,255,.28);border-radius:14px;
+    padding:11px 15px;font-size:12.5px;font-weight:600;color:var(--indigo);
+    box-shadow:0 14px 30px -22px rgba(97,0,255,.5)}
+  .pendtxt{flex:1;min-width:120px}
+  .pendtidy{border:1px solid var(--indigo);background:var(--indigo);color:#fff;border-radius:10px;padding:8px 14px;
+    font-size:12px;font-weight:700}
+  .pendtidy:hover{background:#4d00cc}
+
+  /* TOAST */
+  #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:50;max-width:88%;
+    background:var(--ink);color:#fff;border-radius:12px;padding:11px 16px;font-size:12.5px;font-weight:600;
+    box-shadow:0 18px 40px -18px rgba(0,0,0,.6)}
 
   /* PROBE LINE */
   #log{margin-top:24px;min-height:1rem;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
@@ -97,10 +168,10 @@
 
   @media(min-width:640px){
     .wrap{padding:22px 18px 64px}
-    .hero{border-radius:28px;padding:28px 30px 36px;margin-bottom:20px}
+    .hero{border-radius:28px;padding:28px 30px 26px;margin-bottom:20px}
     h1{font-size:27px}
-    #day{font-size:16px}
     .title{font-size:15px}
+    .tile b{font-size:25px}
   }
 </style>
 </head>
@@ -113,32 +184,56 @@
 
 <!-- WORKOS:DATA tasks BEGIN -->
 <script type="application/json" id="workos-data-tasks">
-{ "generated": "2026-07-15T12:00:00Z", "generatedBy": "sync",
-  "lastFullSync": "2026-07-15T12:00:00Z", "lastTidy": "2026-07-15T14:00:00Z",
-  "pendingApprovals": [ { "id": "ap-1", "kind": "task-drop", "target": "t-9", "summary": "drop stale task", "diff": "-t-9", "raisedBy": "sync", "raisedAt": "2026-07-15T12:00:00Z" } ],
-  "dayTask": { "id": "day-2026-07-15", "date": "2026-07-15", "context": "fixture day",
+{ "generated": "2026-07-22T12:00:00Z", "generatedBy": "sync",
+  "lastFullSync": "2026-07-22T12:00:00Z", "lastTidy": "2026-07-22T09:30:00Z",
+  "lastBoardDrain": "2026-07-22T11:30:00Z",
+  "taskIds": { "sync": "task-fixture-1" }, "boardScope": "sample-root",
+  "identity": { "display_name": "Jordan Sample" },
+  "pendingApprovals": [ { "id": "ap-1", "kind": "task-drop", "target": "t-9", "summary": "drop stale task", "diff": "-t-9", "raisedBy": "sync", "raisedAt": "2026-07-22T11:00:00Z" }, { "id": "ap-2", "kind": "closure", "target": "t-1", "summary": "close Acme proposal (sent)", "diff": "", "raisedBy": "sync", "raisedAt": "2026-07-22T11:05:00Z" } ],
+  "dayTask": { "id": "day-2026-07-22", "date": "2026-07-22", "context": "fixture day",
     "queue": [
-      { "rank": 1, "taskId": "t-1", "title": "Send Acme Health proposal", "account": "Acme Health", "signal": "due-date", "due": "2026-07-14" },
+      { "rank": 1, "taskId": "t-1", "title": "Send Acme Health proposal", "account": "Acme Health", "signal": "due-date", "due": "2026-07-21" },
       { "rank": 2, "taskId": "t-2", "title": "Nudge Acme legal on redlines", "account": "Acme Health", "signal": "waiting-them" },
       { "rank": 3, "title": "Book Globex discovery follow-up", "account": "Globex Care", "signal": "deal-advancing" } ] },
-  "attention": [ "harvest capped: teams (fixture example)" ],
-  "lanes": { "NICE": [
-    { "id": "t-1", "title": "Send Acme Health proposal", "signal": "due-date", "context": "requested 07/10", "due": "2026-07-14" },
-    { "id": "t-2", "title": "Nudge Acme legal on redlines", "signal": "waiting-them", "context": "sent 07/12" } ] } }
+  "attention": [
+    { "class": "system", "text": "harvest capped: teams (fixture example)", "source": "sync" },
+    { "class": "action", "text": "parked sweep (logs, 2 rows, from 2026-07-21) — run weekly next steps to finalize", "source": "sweep" },
+    { "class": "action", "text": "2 approvals waiting — run Tidy to review", "source": "sync" } ],
+  "lanes": {
+    "NICE": [
+      { "id": "t-1", "title": "Send Acme Health proposal", "signal": "due-date", "context": "requested 07/10", "due": "2026-07-21" },
+      { "id": "t-2", "title": "Nudge Acme legal on redlines", "signal": "waiting-them", "context": "sent 07/12" } ],
+    "PERSONAL": [
+      { "id": "p-1", "title": "Renew gym membership", "signal": "admin", "context": "expires end of month" } ] } }
 </script>
 <!-- WORKOS:DATA tasks END -->
 
 <!-- WORKOS:DATA meetings BEGIN -->
 <script type="application/json" id="workos-data-meetings">
-{ "generated": "2026-07-15T12:00:00Z", "meetings": [
-  { "id": "m-1", "lane": "NICE", "start": "2026-07-15T14:00:00-05:00", "displayTime": "2:00p",
+{ "generated": "2026-07-22T12:00:00Z", "meetings": [
+  { "id": "m-1", "lane": "NICE", "start": "2026-07-22T14:00:00-05:00", "displayTime": "2:00p",
     "title": "Acme Health — proposal walkthrough", "who": "Jane Doe (VP Clinical), Sam Lee (IT)",
     "signals": { "revenue": true, "external": true, "youLead": true },
-    "prep": true, "recap": false, "objective": "walk the proposal", "brief": {}, "briefPending": true },
-  { "id": "m-2", "lane": "NICE", "start": "2026-07-16T09:30:00-05:00", "displayTime": "9:30a",
+    "prep": true, "recap": false, "objective": "confirm the eval scope and success metrics",
+    "brief": {
+      "attendees": "Jane Doe (VP Clinical), Sam Lee (Director of IT)",
+      "objective": "Confirm the eval scope and success metrics before the pilot SOW",
+      "accountState": "Tier A; as of 2026-07-20 per account notes — pilot verbal, legal reviewing the MSA",
+      "lastTouchpoint": "2026-07-18 — sent the revised pricing grid, awaiting their sign-off",
+      "openToThem": "Send updated security-questionnaire responses",
+      "openToUs": "They owe the list of pilot clinics and the IT integration contact",
+      "recentSignal": "Opened the pricing deck twice this week; forwarded it internally",
+      "talkingPoints": "1) lock the pilot start date  2) confirm the data-integration owner  3) preview the rollout timeline",
+      "delta": "New since built: legal moved the MSA to final review (2026-07-21)"
+    }, "briefPending": false },
+  { "id": "m-2", "lane": "NICE", "start": "2026-07-23T09:30:00-05:00", "displayTime": "9:30a",
     "title": "Globex Care intro", "who": "Pat Kim (Director Ops)",
     "signals": { "external": true },
-    "prep": false, "recap": false, "objective": "", "brief": {}, "briefPending": false } ] }
+    "prep": false, "recap": false, "objective": "", "brief": {}, "briefPending": false },
+  { "id": "m-3", "lane": "NICE", "start": "2026-07-25T11:00:00-05:00", "displayTime": "11:00a",
+    "title": "Globex Care — pricing review", "who": "Pat Kim (Director Ops), Robin Vale (Finance)",
+    "signals": { "external": true, "decision": true },
+    "prep": false, "recap": false, "objective": "align on the tiered-pricing proposal", "brief": {}, "briefPending": true } ] }
 </script>
 <!-- WORKOS:DATA meetings END -->
 
@@ -148,32 +243,40 @@
   <svg class="wave" viewBox="0 0 1000 44" preserveAspectRatio="none" aria-hidden="true"><path d="M0,24 C160,4 300,42 500,24 C700,6 840,42 1000,20 L1000,44 L0,44 Z" fill="rgba(255,255,255,0.10)"></path><path d="M0,32 C180,14 320,46 520,32 C720,16 860,44 1000,28 L1000,44 L0,44 Z" fill="rgba(255,255,255,0.07)"></path></svg>
   <div class="hero-top">
     <div class="brand">
-      <h1>Today <span id="day"></span><span id="robadge" class="badge ro" hidden>read-only view</span></h1>
-      <div class="meta" id="meta"></div>
+      <h1>Mission Control<span id="robadge" class="badge ro" hidden>read-only view</span></h1>
+      <div class="who"><span id="whoami"></span><span id="daybadge" class="badge day" hidden></span></div>
     </div>
-    <div class="actions" id="passbtns" hidden>
+    <div class="actions" id="passbtns">
       <button id="tidy">Tidy</button>
       <button id="fullsync" class="primary">Full sync</button>
     </div>
   </div>
+  <div class="health" id="health">
+    <span class="dot" id="staledot">●</span>
+    <span id="hstatus">Board current</span>
+    <span id="syncclock"></span>
+    <span id="sysnotices" hidden></span>
+  </div>
+  <div class="syslist" id="syslist" hidden></div>
 </header>
 
-<div class="strip" id="attention" hidden></div>
 <div class="strip" id="first-run" hidden>Empty until your first sync — say "sync my day" in your WorkOS chat, then refresh here.</div>
-<div class="strip" id="approvals" hidden></div>
 
-<section><h2><span>Day queue</span></h2><ul id="queue"></ul></section>
-<section><h2><span>Meetings — today</span></h2><ul id="mtg-today"></ul></section>
-<section><h2><span>Meetings — next business day (<span id="nbd"></span>)</span></h2><ul id="mtg-next"></ul></section>
+<div class="tiles" id="tiles"></div>
+<div class="tabs" id="tabs"></div>
+<div id="tabbody"></div>
+<div class="pendbar" id="pendbar" hidden></div>
 
 <div id="log"></div>
+<div id="toast" hidden></div>
 
 </div>
 
 <script id="workos-derive">
 "use strict";
-// Render-time derivations ONLY (schema/C6): overdue, nearDate, emphasis, staleness are
-// computed here against the viewer's clock and never stored in state.
+// Render-time derivations ONLY (schema/C6): overdue, nearDate, emphasis, staleness, and the
+// nested today/tomorrow/week windows are computed here against the viewer's clock and never
+// stored in state.
 var WORKOS = (function () {
   function pad(n) { return ("0" + n).slice(-2); }
   function dayStr(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
@@ -203,15 +306,82 @@ var WORKOS = (function () {
     return n >= 3 ? "high" : n >= 1 ? "notable" : "none";
   }
   function meetingDay(m) { return String(m.start || "").slice(0, 10); }
-  function isStale(generatedISO, nowMs) {
+  function isStale(generatedISO, nowMs, thresholdMs) {
     var t = Date.parse(generatedISO);
-    return isFinite(t) ? (nowMs - t) > 86400000 : true;
+    var lim = (thresholdMs == null) ? 86400000 : thresholdMs; // carried 2-arg call = 24h
+    return isFinite(t) ? (nowMs - t) > lim : true;            // missing/unparseable = stale
+  }
+  function windowFor(ymd, today) {            // nested render-time windows (spec §3)
+    if (!ymd) return null;
+    if (ymd === today) return "today";
+    if (ymd === addDays(today, 1)) return "tomorrow";
+    if (ymd > today && ymd <= addDays(today, 6)) return "week";
+    return null;                              // week ⊇ tomorrow ⊇ today handled by callers:
+  }                                           // inWindow("week") accepts today|tomorrow|week
+  function inWindow(ymd, win, today) {
+    var w = windowFor(ymd, today);
+    if (!w) return false;
+    if (win === "week") return true;
+    if (win === "tomorrow") return w === "tomorrow";
+    return w === "today";
+  }
+  function attnClass(entry) {                 // legacy string → action (visibility-preserving)
+    if (typeof entry === "string") return { cls: "action", text: entry, source: "" };
+    return { cls: entry.class === "system" ? "system" : "action",
+             text: String(entry.text || ""), source: String(entry.source || "") };
   }
   return { dayStr: dayStr, addDays: addDays, dueStatus: dueStatus,
            nextBusinessDay: nextBusinessDay, emphasis: emphasis,
-           meetingDay: meetingDay, isStale: isStale };
+           meetingDay: meetingDay, isStale: isStale,
+           windowFor: windowFor, inWindow: inWindow, attnClass: attnClass };
 })();
 if (typeof module !== "undefined" && module.exports) module.exports = WORKOS;
+</script>
+
+<script id="workos-actions">
+"use strict";
+// Optimistic-mirror + click-queue state layer. The durable record is the state/board-queue/
+// file (rung 1); localStorage is only the mirror. prune() clears mirror entries the drain has
+// already applied (ts <= lastBoardDrain), that a full sync re-baselined (ts <= lastFullSync),
+// or whose task id vanished from lanes+queue — so the pending bar can be exact even on the
+// rung-2/4 surfaces that leave no watermark (spec §4).
+var WOSQ = (function () {
+  var LS = { done: "wos.done", removed: "wos.removed", edits: "wos.edits",
+             view: "wos.view", tab: "wos.tab", ts: "wos.queuedTs" };
+  // Namespace all keys under wos.{boardScope}. when a scope is embedded (S8) — so two memory
+  // roots opened on the same browser origin don't collide; absent scope keeps the legacy
+  // wos.* keys (back-compat). Called once from render before any load/save.
+  function setScope(scope) {
+    var pfx = scope ? "wos." + scope + "." : "wos.";
+    LS.done = pfx + "done"; LS.removed = pfx + "removed"; LS.edits = pfx + "edits";
+    LS.view = pfx + "view"; LS.tab = pfx + "tab"; LS.ts = pfx + "queuedTs";
+  }
+  function load(k, d) { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (e) { return d; } }
+  function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  // Prune the optimistic mirror (S7). Drop an entry when its ts is at/under the drain
+  // high-water mark, OR at/under lastFullSync (a full sync re-baselines truth), OR its task id
+  // no longer exists in liveIds (lanes+queue). The ts compare carries an ACCEPTED cross-device
+  // clock-skew window: a mirror ts stamped on one device against a watermark stamped on
+  // another can differ by their clock offset, so an entry inside that skew simply lingers one
+  // extra load — never a wrong commit, since the durable board-queue file is the sole authority.
+  function prune(lastDrainISO, liveIds, lastFullSyncISO) {
+    var cut = -Infinity;
+    var drainCut = Date.parse(lastDrainISO || ""); if (isFinite(drainCut)) cut = drainCut;
+    var syncCut = Date.parse(lastFullSyncISO || ""); if (isFinite(syncCut) && syncCut > cut) cut = syncCut;
+    var haveIds = !!liveIds && typeof liveIds === "object";
+    var ts = load(LS.ts, {}); var keep = {};
+    var done = load(LS.done, []), removed = load(LS.removed, []), edits = load(LS.edits, {});
+    Object.keys(ts).forEach(function (id) {
+      var live = !haveIds || Object.prototype.hasOwnProperty.call(liveIds, id);
+      if (ts[id] > cut && live) { keep[id] = ts[id]; return; }
+      done = done.filter(function (x) { return x !== id; });
+      removed = removed.filter(function (x) { return x !== id; });
+      delete edits[id];
+    });
+    save(LS.ts, keep); save(LS.done, done); save(LS.removed, removed); save(LS.edits, edits);
+  }
+  return { LS: LS, load: load, save: save, prune: prune, setScope: setScope };
+})();
 </script>
 
 <script id="workos-render">
@@ -226,7 +396,46 @@ if (typeof module !== "undefined" && module.exports) module.exports = WORKOS;
     return e;
   }
   function read(id) { try { return JSON.parse($(id).textContent); } catch (e) { return null; } }
+  function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
   var log = function (m) { $("log").textContent = m; };
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $("toast"); t.textContent = msg; t.hidden = false;
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.hidden = true; }, 2600);
+  }
+  // Clipboard is the floor rung + every copy-only button (no external assets, C7). The
+  // synchronous execCommand path runs FIRST so the return value is a TRUTHFUL success bool
+  // inside the click gesture and because it is the only mechanism on older OneDrive/mobile
+  // webviews. syncOnly (the task-mutation clipboard floor) takes that sync result as the VERDICT — no
+  // optimistic async upgrade — so doMutation's undo is driven by the real outcome, never a
+  // guess; on sync failure it returns false silently and the caller rolls back + toasts.
+  // Copy-only callers (pass controls, meeting copy) have no mirror to roll back, so they
+  // best-effort the async clipboard API and toast its real (always-handled) outcome.
+  function copyText(text, okMsg, syncOnly) {
+    var ok = false;
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.setAttribute("readonly", "");
+      ta.style.position = "fixed"; ta.style.top = "0"; ta.style.left = "0"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+    } catch (e) { ok = false; }
+    if (ok) { toast(okMsg); return true; }
+    if (syncOnly) return false;               // mutation path: sync verdict; caller rolls back
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        navigator.clipboard.writeText(text).then(
+          function () { toast(okMsg); },
+          function () { toast("couldn't copy — " + text); }
+        );
+        return true;                          // no-mirror caller; async path toasts the outcome
+      } catch (e2) {}
+    }
+    toast("couldn't copy — " + text);
+    return false;
+  }
 
   var tasks = read("workos-data-tasks"), meetings = read("workos-data-meetings");
   if (!tasks || !meetings) { log('board data failed to parse — say "rebuild my board"'); return; }
@@ -237,14 +446,16 @@ if (typeof module !== "undefined" && module.exports) module.exports = WORKOS;
     if (!Array.isArray(tasks.dayTask.queue)) tasks.dayTask.queue = [];
     if (!Array.isArray(tasks.attention)) tasks.attention = [];
     if (!Array.isArray(tasks.pendingApprovals)) tasks.pendingApprovals = [];
+    if (!tasks.lanes || typeof tasks.lanes !== "object") tasks.lanes = {};
     if (!Array.isArray(meetings.meetings)) meetings.meetings = [];
 
     // Bridge (fact #9 + live-test 2026-07-16): global sendPrompt -> cowork.sendPrompt.
     // Detection POLLS for ~5s — the live test showed the bridge can be absent at script
-    // time — and applyBridgeState re-asserts BOTH states so a re-executed script can
-    // never strand the badge and the buttons on screen together. runScheduledTask is
-    // reported in the probe line but never fired: the live test showed it silently
-    // no-ops (no error, no effect) — a button that does nothing is worse than none.
+    // time — and applyBridgeState re-asserts the read-only badge + the chosen action rung so
+    // a re-executed script can never strand the badge and armed buttons together. The
+    // runScheduledTask no-op finding (silently returns nothing) is now HANDLED, not feared:
+    // it is a rung of the PASS-CONTROLS ladder ONLY (never task mutations — a scheduled run
+    // cannot carry which task/action was clicked), wrapped in a falsy/thenable-return check (spec §5).
     function detectSend() {
       if (typeof sendPrompt === "function") return function (m) { sendPrompt(m); };
       if (typeof window !== "undefined" && window.cowork && typeof window.cowork.sendPrompt === "function")
@@ -252,19 +463,21 @@ if (typeof module !== "undefined" && module.exports) module.exports = WORKOS;
       return null;
     }
     var send = detectSend();
-    var doneButtons = [];
-    function applyBridgeState() {
-      $("robadge").hidden = !!send;
-      $("passbtns").hidden = !send;
-      for (var i = 0; i < doneButtons.length; i++) doneButtons[i].hidden = !send;
+    function getRunScheduledTask() {
+      if (typeof runScheduledTask === "function") return runScheduledTask;
+      if (typeof window !== "undefined" && typeof window.runScheduledTask === "function") return window.runScheduledTask;
+      return null;
     }
-    function bridgeReport() {
-      var ck = (typeof window !== "undefined" && window.cowork)
-        ? "cowork:{" + Object.keys(window.cowork).join(",") + "}" : "no window.cowork";
-      return (send ? "bridge: sendPrompt" : "bridge: none (read-only)") + " · " + ck;
+    function rung1Available() {
+      // Gate on boardQueueTool ONLY (the probe-verified create tool) — a task mutation needs
+      // no scheduled-task id, so tasks.taskIds must not couple here (S3). The read-only badge
+      // shares this predicate, so this also fixes the badge's taskIds coupling.
+      return !!(typeof window !== "undefined" && window.cowork &&
+                typeof window.cowork.callMcpTool === "function" &&
+                tasks.boardQueueTool);
     }
-    // sendPrompt auto-sends (fact #9) — every button disarms briefly so a double-tap
-    // can't post twice.
+    // sendPrompt auto-sends (fact #9) — pass/copy buttons disarm briefly so a double-tap
+    // can't fire twice.
     function guard(btn, fn) {
       return function () {
         if (btn.disabled) return;
@@ -273,105 +486,566 @@ if (typeof module !== "undefined" && module.exports) module.exports = WORKOS;
         fn();
       };
     }
-    function firePass(promptText) {
-      if (send) { send(promptText); log("sent: " + promptText); return; }
-      log("no bridge on this surface (read-only view)");
-    }
 
     var today = WORKOS.dayStr(new Date());
-    var nbd = WORKOS.nextBusinessDay(today);
 
-    // Stale = generated >24h old, unparseable, OR the day-task is not today's (the
-    // overnight-sync-didn't-run case). A stale board keeps its pass buttons (refreshing
-    // is exactly what it needs) but never arms ✓-done on a superseded queue.
-    var stale = WORKOS.isStale(tasks.generated, Date.now()) ||
+    // Stale = last FULL sync >14h old / missing / unparseable, OR the day-task is not today's
+    // (the overnight-sync-didn't-run case). Staleness keys off the full-sync clock ONLY —
+    // never `generated` — so a tidy (which restamps `generated`) can't clear a warning it did
+    // not earn (spec §3, reconciled on-branch; the health line shows this clock next to the
+    // dot). A stale board keeps its pass buttons (refreshing is exactly what it needs) but
+    // disarms the ENTIRE task-mutation family on every rung — clipboard included — so a
+    // superseded queue is never armed. Tidy / Full sync / copy-prep stay live.
+    var stale = WORKOS.isStale(tasks.lastFullSync, Date.now(), 14 * 3600000) ||
                 !!(tasks.dayTask.date && tasks.dayTask.date !== today);
 
-    $("day").textContent = tasks.dayTask.date ? "— " + tasks.dayTask.date : "";
-    $("meta").textContent = "generated " + (tasks.generated || "?") + " by " + (tasks.generatedBy || "?");
-    if (stale) $("meta").appendChild(el("span", "badge stale", "stale — run a sync"));
+    // Namespace the mirror per board scope BEFORE any localStorage read (S8), then prune the
+    // optimistic mirror against the drain/full-sync watermarks + the live id set BEFORE first
+    // render (S7).
+    WOSQ.setScope(tasks.boardScope);
+    var liveIds = {};
+    Object.keys(tasks.lanes).forEach(function (ln) {
+      if (Array.isArray(tasks.lanes[ln])) tasks.lanes[ln].forEach(function (t) { if (t && t.id) liveIds[t.id] = true; });
+    });
+    (tasks.dayTask.queue || []).forEach(function (it) { if (it && it.taskId) liveIds[it.taskId] = true; });
+    WOSQ.prune(tasks.lastBoardDrain, liveIds, tasks.lastFullSync);
 
-    $("first-run").hidden = !!(tasks.generated || meetings.generated);
-    var att = tasks.attention;
-    if (att.length) {
-      $("attention").hidden = false;
-      att.forEach(function (a) { $("attention").appendChild(el("div", null, "⚠ " + a)); });
+    // Typed attention split (spec §2/§4): system-class rides the hero health line ONLY,
+    // action-class rides Needs action ONLY. attnClass coerces legacy strings -> action.
+    var mapped = tasks.attention.map(function (e) { return WORKOS.attnClass(e); });
+    var actionEntries = mapped.filter(function (x) { return x.cls === "action"; });
+    var systemEntries = mapped.filter(function (x) { return x.cls === "system"; });
+
+    // taskId -> lane, for day-queue click provenance (queue items don't store their lane).
+    var idLane = {};
+    var laneKeys = Object.keys(tasks.lanes);
+    laneKeys.forEach(function (ln) {
+      if (Array.isArray(tasks.lanes[ln])) tasks.lanes[ln].forEach(function (t) { if (t && t.id) idLane[t.id] = ln; });
+    });
+    var laneFallback = laneKeys.length ? laneKeys[0] : "NICE";
+
+    // ---- The action ladders (spec §5). Rung chosen ONCE at render (refreshed by the
+    // bridge poll if a late bridge appears); a failure within the chosen rung rolls back the
+    // mirror and toasts — it NEVER cascades to the next rung (a cascade could double-fire).
+    var mutRung = 3;
+    // In-flight task-mutation lockout (transient PAGE state — a null-proto map, never localStorage):
+    // a task id is held here while its mutation is unsettled, so a second mutation can't interleave
+    // and a late rollback can't restore a stale snapshot (Codex re-check residual 1). Object.create(null)
+    // so a prototype-named id ("constructor", "toString") can't read as always-busy.
+    var inflight = Object.create(null);
+    function chooseMutRung() {
+      if (rung1Available()) return 1;                                       // cowork queue file
+      if (send) return 2;                                                   // chat ask (gated)
+      return 3;                                                            // clipboard floor
+    }
+    // runScheduledTask is NOT a task-mutation rung (S1): a scheduled sync carries no clicked
+    // task/action, so the mutation would be silently lost. It survives only in pass controls.
+    function rand4() {
+      var s = "", c = "abcdefghijklmnopqrstuvwxyz0123456789", i;
+      for (i = 0; i < 4; i++) s += c.charAt(Math.floor(Math.random() * c.length));
+      return s;
+    }
+    function chatAsk(action, title, id, payload) {
+      var suffix = id ? " (" + id + ")" : "";
+      if (action === "complete") return "Mark done: " + (title || "") + suffix;
+      if (action === "remove") return "Remove task: " + (title || "") + suffix;
+      if (action === "reopen") return "Reopen task: " + (title || "") + suffix;
+      if (action === "update") return "Update task: " + (title || "") + suffix + (payload && payload.title ? " → " + payload.title : "");
+      return (title || "") + suffix;
+    }
+    function rung1Write(action, id, lane, title, payload) {
+      // Best-effort file-create; the exact callMcpTool arg shape is finalized at probe A
+      // (#14) — rung 1 is dormant until tasks.boardQueueTool is embedded (create-only, C4's
+      // named board-click exception). ts-compact keeps filename order == ts order for the drain.
+      var iso = new Date().toISOString();
+      var rec = { ts: iso, type: "task", taskId: id, lane: lane || laneFallback, action: action, title: title || "" };
+      if (payload) rec.payload = payload;
+      var fname = "bq-" + iso.replace(/[-:.]/g, "") + "-" + rand4() + ".json";
+      // Return the RAW result — callMcpTool may return a Promise; commitMutation settles both
+      // sync bools and thenables (S2). false/null/undefined is the failure verdict.
+      return window.cowork.callMcpTool(tasks.boardQueueTool, { path: "state/board-queue/" + fname, content: JSON.stringify(rec) });
+    }
+    function mirrorApply(action, id) {
+      if (!id) return function () {};
+      var done = WOSQ.load(WOSQ.LS.done, []), removed = WOSQ.load(WOSQ.LS.removed, []),
+          edits = WOSQ.load(WOSQ.LS.edits, {}), ts = WOSQ.load(WOSQ.LS.ts, {});
+      // Snapshot the FULL prior mirror entry BEFORE the optimistic write so undo RESTORES it
+      // (not blind-deletes): a failed SECOND edit restores the first edit's payload, and an
+      // update over an already-done row keeps its done membership on rollback (S4).
+      var hadDone = done.indexOf(id) >= 0, hadRemoved = removed.indexOf(id) >= 0;
+      var hadEdit = edits.hasOwnProperty(id), prevEdit = edits[id];
+      var hadTs = ts.hasOwnProperty(id), prevTs = ts[id];
+      function has(arr) { return arr.indexOf(id) >= 0; }
+      if (action === "complete") { if (!has(done)) done.push(id); }
+      else if (action === "reopen") { done = done.filter(function (x) { return x !== id; }); }
+      else if (action === "remove") { if (!has(removed)) removed.push(id); }
+      else if (action === "update") { edits[id] = payloadOr(action); }
+      ts[id] = Date.now();
+      WOSQ.save(WOSQ.LS.done, done); WOSQ.save(WOSQ.LS.removed, removed);
+      WOSQ.save(WOSQ.LS.edits, edits); WOSQ.save(WOSQ.LS.ts, ts);
+      return function undo() {
+        var d = WOSQ.load(WOSQ.LS.done, []), r = WOSQ.load(WOSQ.LS.removed, []),
+            e = WOSQ.load(WOSQ.LS.edits, {}), t = WOSQ.load(WOSQ.LS.ts, {});
+        d = d.filter(function (x) { return x !== id; }); if (hadDone) d.push(id);
+        r = r.filter(function (x) { return x !== id; }); if (hadRemoved) r.push(id);
+        if (hadEdit) e[id] = prevEdit; else delete e[id];
+        if (hadTs) t[id] = prevTs; else delete t[id];
+        WOSQ.save(WOSQ.LS.done, d); WOSQ.save(WOSQ.LS.removed, r); WOSQ.save(WOSQ.LS.edits, e); WOSQ.save(WOSQ.LS.ts, t);
+      };
+    }
+    function payloadOr() { return true; }
+    function isThenable(x) {
+      if (!x || (typeof x !== "object" && typeof x !== "function")) return false;
+      try { return typeof x.then === "function"; } catch (e) { return false; }  // a throwing .then getter is not a usable thenable
+    }
+    // Settle a rung result. A THENABLE (callMcpTool can return a Promise) keeps the mirror
+    // optimistic — render now (this task's buttons render DISABLED while in-flight), return true
+    // — and defers the verdict to settlement. A SYNCHRONOUS false/null/undefined undoes + toasts
+    // + returns false (caller re-arms); a synchronous truthy keeps + toasts. It never cascades to
+    // another rung. Two async residuals hardened here (Codex re-check):
+    //  - SETTLE-ONCE: a `settled` flag makes the FIRST of {truthy fulfil, falsy fulfil, reject}
+    //    win; later/duplicate callbacks no-op (no double undo, no double toast).
+    //  - THROW-SAFE: the `.then` GETTER access AND the `.then(...)` invocation are wrapped — a
+    //    synchronous throw settles as FAILURE (undo + toast once), never escaping with the mirror
+    //    committed. Every settlement (sync or async, success or failure) clears the in-flight id.
+    function commitMutation(id, res, undo, okToast, failMsg) {
+      function clearInflight() { if (id) delete inflight[id]; }
+      var settled = false;
+      function ok() { if (settled) return; settled = true; clearInflight(); if (okToast) toast(okToast); renderPendbar(); renderBody(); }
+      function fail() { if (settled) return; settled = true; clearInflight(); try { undo(); } catch (eu) {} toast(failMsg); renderPendbar(); renderBody(); }  // unlock FIRST — a throwing undo must never wedge the row
+      var thenFn;
+      try { thenFn = res && res.then; }       // read `.then` EXACTLY once — a stateful getter can't bypass settlement
+      catch (e1) { fail(); return false; }     // throwing .then getter -> failure
+      if (typeof thenFn === "function") {
+        renderPendbar(); renderBody();        // optimistic — mirror already written; the row locks (in-flight)
+        try { thenFn.call(res, function (v) { if (v === false || v === null || v === undefined) fail(); else ok(); }, function () { fail(); }); }
+        catch (e2) { fail(); }                // throwing .then invocation -> failure (thenFn captured; res.then never re-read)
+        return true;
+      }
+      clearInflight();
+      if (res === false || res === null || res === undefined) { try { undo(); } catch (e3) {} toast(failMsg); renderPendbar(); return false; }
+      if (okToast) toast(okToast);
+      renderPendbar(); renderBody();
+      return true;
+    }
+    // Task-mutation flow: REFUSE a 2nd mutation on a task whose prior one is still unsettled
+    // (in-flight lockout), else optimistic mirror write FIRST, then attempt the chosen rung; the
+    // result (sync bool or thenable) is settled by commitMutation (S1: no runScheduledTask rung).
+    function doMutation(action, id, lane, title, payload) {
+      if (id && inflight[id]) return false;   // in-flight lockout — an unsettled mutation owns this task
+      var undo = mirrorApply(action, id);
+      // record the real payload in the mirror for update, replacing the placeholder
+      if (action === "update" && id && payload) { var e = WOSQ.load(WOSQ.LS.edits, {}); e[id] = payload; WOSQ.save(WOSQ.LS.edits, e); }
+      if (id) inflight[id] = true;
+      var res = false, okToast = null, failMsg = "not saved";
+      try {
+        if (mutRung === 1) { okToast = "queued — applies at next sync/tidy"; res = id ? rung1Write(action, id, lane, title, payload) : false; }
+        else if (mutRung === 2) { okToast = "sent — routed through approval"; send(chatAsk(action, title, id, payload)); res = true; }
+        else { res = copyText(chatAsk(action, title, id, payload), "copied — paste into your WorkOS chat", true); } // clipboard floor toasts its own success
+      } catch (e2) { res = false; }
+      return commitMutation(id, res, undo, okToast, failMsg);
+    }
+    function firePassControl(ask, schedId) {
+      if (send) { try { send(ask); toast("sent: " + ask); } catch (e) { toast("not saved"); } return; }
+      var rst = getRunScheduledTask();
+      if (rst && schedId) {
+        var failMsg = "could not start — is the scheduled task installed?";
+        var r; try { r = rst(schedId); } catch (e) { r = false; }
+        if (isThenable(r)) {                   // runScheduledTask can return a Promise (S2) — no mirror to roll back, only the toast
+          try {
+            r.then(function (v) { toast(v === false || v === null || v === undefined ? failMsg : "started"); },
+                   function () { toast(failMsg); });
+          } catch (e2) { toast(failMsg); }      // throwing .then invocation -> failure toast
+          return;
+        }
+        if (!r) { toast(failMsg); return; }
+        toast("started"); return;
+      }
+      copyText(ask, "copied — paste into your WorkOS chat");
     }
 
-    var ap = tasks.pendingApprovals.length;
-    if (ap) {
-      $("approvals").hidden = false;
-      $("approvals").textContent = ap + " approval" + (ap > 1 ? "s" : "") + " waiting — run Tidy to review";
-      var apBtn = el("button", null, "Tidy");
-      apBtn.style.marginLeft = ".6rem";
-      apBtn.hidden = true;
-      apBtn.onclick = guard(apBtn, function () { firePass("tidy"); });
-      $("approvals").appendChild(apBtn);
-      doneButtons.push(apBtn);
+    // ---- Mirror state (drives struck-through / disabled rows + the pending bar) ----
+    function mirrorState(id) {
+      if (!id) return { done: false, removed: false, edited: false };
+      var done = WOSQ.load(WOSQ.LS.done, []), removed = WOSQ.load(WOSQ.LS.removed, []), edits = WOSQ.load(WOSQ.LS.edits, {});
+      return { done: done.indexOf(id) >= 0, removed: removed.indexOf(id) >= 0, edited: edits.hasOwnProperty(id) };
     }
 
-    var q = tasks.dayTask.queue;
-    if (!q.length) $("queue").appendChild(el("li", "empty", "nothing staged — run Full sync"));
-    q.forEach(function (item) {
-      var li = el("li", "card");
+    // ---- Brief fields (#11): the nine, in order. Same list drives brief-on-tap AND copy prep.
+    var BRIEF_FIELDS = [
+      { key: "attendees", label: "Attendees" },
+      { key: "objective", label: "Objective" },
+      { key: "accountState", label: "Account state" },
+      { key: "lastTouchpoint", label: "Last touchpoint" },
+      { key: "openToThem", label: "Open to them" },
+      { key: "openToUs", label: "Open to us" },
+      { key: "recentSignal", label: "Recent signal" },
+      { key: "talkingPoints", label: "Talking points" },
+      { key: "delta", label: "Delta since built" }
+    ];
+    function briefFilled(b) {
+      if (!b || typeof b !== "object") return false;
+      for (var i = 0; i < BRIEF_FIELDS.length; i++) if (b[BRIEF_FIELDS[i].key]) return true;
+      return false;
+    }
+    function renderBrief(panel, b) {
+      clear(panel);
+      BRIEF_FIELDS.forEach(function (f) {
+        var v = b[f.key];
+        if (!v) return;                       // skip empty fields
+        var row = el("div", "briefrow");
+        row.appendChild(el("span", "brieflabel", f.label));
+        row.appendChild(el("span", "briefval", String(v)));
+        panel.appendChild(row);
+      });
+    }
+    function prepText(m) {
+      var lines = [m.title || "(untitled)"];
+      if (m.objective) lines.push("Objective: " + m.objective);
+      var b = (m.brief && typeof m.brief === "object") ? m.brief : {};
+      BRIEF_FIELDS.forEach(function (f) { if (b[f.key]) lines.push(f.label + ": " + b[f.key]); });
+      return lines.join("\n");
+    }
+
+    // ---- Card + row renderers ----
+    function sortMeetings(list) {
+      var rank = { high: 0, notable: 1, none: 2 };
+      return list.map(function (m, i) { return { m: m, i: i, r: rank[WORKOS.emphasis(m.signals)], s: String(m.start || "") }; })
+        .sort(function (a, b) { if (a.r !== b.r) return a.r - b.r; if (a.s < b.s) return -1; if (a.s > b.s) return 1; return a.i - b.i; })
+        .map(function (x) { return x.m; });
+    }
+    function meetingCard(m) {
+      var li = el("li", "card " + WORKOS.emphasis(m.signals) + (m.cancelled === true ? " cancelled" : ""));
+      li.appendChild(el("span", "rank", m.displayTime || ""));
+      var body = el("div", "grow");
+      body.appendChild(el("div", "title", m.title || "(untitled)"));
+      if (m.who) body.appendChild(el("div", "sub", m.who));
+      if (m.objective) body.appendChild(el("div", "sub", "Objective: " + m.objective));
+      var flags = el("div", "sub");
+      if (m.prep === true) flags.appendChild(el("span", "chip", "prep"));
+      if (m.briefPending === true) flags.appendChild(el("span", "chip", "brief pending"));
+      if (m.cancelled === true) flags.appendChild(el("span", "chip", "cancelled"));
+      if (flags.childNodes.length) body.appendChild(flags);
+      var acts = el("div", "cardacts");
+      var panel = null;
+      if (briefFilled(m.brief)) {
+        panel = el("div", "briefpanel"); panel.hidden = true;
+        renderBrief(panel, m.brief);
+        var bt = el("button", "linkbtn", "brief ▾");
+        bt.onclick = function () { panel.hidden = !panel.hidden; bt.textContent = panel.hidden ? "brief ▾" : "brief ▴"; };
+        acts.appendChild(bt);
+      }
+      var cp = el("button", "linkbtn", "copy prep");
+      cp.onclick = guard(cp, function () { copyText(prepText(m), "copied prep — paste into your WorkOS chat"); });
+      acts.appendChild(cp);
+      var rc = el("button", "linkbtn", "recap");
+      rc.onclick = guard(rc, function () { copyText("Draft a recap for: " + (m.title || "(untitled)"), "copied — paste into your WorkOS chat"); });
+      acts.appendChild(rc);
+      body.appendChild(acts);
+      if (panel) body.appendChild(panel);
+      li.appendChild(body);
+      return li;
+    }
+    function dueChip(sub, due) {
+      var ds = WORKOS.dueStatus(due, today);
+      sub.appendChild(el("span", "chip " + (ds === "overdue" || ds === "near" ? ds : ""),
+        (ds === "overdue" ? "overdue " : "due ") + due));
+    }
+    function actionButtons(id, lane, title, item, row) {
+      if (stale) return null;                 // stale disarms the whole task-mutation family
+      if (!id) {                              // S6: no taskId → copy-only (no mutation buttons, no mirror writes)
+        var cwrap = el("div", "rowacts");
+        var cb = el("button", "actbtn", "copy");
+        cb.onclick = guard(cb, function () { copyText(title || "(untitled)", "copied — paste into your WorkOS chat"); });
+        cwrap.appendChild(cb);
+        return cwrap;
+      }
+      var ms = mirrorState(id);
+      var busy = !!inflight[id];              // an unsettled mutation on this task locks the row (in-flight lockout)
+      var wrap = el("div", "rowacts");
+      var done = el("button", "actbtn", "✓ done");
+      if (busy) done.disabled = true;
+      done.onclick = function () {            // S5: a mirror-done row's ✓ stays live — re-tap issues reopen
+        if (done.disabled) return;
+        done.disabled = true;                 // one-shot per tap; re-armed only on failure
+        if (!doMutation(ms.done ? "reopen" : "complete", id, lane, title, null)) done.disabled = false;
+      };
+      var edit = el("button", "actbtn", "edit");
+      if (busy) edit.disabled = true;
+      edit.onclick = function () { if (edit.disabled) return; toggleEdit(row, item, lane); };
+      var rm = el("button", "actbtn", "✕");
+      if (busy || ms.removed) rm.disabled = true;
+      rm.onclick = function () {
+        if (rm.disabled) return;
+        rm.disabled = true;
+        if (!doMutation("remove", id, lane, title, null)) rm.disabled = false;
+      };
+      wrap.appendChild(done); wrap.appendChild(edit); wrap.appendChild(rm);
+      return wrap;
+    }
+    function toggleEdit(row, item, lane) {
+      var existing = row.querySelector(".editform");
+      if (existing) { row.removeChild(existing); return; }
+      var id = item.id || item.taskId || null;
+      var form = el("div", "editform");
+      var ti = el("input"); ti.type = "text"; ti.className = "editin"; ti.value = item.title || "";
+      var ci = el("input"); ci.type = "text"; ci.className = "editin"; ci.placeholder = "context"; ci.value = item.context || "";
+      var save = el("button", "actbtn", "save");
+      var cancel = el("button", "actbtn", "cancel");
+      save.onclick = function () {
+        if (save.disabled) return;
+        save.disabled = true;
+        var payload = { title: ti.value, context: ci.value };
+        if (!doMutation("update", id, lane, ti.value, payload)) save.disabled = false;
+      };
+      cancel.onclick = function () { if (form.parentNode) form.parentNode.removeChild(form); };
+      form.appendChild(ti); form.appendChild(ci); form.appendChild(save); form.appendChild(cancel);
+      row.appendChild(form);
+    }
+    function queueRow(item) {
+      var id = item.taskId || null;
+      var ms = mirrorState(id);
+      var li = el("li", "card q" + (ms.done ? " done" : "") + (ms.removed ? " removed" : ""));
       li.appendChild(el("span", "rank", item.rank == null ? "" : String(item.rank)));
       var body = el("div", "grow");
       body.appendChild(el("div", "title", item.title || "(untitled)"));
       var sub = el("div", "sub");
       if (item.account) sub.appendChild(el("span", "chip", item.account));
       if (item.signal) sub.appendChild(el("span", "chip", item.signal));
-      if (item.due) {
-        var ds = WORKOS.dueStatus(item.due, today);
-        sub.appendChild(el("span", "chip " + (ds === "overdue" || ds === "near" ? ds : ""),
-          (ds === "overdue" ? "overdue " : "due ") + item.due));
-      }
+      if (item.due) dueChip(sub, item.due);
+      if (ms.edited) sub.appendChild(el("span", "chip", "edited"));
       body.appendChild(sub);
       li.appendChild(body);
-      if (!stale) {
-        var btn = el("button", null, "✓ done");
-        btn.hidden = true;
-        btn.onclick = guard(btn, function () {
-          btn.disabled = true; // a done-tap is one-shot; stays disarmed
-          var msg = "Mark done: " + item.title + (item.taskId ? " (" + item.taskId + ")" : "");
-          firePass(msg);
-        });
-        li.appendChild(btn);
-        doneButtons.push(btn);
-      }
-      $("queue").appendChild(li);
-    });
-
-    function renderMeetings(ulId, day) {
-      var list = meetings.meetings
-        .filter(function (m) { return WORKOS.meetingDay(m) === day; })
-        .sort(function (a, b) { return String(a.start).localeCompare(String(b.start)); });
-      if (!list.length) { $(ulId).appendChild(el("li", "empty", "none")); return; }
-      list.forEach(function (m) {
-        var cls = "card " + WORKOS.emphasis(m.signals) + (m.cancelled === true ? " cancelled" : "");
-        var li = el("li", cls);
-        li.appendChild(el("span", "rank", m.displayTime || ""));
-        var body = el("div", "grow");
-        body.appendChild(el("div", "title", m.title || "(untitled)"));
-        if (m.who) body.appendChild(el("div", "sub", m.who));
-        var flags = el("div", "sub");
-        if (m.prep === true) flags.appendChild(el("span", "chip", "prep"));
-        if (m.briefPending === true) flags.appendChild(el("span", "chip", "brief pending"));
-        if (m.cancelled === true) flags.appendChild(el("span", "chip", "cancelled"));
-        if (flags.childNodes.length) body.appendChild(flags);
-        li.appendChild(body);
-        $(ulId).appendChild(li);
-      });
+      var acts = actionButtons(id, idLane[item.taskId] || laneFallback, item.title, item, li);
+      if (acts) li.appendChild(acts);
+      return li;
     }
-    $("nbd").textContent = nbd;
-    renderMeetings("mtg-today", today);
-    renderMeetings("mtg-next", nbd);
+    function taskRow(t, lane) {
+      var ms = mirrorState(t.id);
+      var li = el("li", "card" + (ms.done ? " done" : "") + (ms.removed ? " removed" : ""));
+      var body = el("div", "grow");
+      body.appendChild(el("div", "title", t.title || "(untitled)"));
+      var sub = el("div", "sub");
+      if (t.signal) sub.appendChild(el("span", "chip", t.signal));
+      if (t.context) sub.appendChild(el("span", "chip", t.context));
+      if (t.due) dueChip(sub, t.due);
+      if (ms.edited) sub.appendChild(el("span", "chip", "edited"));
+      body.appendChild(sub);
+      li.appendChild(body);
+      var acts = actionButtons(t.id, lane, t.title, t, li);
+      if (acts) li.appendChild(acts);
+      return li;
+    }
+    function needRow(a) {
+      var li = el("li", "card act");
+      var body = el("div", "grow");
+      body.appendChild(el("div", "title", a.text));
+      if (a.source) body.appendChild(el("div", "sub", a.source));
+      li.appendChild(body);
+      var b = el("button", "actbtn", "copy ask");   // attention copy-asks are clipboard-always
+      b.onclick = guard(b, function () { copyText(a.text, "copied — paste into your WorkOS chat"); });
+      li.appendChild(b);
+      return li;
+    }
+
+    // ---- Tiles / health / tabs / body / pending bar ----
+    function tile(n, label, warn) {
+      var t = el("div", "tile" + (warn ? " warn" : ""));
+      t.appendChild(el("b", null, String(n)));
+      t.appendChild(el("small", null, label));
+      return t;
+    }
+    function meetingsInWeek() {
+      return meetings.meetings.filter(function (m) { return WORKOS.inWindow(WORKOS.meetingDay(m), "week", today); });
+    }
+    function laneTaskTotal() {
+      var n = 0; laneKeys.forEach(function (ln) { if (Array.isArray(tasks.lanes[ln])) n += tasks.lanes[ln].length; }); return n;
+    }
+    function renderTiles() {
+      var host = $("tiles"); clear(host);
+      host.appendChild(tile(meetingsInWeek().length, "meetings this week", false));
+      host.appendChild(tile(tasks.dayTask.queue.length, "day queue", false));
+      host.appendChild(tile(laneTaskTotal(), "lane tasks", false));
+      host.appendChild(tile(actionEntries.length, "need action", actionEntries.length > 0));
+    }
+    function fmtClock(iso) {
+      // #49: convert the instant to a real clock value (the viewer's local zone) and NEVER
+      // suffix a zone label onto an unconverted value. Meetings carry a pre-converted
+      // displayTime; lastFullSync has none, so the browser's own conversion is the honest read.
+      if (!iso) return "—";
+      var t = Date.parse(iso);
+      if (!isFinite(t)) return "—";
+      var d = new Date(t);
+      try { return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); }
+      catch (e) { return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2); }
+    }
+    function renderHealth() {
+      $("whoami").textContent = (tasks.identity && tasks.identity.display_name) ? tasks.identity.display_name : "";
+      var dayId = tasks.dayTask.id || (tasks.dayTask.date ? "day-" + tasks.dayTask.date : "");
+      if (dayId) { $("daybadge").textContent = dayId; $("daybadge").hidden = false; }
+      $("staledot").className = "dot" + (stale ? " stale" : "");
+      $("hstatus").textContent = stale ? "stale — run a sync" : "Board current";
+      $("syncclock").textContent = "· full sync " + fmtClock(tasks.lastFullSync) +
+        (tasks.generatedBy ? " · " + tasks.generatedBy : "");
+      if (systemEntries.length) {
+        var sn = $("sysnotices"); sn.hidden = false; clear(sn);
+        sn.appendChild(document.createTextNode("· " + systemEntries.length + " system notice" +
+          (systemEntries.length > 1 ? "s" : "") + " — " + systemEntries[0].text + " "));
+        var exp = el("button", "expandbtn", "expand");
+        exp.onclick = function () {
+          var sl = $("syslist"); sl.hidden = !sl.hidden; exp.textContent = sl.hidden ? "expand" : "collapse";
+        };
+        sn.appendChild(exp);
+        var sl = $("syslist"); clear(sl);
+        systemEntries.forEach(function (s) { sl.appendChild(el("div", "sysrow", s.text + (s.source ? " (" + s.source + ")" : ""))); });
+      }
+    }
+
+    // Two-axis tab state: the Operator group (Meetings/Tasks) persists in LS.tab; the
+    // At-a-glance window (today/tomorrow/week) persists in LS.view. Default: Today.
+    var curTab = WOSQ.load(WOSQ.LS.tab, "");
+    var curView = WOSQ.load(WOSQ.LS.view, "today");
+    if (curTab !== "meetings" && curTab !== "tasks") curTab = "";
+    if (["today", "tomorrow", "week"].indexOf(curView) < 0) curView = "today";
+    var curLane = laneKeys.length ? laneKeys[0] : "";
+
+    function persistTabs() { WOSQ.save(WOSQ.LS.tab, curTab); WOSQ.save(WOSQ.LS.view, curView); }
+    function rerender() { renderTabs(); renderBody(); }
+    function tabBtn(label, n, on, fn) {
+      var b = el("button", "tab" + (on ? " on" : ""));
+      b.appendChild(document.createTextNode(label));
+      if (n != null) b.appendChild(el("span", "n", String(n)));
+      b.onclick = fn;                         // view switches carry no external side effect — no guard
+      return b;
+    }
+    function renderTabs() {
+      var host = $("tabs"); clear(host);
+      host.appendChild(el("span", "tablab", "Operator"));
+      host.appendChild(tabBtn("Meetings", meetingsInWeek().length, curTab === "meetings",
+        function () { curTab = "meetings"; persistTabs(); rerender(); }));
+      host.appendChild(tabBtn("Tasks", laneTaskTotal(), curTab === "tasks",
+        function () { curTab = "tasks"; persistTabs(); rerender(); }));
+      host.appendChild(el("span", "tabsep"));
+      host.appendChild(el("span", "tablab", "At a glance"));
+      host.appendChild(tabBtn("Today", null, curTab === "" && curView === "today",
+        function () { curTab = ""; curView = "today"; persistTabs(); rerender(); }));
+      host.appendChild(tabBtn("Tomorrow", null, curTab === "" && curView === "tomorrow",
+        function () { curTab = ""; curView = "tomorrow"; persistTabs(); rerender(); }));
+      host.appendChild(tabBtn("This week", null, curTab === "" && curView === "week",
+        function () { curTab = ""; curView = "week"; persistTabs(); rerender(); }));
+    }
+
+    function renderNeeds(host) {
+      if (!actionEntries.length) return;
+      host.appendChild(el("div", "sh", "Needs action"));
+      var ul = el("ul");
+      var shown = actionEntries.slice(0, 2), rest = actionEntries.slice(2);
+      shown.forEach(function (a) { ul.appendChild(needRow(a)); });
+      host.appendChild(ul);
+      if (rest.length) {
+        var restUl = el("ul"); restUl.hidden = true;
+        rest.forEach(function (a) { restUl.appendChild(needRow(a)); });
+        var more = el("button", "linkbtn", "+" + rest.length + " more");
+        more.onclick = function () {
+          restUl.hidden = !restUl.hidden; more.textContent = restUl.hidden ? "+" + rest.length + " more" : "show less";
+        };
+        host.appendChild(more);
+        host.appendChild(restUl);
+      }
+    }
+    function renderWindowPanel(host, win) {
+      renderNeeds(host);
+      host.appendChild(el("div", "sh", "Meetings — " + (win === "today" ? "today" : win === "tomorrow" ? "tomorrow" : "this week")));
+      var list = sortMeetings(meetings.meetings.filter(function (m) { return WORKOS.inWindow(WORKOS.meetingDay(m), win, today); }));
+      var ul = el("ul");
+      if (!list.length) ul.appendChild(el("li", "empty", "none"));
+      else list.forEach(function (m) { ul.appendChild(meetingCard(m)); });
+      host.appendChild(ul);
+      if (win === "today") {                  // day queue is Today-only (spec §3)
+        host.appendChild(el("div", "sh", "Day queue"));
+        var qul = el("ul");
+        var q = tasks.dayTask.queue;
+        if (!q.length) qul.appendChild(el("li", "empty", "nothing staged — run Full sync"));
+        else q.forEach(function (it) { qul.appendChild(queueRow(it)); });
+        host.appendChild(qul);
+      }
+    }
+    function renderMeetingsPanel(host) {
+      host.appendChild(el("div", "sh", "Meetings — this week"));
+      var list = sortMeetings(meetingsInWeek());
+      var ul = el("ul");
+      if (!list.length) ul.appendChild(el("li", "empty", "none this week"));
+      else list.forEach(function (m) { ul.appendChild(meetingCard(m)); });
+      host.appendChild(ul);
+    }
+    function renderLaneSection(host, lane) {
+      host.appendChild(el("div", "sh", lane));
+      var ul = el("ul");
+      var arr = Array.isArray(tasks.lanes[lane]) ? tasks.lanes[lane] : [];
+      if (!arr.length) ul.appendChild(el("li", "empty", "none"));
+      else arr.forEach(function (t) { ul.appendChild(taskRow(t, lane)); });
+      host.appendChild(ul);
+    }
+    function renderTasksPanel(host) {
+      if (laneKeys.length > 1) {               // NiCE/Personal segment: data-driven, >1 lane only
+        var seg = el("div", "seg");
+        laneKeys.forEach(function (ln) {
+          var b = el("button", "segbtn" + (ln === curLane ? " on" : ""), ln);
+          b.onclick = function () { curLane = ln; renderBody(); };
+          seg.appendChild(b);
+        });
+        host.appendChild(seg);
+        renderLaneSection(host, curLane);
+      } else if (laneKeys.length === 1) {
+        renderLaneSection(host, laneKeys[0]);
+      } else {
+        host.appendChild(el("ul")).appendChild(el("li", "empty", "no lane tasks — run Full sync"));
+      }
+    }
+    function renderBody() {
+      var host = $("tabbody"); clear(host);
+      if (curTab === "meetings") { renderMeetingsPanel(host); return; }
+      if (curTab === "tasks") { renderTasksPanel(host); return; }
+      renderWindowPanel(host, curView);
+    }
+    function renderPendbar() {
+      var done = WOSQ.load(WOSQ.LS.done, []), removed = WOSQ.load(WOSQ.LS.removed, []), edits = WOSQ.load(WOSQ.LS.edits, {});
+      var nd = done.length, nr = removed.length, nu = Object.keys(edits).length, total = nd + nr + nu;
+      var bar = $("pendbar"); clear(bar);
+      if (!total) { bar.hidden = true; return; }
+      bar.hidden = false;
+      bar.appendChild(el("span", "pendtxt", total + " change" + (total > 1 ? "s" : "") +
+        " pending · " + nd + " done · " + nu + " updated · " + nr + " removed"));
+      var tb = el("button", "pendtidy", "Tidy to commit");   // Tidy-from-bar = pass-controls ladder
+      tb.onclick = guard(tb, function () { firePassControl("tidy", null); });
+      bar.appendChild(tb);
+    }
+
+    $("first-run").hidden = !!(tasks.generated || meetings.generated);
+    renderHealth();
+    renderTiles();
+    renderTabs();
+    renderBody();
+    renderPendbar();
 
     var tidyBtn = $("tidy"), syncBtn = $("fullsync");
-    tidyBtn.onclick = guard(tidyBtn, function () { firePass("tidy"); });
-    syncBtn.onclick = guard(syncBtn, function () { firePass("sync my day"); });
+    tidyBtn.onclick = guard(tidyBtn, function () { firePassControl("tidy", null); });
+    syncBtn.onclick = guard(syncBtn, function () {
+      firePassControl("sync my day", (tasks.taskIds && tasks.taskIds.sync) ? tasks.taskIds.sync : null);
+    });
 
-    // Poll for late bridge injection (live-test finding: the bridge can appear after
-    // script time). Ends with the probe line so every render self-reports its surface.
+    function applyBridgeState() {
+      mutRung = chooseMutRung();
+      $("robadge").hidden = !!(send || rung1Available());
+    }
+    function bridgeReport() {
+      var ck = (typeof window !== "undefined" && window.cowork)
+        ? "cowork:{" + Object.keys(window.cowork).join(",") + "}" : "no window.cowork";
+      return (send ? "bridge: sendPrompt" : "bridge: none (read-only)") + " · action rung " + mutRung + " · " + ck;
+    }
+    // Poll for late bridge injection (live-test finding: the bridge can appear after script
+    // time). Each pass re-asserts the badge + re-chooses the action rung; ends with the probe
+    // line so every render self-reports its surface.
     var tries = 0;
     (function pollBridge() {
       if (!send) send = detectSend();

@@ -270,7 +270,9 @@ cap reached → one `attention[]` line ("harvest capped: {what was left}") — n
   `manual` = latest from `Account_Notes.md` + next-step logs, phrased "as of {date} per
   account notes" — never presented as live) · last touchpoint · open to them · open to us ·
   recent signal · talking points (2–3) · **delta since built** (blank at build; a re-sync
-  refreshes it with what changed since `builtAt`).
+  refreshes it with what changed since `builtAt`). Before emitting, run the
+  voice pass per assets/shared/voice-contract.md (in-chat as this output's destination)
+  and render its audible line with the output.
 - **Per-brief search allowance** (the one exception to S2's delta-only rule, itself
   capped): mail/sent mentioning the account or attendees, 14-day window, cap 10 per
   meeting; account files: `Account_Notes.md` + the **3 most recently touched**
@@ -300,6 +302,32 @@ new queue or appears as a named drop in the S7 consolidated approval; never a si
 disappearance. Challenge low-leverage items in one line.
 
 ### S7. Close — one gate, then write, then release
+
+**Board-click drain (#73) — S7's first action, both modes, under the held lock (C4's
+Board-click exception).** Read `state/board-queue/*.json`; validate each against the schema
+README's board-queue shape. Malformed files (unparseable JSON, bad `action`, shape
+violation) → MOVE to `state/board-queue/malformed/` and raise ONE `action`-class
+`attention[]` line naming them (never applied). Apply the valid files in `ts` order (equal
+`ts` → filename ascending — the `ts-compact` filenames already sort that way):
+`complete`/`reopen`/`update` mutate the named lane task **ungated** — the durable board-click
+record IS the approval (C5's board-click clause; C14 Board-click provenance) — each writing
+ONE journal pointer (durable-outcome grammar, S7.3) VERIFIED; its queue file is deleted
+only AFTER that pointer AND the task mutation are durable in the pass's state-write batch
+(never at S7-open, before the batch commits), so a crash mid-drain (or a delete that didn't
+take) replays idempotently
+(re-applying reaches the same task state; multiple pointers per id are legal, the latest
+governs). A `remove` is destructive → it re-gates per item (C14 Board-click provenance):
+attended it joins S7.1's per-item destructive machinery; unattended it queues as
+`pendingApprovals` (raise pointer per the schema, its file consumed only after that pointer
+verifies). The reversible mutations land in the pass's state-write batch BEFORE the day-roll
+commit — so S1's done/carry counts and the S7.4 rebuild see post-drain task state — and
+`lastBoardDrain` = the max `ts` of the queue files this drain CONSUMED — applied +
+raised-to-`pendingApprovals` + quarantined-as-malformed, **not just applied** (so a `remove`
+whose visibility passes to the approvals queue still lets the shell prune its mirror once) —
+is stamped into `tasks.json` meta in the same batch as `lastFullSync`. Then render the receipt into the close summary: `Board clicks applied —
+{X} done · {Y} reopened · {Z} updated` plus one line per applied action
+`{action}: {title} ({taskId})`. **Empty queue → no receipt section** (never a "0 applied"
+line).
 
 **Attended:**
 1. **Re-validate every EXISTING `pendingApprovals` item before assembling the gate:**
@@ -331,7 +359,8 @@ disappearance. Challenge low-leverage items in one line.
    nickname, and offer DECLINE per named item (C14-rendered; the §1 exits apply —
    hygiene declines suppress, others just remove). "Accept all" covers non-destructive
    proposals only — each destructive item
-   (file delete/move) then gets its own per-item gate with its full finding +
+   (file delete/move, or a board `remove` click drained at S7-open) then gets its own
+   per-item gate with its full finding +
    proposedAction re-shown beside the question — outcomes: **apply / decline / leave
    pending** (leave pending keeps it queued untouched for a later pass).** Loop on 2/3 until accepted — each
    round re-renders the FULL gate (revised items in full; unchanged items at minimum as
@@ -346,7 +375,10 @@ disappearance. Challenge low-leverage items in one line.
    appended and verified BEFORE this state write — the step numbering is presentation,
    not ordering); a gate-approved `Contacts.md` row/header append (contact-resolution mechanics) executes
    AFTER the state writes, read-back verified (ownership re-check per Step 0.4
-   immediately before this write, same as a state batch) — refresh `attention[]` (loud
+   immediately before this write, same as a state batch) — refresh `attention[]` — each
+   entry the typed `{class, text, source}` record, its `class` and `source` per the schema
+   README's attention-class table (every derived line carries its class; the pass re-derives
+   the whole array, so a legacy bare string self-heals) — (loud
    SKIPs, caps, version notice, approvals still queued, parked sweep — DERIVED from
    `state/sweep.json`: present ⇔ a park exists, exact line `parked sweep ({tier}, {N} rows,
    from {date}) — run 'weekly next steps' to finalize`, intake overdue — DERIVED, only
@@ -381,7 +413,10 @@ disappearance. Challenge low-leverage items in one line.
    inside each `<script type="application/json" id="workos-data-{tasks|meetings}">`
    element (the `WORKOS:DATA` marker pairs locate them; the markers and the script
    open/close tags stay byte-identical) with the current `tasks.json` / `meetings.json`,
-   escaping every `</` as `<\/`, via the platform's artifact-update mechanism. **Then the
+   escaping every `</` as `<\/`, via the platform's artifact-update mechanism. The tasks
+   block carries the same four config-derived meta keys the BOARD build embeds —
+   `identity.display_name`, `taskIds`, `boardQueueTool`-when-probed, `boardScope` (D3
+   mechanics unchanged). **Then the
    mechanical self-check before reporting** (Python or equivalent): exactly one BEGIN/END
    pair per block · script wrappers intact · each block's inner text parses as JSON · no
    raw `</` and no marker literal inside the JSON. Self-check fails, or no update path
@@ -400,16 +435,19 @@ disappearance. Challenge low-leverage items in one line.
 
 **Unattended:** no questions anywhere. Apply only what C5's state-store clause allows
 ungated (calendar/meeting updates, evidence-formed NEW tasks); closures and everything
-destructive → `pendingApprovals` (merge-append per the schema). Run the S7.3 journal-pointer backfill (append-only
+destructive → `pendingApprovals` (merge-append per the schema). The S7 board-click drain
+still runs (its reversible clicks apply — the click is the approval, C5's board-click
+clause; a `remove` click queues as `pendingApprovals`). Run the S7.3 journal-pointer backfill (append-only
 pointers are C5-exempt bookkeeping; its count line goes in the run output). Write,
 stamp — merging `lastUnattendedRun.sync` = `{at: {now}, localDate (same resolution
 order as the Step 0 dedupe check; OMIT when unresolved), surface (the lock's own value),
 version (assets/shared/VERSION verbatim, or "unstamped")}` while PRESERVING every other
 key of the map, written by unattended runs only, in the same batch as `lastFullSync`
-(schema §lastUnattendedRun) —
+(schema §lastUnattendedRun), plus `lastBoardDrain` from the drain —
 rebuild the board, put counts in
 `attention[]` ("{N} approvals waiting"; also "{N} findings suppressed by earlier declines"
-whenever N>0), summarize in the run output, release.
+whenever N>0 — both `action`-class), the drain receipt (empty queue → omitted) and the
+summary in the run output, release.
 
 ---
 
@@ -417,7 +455,9 @@ whenever N>0), summarize in the run output, release.
 
 **Read-set, exactly:** config · the lock · `tasks.json` · `meetings.json` ·
 `suppressed.json` · `state/sweep.json` (existence + parked header only, for the derived
-attention line) · `state/intake.json` (same, for the intake-overdue line) · the board's
+attention line) · `state/intake.json` (same, for the intake-overdue line) ·
+`state/board-queue/*.json` (the step-2 drain read; malformed ones MOVE to its `malformed/`
+subfolder — the one write target this read-set names) · the board's
 current data blocks · the exact files/folders named by
 approvals being applied OR re-validated this pass · at most ONE calendar query (today + next business day) — only if
 calendar is configured and its first-use probe succeeds (configured-but-failing → loud
@@ -426,7 +466,24 @@ journal READS (the approval EXIT appends of step 2 excepted — Tidy never raise
 brief-building.
 
 1. Lock per Step 0.4.
-2. **Approvals:** attended → RE-RENDER each pendingApproval's full finding +
+2. **Board-click drain (#73), before any approval write** (both modes, under the lock):
+   read `state/board-queue/*.json`, validate per the schema README's board-queue shape,
+   MOVE malformed to `state/board-queue/malformed/` + ONE `action`-class `attention[]` line
+   naming them; apply valid files in `ts` order (equal `ts` → filename ascending):
+   `complete`/`reopen`/`update` mutate the task ungated (the click is the approval — C5's
+   board-click clause; C14 Board-click provenance), each writing ONE journal pointer
+   VERIFIED — its queue file deleted only AFTER that pointer AND the task mutation are durable
+   in this pass's write batch (idempotent replay) — the drain's per-action pointers
+   are sanctioned Tidy journal appends alongside the approval exits below (S7.3's backfill
+   scan stays sync-only). A `remove` re-gates per item (C14 Board-click provenance) —
+   attended it joins this step's per-item destructive gate, unattended it queues as
+   `pendingApprovals`. Stamp `lastBoardDrain` = the max `ts` this drain CONSUMED (applied +
+   raised-to-`pendingApprovals` + quarantined, not just applied) in this pass's write batch —
+   `lastFullSync` untouched.
+   Render the receipt — `Board clicks applied — {X} done · {Y} reopened · {Z} updated` + one
+   line per applied action `{action}: {title} ({taskId})`; empty queue → no receipt section.
+   The drain's task mutations feed step 4's changed-check.
+   **Approvals:** attended → RE-RENDER each pendingApproval's full finding +
    proposedAction in THIS chat, with its stable `appr-…` id, in the same turn as its
    gate (C14 — a render in the earlier sync pass does not count; "as originally shown"
    is banned phrasing). Destructive items gate PER ITEM (C14); non-destructive items
@@ -439,16 +496,19 @@ brief-building.
    one Tidy journal exception; S7.3's backfill scan stays sync-only). A "Mark done:"
    board-button message that triggered this run joins the same pass as a proposed closure
    (evidence: the user's tap; match by `taskId` when present, else by title — ambiguous
-   title → one C11 question). Unattended → count into `attention[]`, touch nothing.
+   title → one C11 question). Unattended → count into `attention[]` (`action`-class), touch nothing.
 3. Calendar delta: new/cancelled meetings update `meetings.json` (additive bookkeeping);
    newly flagged meetings get `briefPending: true` — tidy never builds briefs. Re-derive
    the parked-sweep attention line from `state/sweep.json` (present ⇔ a park exists; exact
    line per S7.2) — its appearance or clearing participates in step 4's changed-check.
-   Same for the intake-overdue line (from `state/intake.json`, same rules as S7.2).
+   Same for the intake-overdue line (from `state/intake.json`, same rules as S7.2). Each
+   re-derived entry is the typed `{class, text, source}` record per S7.2's typing rule.
 4. Board rebuild only if a data block actually changed — **and "changed" includes
    `attention[]` and every tasks/meetings field the board renders; only bookkeeping
-   stamps (`lastTidy`) alone don't trigger** (live-test defect 2026-07-16: tidy cleared
-   an attention line, said "no data changed", left the board stale). Mechanics per SYNC
+   stamps (`lastTidy`/`lastBoardDrain`) alone don't trigger** (live-test defect 2026-07-16:
+   tidy cleared an attention line, said "no data changed", left the board stale) — but a
+   drain that applied a click mutated a task, and a quarantine changed `attention[]`, so
+   either still rebuilds. Mechanics per SYNC
    S7.4: marker pairs only · snapshot rewrite · honest failure. Stamp `generated`,
    `generatedBy: tidy`, `lastTidy` — **never `lastFullSync`, never the day-task.**
 5. If the world clearly moved a lot, say "worth a full sync" and stop — the user's call,
@@ -475,7 +535,15 @@ lock. In an unattended run, board vocabulary is reported in the run output and s
    text inside each `<script type="application/json" id="workos-data-{tasks|meetings}">`
    element (the `<!-- WORKOS:DATA {tasks|meetings} BEGIN/END -->` marker pairs locate
    them; markers and script open/close tags stay byte-identical): replace it with the
-   current file's JSON, escaping every `</` as `<\/`. Run S7.4's mechanical self-check
+   current file's JSON, escaping every `</` as `<\/`. **The substituted tasks block
+   additionally carries four config-derived meta keys** (D3's data-block mechanics —
+   markers, escape, self-check — otherwise UNCHANGED): `identity.display_name` (per C2, the
+   hero name), `taskIds` from the config's `scheduled_task_ids` (an absent id → that
+   scheduled-run rung is simply absent, never a finding), and `boardQueueTool` from the
+   config's `board_queue_tool` — embedded ONLY once probe A (#14) has set it, absent before
+   (rung 1 stays dormant, never a finding) — and `boardScope`, the memory-root folder name
+   (namespaces the shell's localStorage as `wos.{boardScope}.*`; absent → legacy `wos.*` keys).
+   Run S7.4's mechanical self-check
    before presenting, **plus emission completeness: the emitted HTML ends with
    `</html>`, every `<script` has a matching `</script>`, and the four script ids
    (`workos-data-tasks`, `workos-data-meetings`, `workos-derive`, `workos-render`) are

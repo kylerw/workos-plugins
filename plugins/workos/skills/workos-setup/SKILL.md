@@ -170,11 +170,11 @@ last_verified`), approved before writing. Skipping is fine; capture fills these 
      lives there, so regenerating this file clobbers nothing), then the folder map and
      account-folder handoff, and
    - the **Cowork project-instructions paste text** — short: memory root, config lives in
-     core.md, the three workos skills with their invocation vocabulary (sync's manual
-     words: sync my day / tidy / build my board / rebuild my board; legacy
+     core.md, the workos skills (sync's vocabulary: sync my day / tidy / build my board /
+     rebuild my board; next-steps: run my weekly next steps; capture: log a call /
+     capture the meeting; intake: run intake / intake check); legacy
      kickoff/wrap/start-my-day/close-out vocabulary ROUTES to workos-sync — never to
-     retired skills), the capture-skills residual role (account truth until
-     workos-capture ships), and the filing-rules pointer.
+     retired skills, and the filing-rules pointer.
    Tell the user: copy your EXISTING project instructions to a note first (instant
    rollback), then paste the new text into the Cowork project's instructions field.
 2. **Scheduled task, by exact recipe — never improvised, never a pair:** offer (C11) to
@@ -182,8 +182,15 @@ last_verified`), approved before writing. Skipping is fine; capture fills these 
    `sync my day (scheduled, unattended)`, weekdays 7:00 AM, enabled." ONE task; legacy
    kickoff/wrap slots are deleted or left dead, never re-enabled (live near-miss: a
    doctor offered to re-enable BOTH holdovers = two full syncs daily). Optional second
-   offer where the user wants it: the weekly next-steps sweep on the team's cadence day.
-3. Report what was created vs already present, write the config, close.
+   offer — the weekly sweep, anchored to the update's DUE day (#68): ask (C11) "which
+   day is your weekly next-steps update due?" (default = the recorded manager-decision
+   cadence day when present, else Thursday), then offer to create the task by exact
+   recipe — "do NOT run it now — prompt exactly `weekly next steps (scheduled,
+   unattended)`, scheduled the PREVIOUS BUSINESS DAY at 5:00 PM, enabled" (due
+   Thursday → runs Wednesday 5:00 PM; due Monday → Friday 5:00 PM). Never at the daily
+   sync's minute — two unattended runs contending on the C4 lock means the loser exits,
+   silently costing that day's run.
+3. Report what was created vs already present, write the config, then OFFER the board (C11 — live gap 2026-07-17: the first non-founder install ended with no board offer): "1. Build my board now / 2. Skip — say 'build my board' any time." On 1, hand off to workos-sync's BOARD entry point. Then close.
 
 ---
 
@@ -249,7 +256,7 @@ is "issues found," never green-with-asterisks** (C13):
    core.md's record, say "config written by {M}; bundle is {N} — fine unless release notes
    say config fields changed", never "update available".
 6. **Team/ publication:** shortcut present? user's subfolder writable? manager-decision
-   file recorded? Each absent one maps to the Day-1 guide step or the pending Adam item.
+   file recorded? Each absent one maps to the Day-1 guide step or the pending Adam item. **Fresh-install rule (#32): an unset publish gate on a root with no prior Team/ updates is INFO, not a finding — one line: "publish gate unsettled — it settles via the manager-decision file; the weekly sweep's A6.3 gate skips (with the reason said) until then."**
 7. **State layer:** `state/` exists; JSON parses; the writer's lock is a released
    tombstone (`released: true` — FREE, healthy), absent (also fine), or one live lock
    (stale live lock → name the recovery step from the recorded spike design, quoting the
@@ -277,7 +284,9 @@ is "issues found," never green-with-asterisks** (C13):
    - **"approvals queue shrank without a recorded resolution (stale-bundle run? — see the
      scheduled-task check)":** no exit pointer, not pending, no suppression.
    - **"crashed decline (half-recorded)":** a declined-hygiene exit without its suppression
-     entry, or a suppression entry without its declined exit.
+     entry, or a suppression entry without its declined exit. (hygiene kinds only — a
+     declined INTAKE-kind item's mate is its `suppressed.intake` LEAVE record, not a
+     `suppressed.approvals` entry; match by the item's target)
    - **"exit recorded but item still queued (crashed pass — item remains live)":** any exit
      pointer while the id is still in `pendingApprovals`.
    Additionally: any `suppressed.approvals` entry whose kind is not
@@ -297,7 +306,24 @@ is "issues found," never green-with-asterisks** (C13):
    unattended marker is its own finding** — those words route into the sync skill as a
    FULL ATTENDED pass with nobody watching (stalls on questions; a wrap task
    double-syncs the day). Recommend the user pause or delete them in the platform UI;
-   doctor never touches them.
+   doctor never touches them. **Additionally (#68): (a) NO conforming sweep task → one
+   INFO line + the C11-gated offer to create it by A6.2's exact due-day recipe (ask the
+   due day; previous business day 5:00 PM); a decline settles it — never re-offer on
+   later runs of the same root. (b) A conforming sweep task scheduled at the SAME
+   minute as the sync task is a finding — "lock contention: one run will exit; offset
+   the sweep (recipe: previous business day 5:00 PM)." (c) A conforming sweep task with
+   NO `lastUnattendedRun.sweep` entry after its first scheduled day → "the task may be
+   executing a pre-sweep bundle snapshot — offer (C11-gated) to re-create it (#52)."**
+10. **Last unattended runs (#52/#67/#68) — report-only, never a finding by itself:**
+    for EACH key of `state/tasks.json → lastUnattendedRun` ({sync, sweep}): one line,
+    values verbatim: `last unattended {key}: {at} ({localDate}, or "no local date") on
+    {surface} — bundle {version}`. Empty/absent map → `no unattended runs recorded
+    yet` (informational). When an entry's {version} differs from THIS bundle's
+    `assets/shared/VERSION` (compare per version-check.md ordering; unordered values →
+    report both verbatim, no comparison), append: ` — differs from this bundle
+    ({installed}); the scheduled task may be executing a stale snapshot (#52)`.
+    Additionally: `state/sweep.json` holding a park older than 7 days → one INFO line
+    naming its age and the resume offer.
 
 Output ends with: `doctor: {N} ok · {M} findings · {K} skipped` + the shortest fix list,
 ordered by what blocks the most.

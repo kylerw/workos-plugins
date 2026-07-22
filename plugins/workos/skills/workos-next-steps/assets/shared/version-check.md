@@ -18,7 +18,9 @@ unparseable) is treated as MISSING — a release-stamped bundle overwrites it, q
 old contents verbatim in its one line.
 
 **Three cases, every check:**
-- **Equal rank** → nothing.
+- **Equal rank** → nothing (exception: workos-sync's audible-outcome rule (#53) renders
+  the one-line `engine {installed} — current` in its close summary — sync only; other
+  consumers stay silent).
 - **Installed behind latest** → the one-line notice: "Engine update available: you're on
   {installed}, current is {latest}" + the fix for the running surface — plugin install:
   sync the marketplace (or auto-sync picks it up) · Cowork upload: download the new

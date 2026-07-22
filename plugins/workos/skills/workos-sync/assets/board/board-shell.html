@@ -159,6 +159,7 @@
 </header>
 
 <div class="strip" id="attention" hidden></div>
+<div class="strip" id="first-run" hidden>Empty until your first sync — say "sync my day" in your WorkOS chat, then refresh here.</div>
 <div class="strip" id="approvals" hidden></div>
 
 <section><h2><span>Day queue</span></h2><ul id="queue"></ul></section>
@@ -290,6 +291,7 @@ if (typeof module !== "undefined" && module.exports) module.exports = WORKOS;
     $("meta").textContent = "generated " + (tasks.generated || "?") + " by " + (tasks.generatedBy || "?");
     if (stale) $("meta").appendChild(el("span", "badge stale", "stale — run a sync"));
 
+    $("first-run").hidden = !!(tasks.generated || meetings.generated);
     var att = tasks.attention;
     if (att.length) {
       $("attention").hidden = false;

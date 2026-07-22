@@ -49,6 +49,23 @@ bundle's VERSION against `Team/_engine/latest-version.txt` silently; behind → 
 single-line update notice to this run's output; ahead → apply the self-heal beacon bump and
 its one line. Unreachable → skip the notice silently; `doctor` is the loud surface.
 
+**Run header (#52) — every mode, unconditional:** the FIRST line of the run output is
+`workos-next-steps {installed} on {surface}` — {installed} = `assets/shared/VERSION`
+verbatim (missing → `unstamped dev bundle`), {surface} = `cowork` | `claude-code` (the
+value a lock write carries).
+
+**Attended vs unattended (#68):** the run is **unattended ⇔ the invoking prompt
+contains the marker "(scheduled, unattended)"** — setup's scheduled task carries it;
+no marker → attended. Unattended runs execute §A ONLY, in stage-and-park form (§A0):
+never §B or §C, never a question, never an external emission. **Same-day dedupe,
+before anything else:** read `state/tasks.json → lastUnattendedRun.sweep` (one read,
+no lock). That entry's `localDate` equals this run's local date (computed per
+identity.schema.md's full `timezone` resolution order) → exit with the run header
+plus exactly one further line:
+`unattended sweep already completed today at {at} on {surface} ({version}) — skipping`
+— two lines total, nothing else. Fail-open on any ambiguity (absent entry, missing
+`localDate`, own date unresolved) → proceed.
+
 **Every question in every mode follows C11** — including ad-hoc gap questions mid-flow
 (meeting outcomes, close-date resolutions, on-track/at-risk calls): reframe as structured
 numbered options with an escape hatch, never prose asks, and ask through the platform's
@@ -75,6 +92,55 @@ One pass. Generate everything first, approve once on the **actual artifacts**, t
 three outputs and persist. Recommended as a weekly Cowork scheduled task on the team's
 confirmed cadence day (leadership currently says Thursdays; the recorded manager-decision
 file wins if it says otherwise).
+
+**Parked-sweep resume (attended entry check, #68):** before A1, when
+`state/sweep.json` holds a park, one structured offer (C11): "Parked sweep from
+{generatedAt} ({tier}, {coverage}, {N} rows{; STALE — {age} days old, regenerating
+recommended} when older than 7 days). 1. Finalize — refresh and gate / 2. Tweak named
+rows first / 3. Discard it / 4. Leave parked, run fresh." **Finalize:** staleness
+refresh — `mcp` tier re-runs the A1 query and marks each row changed/unchanged, every
+changed row re-rendered in full (`render-before-gate`); `logs` tier presents as-parked
+with its coverage label; parked `unknowns[]` become A3.3's one batched question; then
+A5's consolidated gate on the full set → A6 outputs + persistence exactly as attended
+(observations stamp HERE, from finalize-time data). **Tweak:** adjust the named rows,
+then Finalize's flow. **Discard:** rewrite `parked` to null + one journal pointer
+`- {date} parked sweep discarded (generated {generatedAt})`. **Leave parked:** run a
+fresh attended sweep; the park stays untouched. Finalize and Discard clear the park,
+and the derived attention line clears at the next sync/tidy pass. **At finalize, A5
+renders ALL rows at full fidelity in the gate turn — a park is never a prior render
+(C14); changed/unchanged marks are annotations, never fidelity tiers.** Finalize's and
+Discard's state writes — the `sweep.json` rewrite (restamping `generated`/`generatedBy:
+"sweep"`) and the journal pointer — happen under the C4 lock, pass `sweep`, full
+protocol by reference to workos-sync Step 0.4, exactly like the unattended park's.
+
+### A0. Unattended: stage-and-park (#68 — spec 2026-07-21-unattended-sweep-design.md)
+
+An unattended sweep GENERATES everything and PARKS it. The A5 gate — and every output
+and persistence write — happens only at a later attended finalize (§A-entry resume).
+
+1. **Probe (C13):** `mcp` tier → the harmless probe read. Green → run A1–A4 from live
+   SOQL exactly as attended. Probe fails, or `manual` tier → **generate from history**:
+   per opp folder under `Accounts/*/01_Opportunities/*/`, the `Next_Step_Log.md` last
+   Observed snapshot + last accepted line, plus `Account_Notes.md` /
+   `Account_Context.md`. Coverage = `partial`; coverageNote = "partial sweep from logs
+   as of {dates} — no live pipeline read". Cached data is never presented as live, and
+   without an exhaustive base list the output never claims whole-pipeline coverage.
+2. **No questions anywhere.** A3.3's batched unknowns are recorded per-row in
+   `unknowns[]`; ownership-flagged rows park as flagged, never confirmed.
+3. **Park under the C4 lock** — pass `sweep`, full lock protocol by reference to
+   workos-sync Step 0.4 (acquire over absent/tombstone, heartbeat, ownership check
+   before writes, verified tombstone release, never delete): write the artifact set to
+   `state/sweep.json` per the schema. An existing unfinalized park is REPLACED
+   (regenerable staging), said in the run output. Same write batch: MERGE
+   `lastUnattendedRun.sweep` = `{at, localDate (omit when unresolved), surface,
+   version (assets/shared/VERSION verbatim, or "unstamped")}` preserving every other
+   key, and refresh the parked-sweep `attention[]` line in `tasks.json` (exact line per
+   workos-sync S7.2's derivation). The board is NOT rebuilt here — sync and tidy own
+   board rebuilds; the due-day morning sync surfaces the park (spec §6b).
+4. **Nothing leaves:** no paste block, no mail draft (an external mailbox write waits
+   for the gate), no `Next_Step_Log.md` observation, no Team/ publish. Run output:
+   the header line, rows parked, tier + coverage, unknowns count, replaced-park note
+   when applicable. Release the lock as the final action.
 
 ### A1. Enumerate the pipeline (tiered intake)
 
@@ -316,3 +382,9 @@ Salesforce account merges retire Ids.
   and is never read as current state.
 - Re-dating an unchanged step to pass the week-over-week rule.
 - Skipping renewals because they're no-track — no-track exempts step-language rules only.
+- Emitting ANYTHING from an unattended run — a mail draft, a paste block, a log entry,
+  a Team/ file (the C5-exempt version beacon excepted), a question. Parking to
+  `state/sweep.json` (+ its stamp and attention line) is the only unattended output (#68).
+- Rebuilding the board from this skill, or writing any `state/` file other than
+  `sweep.json` + the two `tasks.json` fields §A0.3 names (attention line,
+  `lastUnattendedRun.sweep`) — sync/tidy own the rest.

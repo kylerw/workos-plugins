@@ -44,7 +44,13 @@ board computes (no pass stores or refreshes them).
    deciding what the pass does (C3). **Capture {today}/{now} ONCE here; every use this
    pass (ids, journal month, day-task date, `raisedAt`) uses the captured values — only
    lock heartbeats use live now.** (Midnight/month rollover mid-run otherwise splits id
-   dates from journal months.)
+   dates from journal months.) **Time rendering (#49, one rule): every user-facing or
+   file-written clock value — gates, briefs, `displayTime`, journal lines, close
+   summaries — converts per identity.schema.md's full `timezone` resolution order
+   BEFORE any zone label attaches — the resolution order resolves the SOURCE instant,
+   and the configured `timezone` key is the DISPLAY zone the value converts TO; a zone
+   label is NEVER suffixed onto an unconverted value; unresolvable →
+   `{time} (timezone unset)` per the key's rule.**
 2. **Mode:** trigger word wins. Sync vocabulary: sync my day / full sync / kickoff / start
    my day / wrap / close out (legacy words are triggers only — same single pass, C3).
    Tidy vocabulary: tidy / tidy the board. Board vocabulary: build my board / rebuild my
@@ -61,6 +67,24 @@ board computes (no pass stores or refreshes them).
    only what C5's state-store clause allows ungated (incl. the engine version beacon —
    `assets/shared/version-check.md`), queue everything else, and report
    into `attention[]` + the run output.
+   **Unattended same-day dedupe (#67) — checked HERE, before the lock:** an unattended
+   SYNC run first reads `state/tasks.json → lastUnattendedRun.sync` (one read; no writes, no
+   lock). When that entry exists AND its `localDate` equals this run's local
+   date — computed from the captured {now} per identity.schema.md's full `timezone`
+   resolution order — exit with the run header followed by exactly one further line:
+   `unattended sync already completed today at {at} on {surface} ({version}) — skipping`
+   — two lines total, zero state writes, zero board writes, no lock taken. [The header
+   names THIS run's bundle while the skip line's `({version})` names the STAMP's — a
+   mismatch between the two lines is #52's stale-snapshot signal, visible even on a
+   skipped run.] Anything else — stamp absent,
+   different `localDate`, stamp has no `localDate`, or this run's own date unresolved —
+   is NOT a match: proceed normally (fail-open: a duplicate pass is cheap, a wrongly
+   skipped sync is not), and when it was one of the two unresolved cases, add one
+   `attention[]` line at S7: "dedupe check inconclusive — timezone unresolved".
+   Attended runs never check and are never skipped; Tidy never checks (cheap and
+   idempotent by design). A simultaneous double-fire that passes this check still
+   serializes on the C4 lock below — the check is the fast path; the lock stays the
+   correctness backstop.
 4. **The lock (C4 — acquired BEFORE any state/ write, including baseline scaffolding):**
    read `state/.pass-lock.json`.
    - Absent, or a tombstone (`released: true`, any writer) → write
@@ -118,7 +142,21 @@ board computes (no pass stores or refreshes them).
    `assets/shared/version-check.md`: behind → the one-line notice in `attention[]` and the
    close summary; ahead → the self-heal beacon bump, its one line in the close summary.
    Configured but unreachable → attention entry ("Team/ unreachable"). Not configured →
-   skip, silently (an unconfigured surface is not a degradation).
+   skip, silently (an unconfigured surface is not a degradation). **Audible outcome (#53):
+   when `team_publish_folder` IS configured, the close summary / run output contains
+   EXACTLY ONE version-check outcome line — the equal-rank line
+   `engine {installed} — current`, the behind-notice, the beacon line, or the
+   unreachable attention line. A configured run with ZERO such lines is the #53 defect;
+   if the step cannot run at all (Team library not in this session's scope), that fact IS
+   the attention line — never silence.**
+
+**Run header (#52) — every entry point, both modes, unconditional** (unlike item 6 it
+does not depend on `team_publish_folder`): the FIRST line of the run output / close
+summary is `workos-sync {installed} on {surface}`, where {installed} =
+`assets/shared/VERSION` verbatim (file missing → `unstamped dev bundle`) and {surface} =
+the value this run writes — or, for the lockless BOARD entry point, would write — into
+the lock's `surface` field (`cowork` | `claude-code`). One line, never more; it makes
+cross-surface version skew a read instead of forensics.
 
 ---
 
@@ -152,7 +190,16 @@ close summary — never silent. Unconfigured sources are never mentioned at all.
 - **Calendar:** today + the next business day, full list.
 - **Inbox delta:** since `lastFullSync`, newest first, cap 20, subject/snippet triage.
 - **Sent delta:** since `lastFullSync`, newest first, cap 20 — completed-action evidence.
-- **Teams DMs** (if configured): outbound since `lastFullSync`, cap 15.
+- **Teams DMs** (if configured — #51 incremental): scan ONLY chats with activity since
+  that chat's `teamsScan.cursors` mark when present, else `lastFullSync` — this rule
+  governs BOTH chat selection and the read window (a cursor never clamps forward to
+  `lastFullSync`), newest first; advance a chat's cursor to its scan time only AFTER
+  that chat completes, so a rate-limited pass RESUMES where it stopped instead of
+  restarting at 0/N. Pace the reads (small batches; on a 429 honor Retry-After once,
+  then loud-skip the rest of the pass). Outbound cap 15 unchanged. A pass that ends
+  Teams-incomplete increments `teamsScan.missStreak` (a completed pass resets it to 0)
+  and the attention line carries the streak: "Teams coverage incomplete —
+  {missStreak} consecutive passes."
 - **Meeting notes** (if bridged): recordings since `lastFullSync`, summaries +
   action-item candidates.
 - **Dialogue:** whatever the user tells this session, first-class.
@@ -257,15 +304,26 @@ disappearance. Challenge low-leverage items in one line.
 **Attended:**
 1. **Re-validate every EXISTING `pendingApprovals` item before assembling the gate:**
    hygiene kinds → list the target folder (this directory read is sanctioned, S5 scope);
-   task kinds → check the task id. A finding that no longer validates → RETIRED (journaled
-   per the schema's raise/exit ordering, named in the close summary), never shown at the
-   gate. Then assemble everything into ONE consolidated approval (C11): proposed closures (with
+   task kinds → check the task id. Intake kinds → existence-stat ONLY (the source path
+   still exists); a source unreachable from THIS session (unmounted folder,
+   account-scoped run) → leave queued, NEVER retire. A finding that no longer validates
+   → RETIRED (journaled per the schema's raise/exit ordering, named in the close
+   summary), never shown at the gate. Then assemble everything into ONE consolidated
+   approval (C11): proposed closures (with
    evidence) · new tasks · the queue · prep-selection changes · hygiene keep/drop lists ·
    confirmed contact rows/header changes (contact-resolution) ·
    **the full `pendingApprovals` backlog** (this is sync's surfacing step — a user who
-   never runs tidy still sees it here). **Format the gate like the close summary: a
+   never runs tidy still sees it here; intake kinds render as the aggregate line +
+   pointer per the schema's apply boundary — never per-item here). **Format the gate
+   like the close summary: a
    header + bulleted list per section, blank lines between sections — never one
    paragraph** (live-test friction 2026-07-16: the gate rendered as a wall of text).
+   **Typed sections (#48), stable order: PROPOSED CLOSURES / NEW THIS PASS (new tasks
+   · hygiene keep/drop · confirmed contact rows) / APPROVALS BACKLOG / PREP CHANGES /
+   QUEUE (revised) / ATTENTION.** Closure bullets render `{id} — {task} — {one-line
+   evidence} — {done|progressed}`. ATTENTION is FYI: nothing under it is applied by
+   the gate, and the section says so. The options line names what option 1 applies BY
+   ID (C14). (Second wall-of-text sighting 2026-07-20 — #48.)
    Options: "1. Accept all as shown / 2. Adjust named
    items / 3. Add an outcome I forgot / 4. Stop — apply nothing from this pass." **C14:
    every proposal renders with its stable identifier (`appr-…`, task id); option-2
@@ -289,7 +347,14 @@ disappearance. Challenge low-leverage items in one line.
    not ordering); a gate-approved `Contacts.md` row/header append (contact-resolution mechanics) executes
    AFTER the state writes, read-back verified (ownership re-check per Step 0.4
    immediately before this write, same as a state batch) — refresh `attention[]` (loud
-   SKIPs, caps, version notice, approvals still queued).
+   SKIPs, caps, version notice, approvals still queued, parked sweep — DERIVED from
+   `state/sweep.json`: present ⇔ a park exists, exact line `parked sweep ({tier}, {N} rows,
+   from {date}) — run 'weekly next steps' to finalize`, intake overdue — DERIVED, only
+   when `intake_sources` is configured AND non-empty, from `state/intake.json`: present
+   when both watermarks (or the file itself — absent/unparseable reads as never-run) are
+   older than the largest configured `intake_retention_days` window; exact line `intake
+   overdue — last sweep {date or "never"}; say '{run intake when never, else intake
+   check}'` (sync never runs intake)).
 3. **Journal pointers:** one line per durable outcome —
    `- {date} {outcome} → {where truth landed}`. Approval RAISES add `- {date} approval {id} raised: {one-line summary}`; approval exits add `- {date} approval {id} {applied|declined|retired}: {one-line
    summary}` (schema grammar + ordering — each raise pointer verified BEFORE its item enters
@@ -328,14 +393,21 @@ disappearance. Challenge low-leverage items in one line.
    C5-exempt). No board yet (no `Board.html`) → one line offering "build my board", skip
    thereafter.
 5. Close summary, readable in 90 seconds: done (evidence-backed) · still open (max 3) ·
-   next business day (meetings + queue) · attention items. **Then release the lock — the
+   next business day (meetings + queue) · attention items. A parked sweep additionally gets
+   one close-summary line offering `workos-next-steps` to finalize — a pointer, never an
+   automatic escalation (C3). **Then release the lock — the
    final action. No questions after release.**
 
 **Unattended:** no questions anywhere. Apply only what C5's state-store clause allows
 ungated (calendar/meeting updates, evidence-formed NEW tasks); closures and everything
 destructive → `pendingApprovals` (merge-append per the schema). Run the S7.3 journal-pointer backfill (append-only
 pointers are C5-exempt bookkeeping; its count line goes in the run output). Write,
-stamp, rebuild the board, put counts in
+stamp — merging `lastUnattendedRun.sync` = `{at: {now}, localDate (same resolution
+order as the Step 0 dedupe check; OMIT when unresolved), surface (the lock's own value),
+version (assets/shared/VERSION verbatim, or "unstamped")}` while PRESERVING every other
+key of the map, written by unattended runs only, in the same batch as `lastFullSync`
+(schema §lastUnattendedRun) —
+rebuild the board, put counts in
 `attention[]` ("{N} approvals waiting"; also "{N} findings suppressed by earlier declines"
 whenever N>0), summarize in the run output, release.
 
@@ -344,7 +416,9 @@ whenever N>0), summarize in the run output, release.
 ## TIDY — the cheap pass
 
 **Read-set, exactly:** config · the lock · `tasks.json` · `meetings.json` ·
-`suppressed.json` · the board's current data blocks · the exact files/folders named by
+`suppressed.json` · `state/sweep.json` (existence + parked header only, for the derived
+attention line) · `state/intake.json` (same, for the intake-overdue line) · the board's
+current data blocks · the exact files/folders named by
 approvals being applied OR re-validated this pass · at most ONE calendar query (today + next business day) — only if
 calendar is configured and its first-use probe succeeds (configured-but-failing → loud
 SKIP into `attention[]`; unconfigured → silently none). No mail, no account folders, no
@@ -356,8 +430,10 @@ brief-building.
    proposedAction in THIS chat, with its stable `appr-…` id, in the same turn as its
    gate (C14 — a render in the earlier sync pass does not count; "as originally shown"
    is banned phrasing). Destructive items gate PER ITEM (C14); non-destructive items
-   may share one structured pass (C11). Apply what's approved (this is a state write —
-   ownership check first). Per-item outcomes: apply / decline / leave pending — plus retired when the finding no
+   may share one structured pass (C11). Intake-kind items are the exception: the
+   aggregate line + pointer only (schema apply boundary) — no per-item outcomes in
+   Tidy; apply happens solely in workos-intake's gate. Apply what's approved (this is
+   a state write — ownership check first). Per-item outcomes: apply / decline / leave pending — plus retired when the finding no
    longer validates (schema exits). Declines and retires land in the same write batch as
    applies; every exit appends its journal pointer (an APPEND-ONLY journal write — the
    one Tidy journal exception; S7.3's backfill scan stays sync-only). A "Mark done:"
@@ -365,7 +441,10 @@ brief-building.
    (evidence: the user's tap; match by `taskId` when present, else by title — ambiguous
    title → one C11 question). Unattended → count into `attention[]`, touch nothing.
 3. Calendar delta: new/cancelled meetings update `meetings.json` (additive bookkeeping);
-   newly flagged meetings get `briefPending: true` — tidy never builds briefs.
+   newly flagged meetings get `briefPending: true` — tidy never builds briefs. Re-derive
+   the parked-sweep attention line from `state/sweep.json` (present ⇔ a park exists; exact
+   line per S7.2) — its appearance or clearing participates in step 4's changed-check.
+   Same for the intake-overdue line (from `state/intake.json`, same rules as S7.2).
 4. Board rebuild only if a data block actually changed — **and "changed" includes
    `attention[]` and every tasks/meetings field the board renders; only bookkeeping
    stamps (`lastTidy`) alone don't trigger** (live-test defect 2026-07-16: tidy cleared

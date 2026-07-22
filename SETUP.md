@@ -94,6 +94,12 @@ behave differently, this file is almost always the answer.
   steps`** → paste your pipeline report → review one approval screen → paste the output
   lines into Salesforce and send the email yourself.
 
+**If Cowork is paused (usage limits, an outage):** open Claude Code in the same folder
+and run `sync my day` when you sit down — attended beats the scheduled run (questions
+get asked; approvals apply instead of queuing). Don't create a second scheduled task in
+Claude Code: one scheduler (Cowork) is the design, and when Cowork resumes its schedule
+just resumes. A same-day duplicate unattended sync skips itself either way.
+
 ## H. Things that look scary but aren't
 
 - **"Allow Claude to permanently delete files?"** at the end of a sync — that's the sync

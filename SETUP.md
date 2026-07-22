@@ -16,6 +16,8 @@ If anything on this page confuses you, that's a bug in the page — tell whoever
 2. In File Explorer: right-click the folder → **"Always keep on this device."**
    ← Don't skip. OneDrive's placeholder files cause failures that look like data loss.
 
+Already have an old personal folder buried somewhere deep? Start with a FRESH folder now and migrate files later — very deep paths can fail to open files at all.
+
 ## B. The Team folder (2 min)
 
 This connects you to the shared leadership folder (weekly updates, engine version).
@@ -33,6 +35,7 @@ still works — you'll just see a "Team/ not set up" note in health checks until
 ## C. The Cowork project (3 min)
 
 4. In Cowork: create a project named **WorkOS**.
+   Cowork may auto-rename the project when it's created. Renaming it back is safe — **⋯ → Edit details → rename** — nothing breaks.
 5. In the project's settings, add **folder access** pointed at your WorkOS folder — this
    is what stops constant file-permission prompts.
 6. Connectors (account-level, one time): make sure **Microsoft 365** is connected. If
@@ -41,12 +44,15 @@ still works — you'll just see a "Team/ not set up" note in health checks until
 
 ## D. The skills — one plugin, no downloads (2 min)
 
-7. **Settings → Customize → Plugins → Add marketplace** → paste **`kylerw/workos-plugins`**
+7. **Settings → Plugins → Add marketplace** (some builds: **Customize** top-left, then Plugins — the Plugins entry is the one you want) → paste **`kylerw/workos-plugins`**
    → Sync. (You'll see a red "make sure you trust this plugin" notice — that's standard
    for any non-Anthropic plugin. This one is ours.)
 8. Install the **workos** plugin — the `workos-…` skills appear automatically.
-9. On the marketplace chip: **⋯ → turn "Sync automatically" ON.** ← Don't skip. It's off
-   by default, and it's how updates reach you without ever re-installing anything.
+9. Turn auto-updates on — the exact path: **Browse plugins → Personal → click the
+   marketplace entry itself (NOT Edit) → scroll to the Plugins section at the bottom →
+   ⋯ menu on the workos plugin → "Sync automatically" ON → then "Check for update".**
+   ← Don't skip: it's off by default, and it's how updates reach you without
+   re-installing. *Missed it during install? Come back any time — same path.*
 
 ## E. First run (5 min)
 
@@ -65,6 +71,8 @@ still works — you'll just see a "Team/ not set up" note in health checks until
     *Done when: the project's instructions field shows the pasted text.*
     (Already had instructions in that field? Copy the old ones to a note first —
     pasting replaces them.)
+
+New-user tip: a chat that's still working shows a pulsing dot next to it in Recents.
 
 ## F. Yours to customize — `user.md` (know this one)
 

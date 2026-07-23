@@ -46,11 +46,8 @@ board computes (no pass stores or refreshes them).
    lock heartbeats use live now.** (Midnight/month rollover mid-run otherwise splits id
    dates from journal months.) **Time rendering (#49, one rule): every user-facing or
    file-written clock value — gates, briefs, `displayTime`, journal lines, close
-   summaries — converts per identity.schema.md's full `timezone` resolution order
-   BEFORE any zone label attaches — the resolution order resolves the SOURCE instant,
-   and the configured `timezone` key is the DISPLAY zone the value converts TO; a zone
-   label is NEVER suffixed onto an unconverted value; unresolvable →
-   `{time} (timezone unset)` per the key's rule.**
+   summaries — follows identity.schema.md's `timezone` row render rule (sole authority;
+   not restated here).**
 2. **Mode:** trigger word wins. Sync vocabulary: sync my day / full sync / kickoff / start
    my day / wrap / close out (legacy words are triggers only — same single pass, C3).
    Tidy vocabulary: tidy / tidy the board. Board vocabulary: build my board / rebuild my
@@ -72,7 +69,9 @@ board computes (no pass stores or refreshes them).
    lock). When that entry exists AND its `localDate` equals this run's local
    date — computed from the captured {now} per identity.schema.md's full `timezone`
    resolution order — exit with the run header followed by exactly one further line:
-   `unattended sync already completed today at {at} on {surface} ({version}) — skipping`
+   `unattended sync already completed today at {displayTime} on {surface} ({version}) — skipping`
+   (`displayTime` = the stamp's `{at}` instant rendered per identity.schema.md's
+   `timezone` resolution order — never the raw stamp)
    — two lines total, zero state writes, zero board writes, no lock taken. [The header
    names THIS run's bundle while the skip line's `({version})` names the STAMP's — a
    mismatch between the two lines is #52's stale-snapshot signal, visible even on a

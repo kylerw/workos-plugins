@@ -2,7 +2,8 @@
 
 The weekly `Team/` snapshot — dated, regenerable, frontmatter-structured so the future
 rollup parses every AE identically (PLAN §4.4). Destination:
-`{memory_root}/Team/{team_publish_folder}/{YYYY-WW}_update.md` — write your own subfolder
+`{memory_root}/{team_publish_folder}/{YYYY-WW}_update.md` (`team_publish_folder` already
+carries the `Team/` prefix, per identity.schema.md) — write your own subfolder
 only; overwrite the same week's file, never another week's. Publication is human-gated
 every time (C5) and governed by the recorded manager-decision file; if that file is absent
 or unresolved, the publishing skill skips the gate and says why.

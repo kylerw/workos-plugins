@@ -143,7 +143,9 @@ From `assets/shared/` templates and the memory-structure layout: `Accounts/`, `s
 `journal/`, `lanes/` — **create only what's missing** (additive, idempotent). `state/`
 gets the four baseline files as empty shapes per
 `assets/shared/state-schema/README.md` (`tasks.json`, `meetings.json`, `drafts.json`,
-`suppressed.json`) so the daily driver never bootstraps blind.
+`suppressed.json`) so the daily driver never bootstraps blind (sanctioned by C4's
+bootstrap exception — exclusive create that no-ops if the file appears; never an
+existing file, and only these four).
 `{library_path}` (default `Library`) gets the collateral taxonomy — `INDEX.md` from
 `assets/shared/memory-structure/Library-INDEX.md` (its top comment carries the anti-mirror
 rule: local copies ONLY for files you open and modify; everything else is an INDEX row
@@ -267,10 +269,17 @@ is "issues found," never green-with-asterisks** (C13):
    Absent → INFO, never a finding — `voice.md not seeded — say "seed my voice file"
    (optional equipment)`. Present but NOT imported → a finding, one-line fix: add
    `@voice.md` to the root CLAUDE.md import line beside `@user.md`.**
-3. **Integrations:** probe each configured one with a harmless read (C13) — "configured
-   but not responding" is a finding, not a crash.
-4. **Salesforce tier sanity:** `mcp` tier → the probe read works; `manual` tier → say what
-   that means (pasted reports are the intake — expected, not an error).
+3. **Integrations:** probe each configured one with a harmless read (C13). Split the
+   result (#57 — session scope is not misconfiguration): **configured, not exposed on
+   THIS surface (a session with no MCPs at all — expected on some surfaces)** → INFO,
+   never a finding; **configured and failing where the surface should expose it** →
+   FINDING, "configured but not responding."
+4. **Salesforce tier sanity:** `mcp` tier → the probe read works on a surface that
+   exposes MCPs. Apply check 3's split here too: no MCPs exposed on this surface → INFO;
+   configured-and-failing where it should exist → FINDING. The tier-change
+   recommendation is reserved for the FINDING case only — never suggested off a
+   session-scope INFO. `manual` tier → say what that means (pasted reports are the
+   intake — expected, not an error).
 5. **Engine version:** per `assets/shared/version-check.md` — INSTALLED = this bundle's
    VERSION (the authoritative fact); LATEST = `Team/_engine/latest-version.txt` (unreachable
    → "latest: unknown"); installed ahead of latest → report "beacon behind; your next sync
@@ -289,14 +298,23 @@ is "issues found," never green-with-asterisks** (C13):
    the first `sync my day` scaffolds it"* — never "only relevant if you use the board"
    (live mis-framing 2026-07-16). **A LIVE lock whose
    `startedAt` predates `lastFullSync`/`lastTidy` is an ORPHAN** (a pass claimed release
-   and failed — live defect 2026-07-16): name it, and offer the one-step fix (add
+   and failed — live defect 2026-07-16), but offer the orphan repair ONLY when
+   `now − max(lastFullSync, lastTidy)` exceeds a 5-minute grace window (a Tidy mid-close
+   is exactly as trippable as a sync mid-close, and keying to `lastFullSync` alone left
+   it exposed when that stamp was hours stale) — inside it, report "possible
+   orphan OR a pass mid-close — re-check shortly" with NO repair offer (#57 field
+   evidence: a live pass showed heartbeat 21:40Z → state write 21:45Z → release 21:52Z;
+   snapshotting at 21:45 read the pre-release gap as the orphan signature). Past the
+   window: name it, and offer the one-step fix (add
    `released: true, releasedAt: now` to the existing lock object — an ordinary write,
    works on every surface where delete does not) as a question (C11) — an offered-action
    finding (the gated offered-action pattern — used only where a future pass otherwise
    blocks, or a create-only scaffold leaves no other remedy: the scheduled-task and
    Library-header offers follow it), because a future pass blocks on it. On approval,
    re-read first: still the exact lock reported → write the tombstone; anything else
-   changed underneath → abort and re-report, never repair a lock you didn't diagnose.
+   changed underneath → abort and re-report, never repair a lock you didn't diagnose
+   (the re-read guard stays regardless of the grace window — it is what caught the
+   false positive in the field).
 8. **Approvals-queue audit (#50) — STATE-BASED:** for every id with a `raised` pointer in
    the current + prior month's journal (**latest pointer per id governs** when an id has
    several), classify against current STATE — the queue is authority, the journal is the
@@ -331,8 +349,10 @@ is "issues found," never green-with-asterisks** (C13):
    double-syncs the day). Recommend the user pause or delete them in the platform UI;
    doctor never touches them. **Additionally (#68): (a) NO conforming sweep task → one
    INFO line + the C11-gated offer to create it by A6.2's exact due-day recipe (ask the
-   due day; previous business day 5:00 PM); a decline settles it — never re-offer on
-   later runs of the same root. (b) A conforming sweep task scheduled at the SAME
+   due day; previous business day 5:00 PM); never-re-offer holds ONLY when a prior
+   decline is RECORDED (the setup close-out record) — with no such record, doctor is
+   diagnose-never-modify and sessions are memoryless, so offering again is correct,
+   not a nag (#70). (b) A conforming sweep task scheduled at the SAME
    minute as the sync task is a finding — "lock contention: one run will exit; offset
    the sweep (recipe: previous business day 5:00 PM)." (c) A conforming sweep task with
    NO `lastUnattendedRun.sweep` entry after its first scheduled day → "the task may be

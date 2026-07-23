@@ -23,8 +23,18 @@ Cadence lives in scheduled-task configuration, not in skill logic.
 
 **C4 · single-writer-state** — Exactly one pass writes `state/` at a time. A starting pass
 checks for a running sibling; the locking mechanism and stale-lock recovery follow the
-Phase 0 spike's recorded design. `state/` files have exactly one writer per run; artifacts
-and other skills read, never write. **Board-click exception (#73):** the board artifact may CREATE unique-named files under `state/board-queue/` only (create-only — never modify, delete, or touch any other `state/` path; shape and naming per the schema README's board-queue contract); draining them is pass-only work under this lock.
+Phase 0 spike's recorded design. `state/` files have exactly one writer per run — the
+lock-holding pass, whichever skill holds it (pass vocabulary: sync · tidy · sweep ·
+intake); outside the lock, skills and artifacts read, never write (wording refreshed
+2026-07-22, #70 — "other skills" predated next-steps/intake becoming legitimate
+lock-holding writers). **Board-click exception (#73):** the board artifact may CREATE unique-named files under `state/board-queue/` only (create-only — never modify, delete, or touch any other `state/` path; shape and naming per the schema README's board-queue contract); draining them is pass-only work under this lock. **Bootstrap exception (#81):** on a root
+where one of the four scaffold files — `state/tasks.json`, `meetings.json`, `drafts.json`,
+`suppressed.json` (empty shapes per the schema README) — does not yet exist, `setup` may
+CREATE it (create-only — an existing file is never touched, and every later write is
+lock-governed). No other `state/` file is covered: `sweep.json`, `intake.json`, and
+board-queue files belong to their passes, and their mere presence carries meaning.
+Doctor's tombstone write stays separately sanctioned by the stale-lock-recovery sentence
+above. (added 2026-07-22, #81)
 
 **C5 · draft-before-write** — A human approves content before it is written, published, or
 staged for an external surface — shown the actual artifact, not a description of it.
@@ -42,8 +52,9 @@ display; destructive items decided per item — C14).
 Append-only journal POINTER lines are exempt bookkeeping, as is the engine version beacon
 (`Team/_engine/latest-version.txt` — monotonic bump only, per `shared/version-check.md`;
 added 2026-07-17, #29). Parked sweep staging (`state/sweep.json`, #68) is ungated machine
-staging under this clause — the A5 finalize gate remains the sole approval for everything
-staged. A durable board-click record (C4's board-queue exception) IS the approval for the reversible task mutation it names — the drain renders a receipt, not a second gate; destructive actions stay gated (C14).
+staging under this clause — the attended finalize's single consolidated gate remains the
+sole approval for everything staged (cross-ref generalized 2026-07-22, #70 — the register
+never points at skill-internal section names). A durable board-click record (C4's board-queue exception) IS the approval for the reversible task mutation it names — the drain renders a receipt, not a second gate; destructive actions stay gated (C14).
 
 **C6 · no-shadow-store** — Never store a copy of an authoritative source's current state,
 and never store a derived value next to its source (scores/signals compute at render time).

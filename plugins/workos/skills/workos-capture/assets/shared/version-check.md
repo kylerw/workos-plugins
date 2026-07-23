@@ -17,7 +17,10 @@ reports both values verbatim. A latest value that is not a release stamp (empty,
 unparseable) is treated as MISSING — a release-stamped bundle overwrites it, quoting the
 old contents verbatim in its one line.
 
-**Three cases, every check:**
+**Four cases, every check:**
+- **Unordered (`dev-{sha}`/unstamped)** → its own audible outcome, not silence: report
+  both values verbatim (doctor's existing pattern) — so a configured run on a dev
+  bundle never self-reports as the #53 defect (#70).
 - **Equal rank** → nothing (exception: workos-sync's audible-outcome rule (#53) renders
   the one-line `engine {installed} — current` in its close summary — sync only; other
   consumers stay silent).

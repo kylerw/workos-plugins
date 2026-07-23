@@ -62,7 +62,9 @@ before anything else:** read `state/tasks.json → lastUnattendedRun.sweep` (one
 no lock). That entry's `localDate` equals this run's local date (computed per
 identity.schema.md's full `timezone` resolution order) → exit with the run header
 plus exactly one further line:
-`unattended sweep already completed today at {at} on {surface} ({version}) — skipping`
+`unattended sweep already completed today at {displayTime} on {surface} ({version}) — skipping`
+(`displayTime` = the stamp's `{at}` instant rendered per identity.schema.md's
+`timezone` resolution order — never the raw stamp)
 — two lines total, nothing else. Fail-open on any ambiguity (absent entry, missing
 `localDate`, own date unresolved) → proceed.
 

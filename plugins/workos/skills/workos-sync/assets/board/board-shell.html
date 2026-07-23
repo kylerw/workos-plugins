@@ -64,6 +64,12 @@
   .strip::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;
                  background:linear-gradient(180deg,#ffb020,var(--coral))}
 
+  /* MOJIBAKE WARNING BANNER (#86 — loud, above the board, never blocks it) */
+  .banner{position:relative;overflow:hidden;background:#fff;border:1px solid var(--coral);border-radius:14px;
+          padding:12px 16px 12px 21px;margin:0 0 12px;font-size:12.5px;font-weight:600;color:#b3204e;
+          box-shadow:0 14px 30px -26px rgba(255,91,138,.6)}
+  .banner::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--coral)}
+
   /* STAT TILES */
   .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:0 0 16px}
   .tile{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px 8px;text-align:center;
@@ -261,6 +267,7 @@
 </header>
 
 <div class="strip" id="first-run" hidden>Empty until your first sync — say "sync my day" in your WorkOS chat, then refresh here.</div>
+<div class="banner" id="mojibake-banner" hidden></div>
 
 <div class="tiles" id="tiles"></div>
 <div class="tabs" id="tabs"></div>
@@ -440,6 +447,28 @@ var WOSQ = (function () {
   var tasks = read("workos-data-tasks"), meetings = read("workos-data-meetings");
   if (!tasks || !meetings) { log('board data failed to parse — say "rebuild my board"'); return; }
 
+  // #86 mojibake tripwire → a WARNING BANNER above the board (loud, actionable), NEVER a
+  // board-blocking degrade: a false positive costs a banner, not the board. UTF-8 bytes read as
+  // Windows-1252 mojibake a lead byte to Ã(C3)/Â(C2)/â(E2) and the continuation byte
+  // to a high-Latin char [\u00A0-\u00FF] OR a CP1252 0x80–0x9F punctuation glyph. Requiring the
+  // ADJACENT pair kills the ASCII false positive ("SÃO" = Ã+O, ASCII O → no trip) while
+  // catching uppercase corruption ("Ã‰" = Ã+‰). \u escapes so the detector is encoding-proof.
+  function hasMojibake(s) {
+    if (!s) return false;
+    return /[\u00C3\u00C2\u00E2][\u00A0-\u00FF\u2013\u2014\u2018\u2019\u201C\u201D\u2020\u2021\u2026\u2030\u2039\u203A\u0152\u0153\u0160\u0161\u0178\u017D\u017E\u20AC\u2122]/.test(s);
+  }
+  // Names both repairs: rebuild state as UTF-8 (fix-direction 1/2) AND fix already-corrupted task
+  // text via chat (fix-direction 3). Returns a hit bool for logging; the CALL ignores it, so
+  // render CONTINUES — the banner never blocks the board.
+  function mojibakeBanner() {
+    if (!hasMojibake($("workos-data-tasks").textContent) && !hasMojibake($("workos-data-meetings").textContent)) return false;
+    var bn = $("mojibake-banner");
+    bn.textContent = 'Some board text looks mis-encoded (mojibake — UTF-8 read as Windows-1252). Say "rebuild my board" to re-write state as UTF-8. Existing task text may already carry the bad bytes — say "fix the encoding in {task}" in chat to repair it.';
+    bn.hidden = false;
+    return true;
+  }
+  mojibakeBanner();
+
   try {
     // Schema-shape coercion: a malformed pass write must degrade, never blank the board.
     if (!tasks.dayTask || typeof tasks.dayTask !== "object") tasks.dayTask = {};
@@ -517,11 +546,14 @@ var WOSQ = (function () {
     var systemEntries = mapped.filter(function (x) { return x.cls === "system"; });
 
     // taskId -> lane, for day-queue click provenance (queue items don't store their lane).
-    var idLane = {};
+    // taskId -> title, so the #88 batch-compose completes/removes can cite the task title.
+    var idLane = Object.create(null);
+    var idTitle = Object.create(null);       // null-proto: a prototype-named taskId ("hasOwnProperty") can't leak a function-as-title (#88 class closure)
     var laneKeys = Object.keys(tasks.lanes);
     laneKeys.forEach(function (ln) {
-      if (Array.isArray(tasks.lanes[ln])) tasks.lanes[ln].forEach(function (t) { if (t && t.id) idLane[t.id] = ln; });
+      if (Array.isArray(tasks.lanes[ln])) tasks.lanes[ln].forEach(function (t) { if (t && t.id) { idLane[t.id] = ln; idTitle[t.id] = t.title || ""; } });
     });
+    (tasks.dayTask.queue || []).forEach(function (it) { if (it && it.taskId && !(it.taskId in idTitle)) idTitle[it.taskId] = it.title || ""; });
     var laneFallback = laneKeys.length ? laneKeys[0] : "NICE";
 
     // ---- The action ladders (spec §5). Rung chosen ONCE at render (refreshed by the
@@ -533,6 +565,21 @@ var WOSQ = (function () {
     // and a late rollback can't restore a stale snapshot (Codex re-check residual 1). Object.create(null)
     // so a prototype-named id ("constructor", "toString") can't read as always-busy.
     var inflight = Object.create(null);
+    // Remove provenance (#87/#88 review wave) — page-lifetime transient state, NEVER
+    // localStorage. At remove time we snapshot, per task id: the pre-remove ts (so a ✕-undo
+    // restores a co-pending earlier edit's ordering slot, not a blind delete), the rung (so
+    // the undo toast is honest even if mutRung later changes), and whether the remove already
+    // went DURABLE (rung-1 file / rung-2 send) so a re-remove after undo is mirror-only, not a
+    // second ask. Post-reload the map is empty: undo wording goes generic-honest and a
+    // duplicate remove falls back to the gate's per-item C14 guard (acceptable). TS_NONE marks
+    // "no prior ts existed" (distinct from any real Date.now()).
+    var removeSnap = Object.create(null);
+    var TS_NONE = "__none__";
+    function recordRemoveSnap(id, rung, durable) {
+      if (!id) return;                        // capture BEFORE mirrorApply overwrites ts[id]
+      var ts = WOSQ.load(WOSQ.LS.ts, {});
+      removeSnap[id] = { ts: Object.prototype.hasOwnProperty.call(ts, id) ? ts[id] : TS_NONE, rung: rung, durable: !!durable };
+    }
     function chooseMutRung() {
       if (rung1Available()) return 1;                                       // cowork queue file
       if (send) return 2;                                                   // chat ask (gated)
@@ -573,8 +620,8 @@ var WOSQ = (function () {
       // (not blind-deletes): a failed SECOND edit restores the first edit's payload, and an
       // update over an already-done row keeps its done membership on rollback (S4).
       var hadDone = done.indexOf(id) >= 0, hadRemoved = removed.indexOf(id) >= 0;
-      var hadEdit = edits.hasOwnProperty(id), prevEdit = edits[id];
-      var hadTs = ts.hasOwnProperty(id), prevTs = ts[id];
+      var hadEdit = Object.prototype.hasOwnProperty.call(edits, id), prevEdit = edits[id];
+      var hadTs = Object.prototype.hasOwnProperty.call(ts, id), prevTs = ts[id];
       function has(arr) { return arr.indexOf(id) >= 0; }
       if (action === "complete") { if (!has(done)) done.push(id); }
       else if (action === "reopen") { done = done.filter(function (x) { return x !== id; }); }
@@ -633,7 +680,13 @@ var WOSQ = (function () {
     // result (sync bool or thenable) is settled by commitMutation (S1: no runScheduledTask rung).
     function doMutation(action, id, lane, title, payload) {
       if (id && inflight[id]) return false;   // in-flight lockout — an unsettled mutation owns this task
+      // Snapshot remove provenance BEFORE mirrorApply overwrites ts[id]. durable optimistic for
+      // rung 1/2; rung 2 (send) is durable synchronously, rung 1 (file) only on success — so wrap
+      // its undo to clear the snapshot if a rung-1 create rolls back (else a stale durable flag
+      // would wrongly suppress a later re-remove's ask).
+      if (action === "remove") recordRemoveSnap(id, mutRung, mutRung !== 3);
       var undo = mirrorApply(action, id);
+      if (action === "remove" && id) { var baseUndo = undo; undo = function () { baseUndo(); delete removeSnap[id]; }; }
       // record the real payload in the mirror for update, replacing the placeholder
       if (action === "update" && id && payload) { var e = WOSQ.load(WOSQ.LS.edits, {}); e[id] = payload; WOSQ.save(WOSQ.LS.edits, e); }
       if (id) inflight[id] = true;
@@ -668,7 +721,48 @@ var WOSQ = (function () {
     function mirrorState(id) {
       if (!id) return { done: false, removed: false, edited: false };
       var done = WOSQ.load(WOSQ.LS.done, []), removed = WOSQ.load(WOSQ.LS.removed, []), edits = WOSQ.load(WOSQ.LS.edits, {});
-      return { done: done.indexOf(id) >= 0, removed: removed.indexOf(id) >= 0, edited: edits.hasOwnProperty(id) };
+      return { done: done.indexOf(id) >= 0, removed: removed.indexOf(id) >= 0, edited: Object.prototype.hasOwnProperty.call(edits, id) };
+    }
+    // #87 mirror-level undo: reverse an optimistic remove IN PLACE (a ✕ re-tap). Drop the id
+    // from `removed`; restore ts from the page-lifetime snapshot (so a co-pending earlier edit
+    // keeps its original ordering slot — TS_NONE means no prior ts, so delete). No snapshot
+    // (post-reload) → fall back to the phantom-drop heuristic. NO new queue vocabulary: a
+    // durable remove already queued still re-gates at drain.
+    function mirrorUndoRemove(id) {
+      if (!id) return;
+      var removed = WOSQ.load(WOSQ.LS.removed, []), ts = WOSQ.load(WOSQ.LS.ts, {}),
+          done = WOSQ.load(WOSQ.LS.done, []), edits = WOSQ.load(WOSQ.LS.edits, {});
+      removed = removed.filter(function (x) { return x !== id; });
+      var snap = removeSnap[id];
+      if (snap) { if (snap.ts === TS_NONE) delete ts[id]; else ts[id] = snap.ts; }
+      else if (done.indexOf(id) < 0 && !Object.prototype.hasOwnProperty.call(edits, id)) delete ts[id];
+      WOSQ.save(WOSQ.LS.removed, removed); WOSQ.save(WOSQ.LS.ts, ts);
+    }
+    // The ✕ re-tap on a mirror-removed row (#87): reverse the mirror locally and toast from the
+    // snapshotted rung (NOT current mutRung, which a late bridge may have changed). Clipboard
+    // floor left no durable record (clean "removed — undone"); a bridged rung already sent a
+    // durable remove that still re-gates at the next tidy (say so honestly); post-reload the
+    // snapshot is gone → generic-honest wording. Respects the in-flight lockout: an unsettled
+    // mutation owns the task, so the tap is swallowed. Returns true when it HANDLED the tap
+    // (caller must not then fall through to a fresh remove); false means this was not a removed row.
+    function undoRemoveTap(id, ms) {
+      if (!ms.removed) return false;            // not a removed row → caller issues a fresh remove
+      if (id && inflight[id]) return true;      // in-flight lockout — swallow, no toggle
+      mirrorUndoRemove(id);
+      var snap = id ? removeSnap[id] : null;
+      toast(!snap ? "undone here — if this remove was sent to chat earlier, decline it at the tidy gate"
+            : snap.rung === 3 ? "removed — undone"
+            : "undone here — the queued remove still asks at the next tidy (decline it there)");
+      renderPendbar(); renderBody();
+      return true;
+    }
+    // #88 duplicate-durable guard: a re-remove after undo on a task whose remove already went
+    // durable (snapshot.durable) is MIRROR-ONLY — the durable ask is already queued at the gate,
+    // so no second ask is sent (the gate's per-item C14 guard would only re-ask anyway).
+    function reRemoveMirrorOnly(id) {
+      mirrorApply("remove", id);
+      toast("remove already queued at the gate — no second ask sent");
+      renderPendbar(); renderBody();
     }
 
     // ---- Brief fields (#11): the nine, in order. Same list drives brief-on-tap AND copy prep.
@@ -773,10 +867,12 @@ var WOSQ = (function () {
       var edit = el("button", "actbtn", "edit");
       if (busy) edit.disabled = true;
       edit.onclick = function () { if (edit.disabled) return; toggleEdit(row, item, lane); };
-      var rm = el("button", "actbtn", "✕");
-      if (busy || ms.removed) rm.disabled = true;
+      var rm = el("button", "actbtn", "✕");   // #87: a mirror-removed row keeps ✕ LIVE — re-tap reverses the mirror
+      if (busy) rm.disabled = true;            // only the in-flight lockout disables it now
       rm.onclick = function () {
         if (rm.disabled) return;
+        if (undoRemoveTap(id, ms)) return;     // re-tap on a removed row = mirror-level undo (no new ask)
+        if (id && removeSnap[id] && removeSnap[id].durable) { reRemoveMirrorOnly(id); return; }  // #88 dup-durable: mirror-only
         rm.disabled = true;
         if (!doMutation("remove", id, lane, title, null)) rm.disabled = false;
       };
@@ -1008,6 +1104,41 @@ var WOSQ = (function () {
       if (curTab === "tasks") { renderTasksPanel(host); return; }
       renderWindowPanel(host, curView);
     }
+    // #88 bridgeless batch: ONE copy-ready prompt over every pending mirror change, as PER-TASK
+    // GROUPS + a trailing tidy. Groups are ordered by each task's latest ts; within a group the
+    // fixed logical order is update → complete (reopen leaves no mirror entry) → remove (last).
+    // The prompt is a SET OF ASKS flowing through the skill's normal gates, not a replay log —
+    // per-change click order isn't load-bearing, so per-task grouping is the honest shape and
+    // needs no mirror schema growth. Wired to the pending bar ONLY on the clipboard floor (no
+    // artifact bridge exists there, so the batch copy-ask IS the commit path). Each line carries
+    // the stable taskId verbatim (C14) so the drain applies to the exact task.
+    function composeBatch() {
+      var done = WOSQ.load(WOSQ.LS.done, []), removed = WOSQ.load(WOSQ.LS.removed, []),
+          edits = WOSQ.load(WOSQ.LS.edits, {}), ts = WOSQ.load(WOSQ.LS.ts, {});
+      // null-proto lookup maps (#88 class closure): a prototype-named taskId ("hasOwnProperty",
+      // "constructor") indexes to `undefined`, never an inherited method — so isRem/isDone can't
+      // read truthy for a task that was never removed/completed and inject a spurious line.
+      var isDone = Object.create(null), isRem = Object.create(null), ids = Object.create(null);
+      done.forEach(function (id) { isDone[id] = true; ids[id] = true; });
+      removed.forEach(function (id) { isRem[id] = true; ids[id] = true; });
+      Object.keys(edits).forEach(function (id) { ids[id] = true; });
+      var ordered = Object.keys(ids).sort(function (a, b) {   // groups ordered by each task's latest ts
+        var ta = (ts[a] == null ? 0 : ts[a]), tb = (ts[b] == null ? 0 : ts[b]);
+        return ta === tb ? (a < b ? -1 : a > b ? 1 : 0) : ta - tb;
+      });
+      var lines = [];
+      ordered.forEach(function (id) {          // within a task: update → complete → remove
+        var title = idTitle[id] || (edits[id] && edits[id].title) || "(untitled)";
+        if (Object.prototype.hasOwnProperty.call(edits, id)) {
+          var p = edits[id] || {};
+          lines.push("update task " + id + ": title '" + (p.title || "") + "' / context '" + (p.context || "") + "'");
+        }
+        if (isDone[id]) lines.push("mark done: " + title + " (" + id + ")");
+        if (isRem[id]) lines.push("remove task " + id + ": " + title);
+      });
+      lines.push("— then tidy");
+      return lines.join("\n");
+    }
     function renderPendbar() {
       var done = WOSQ.load(WOSQ.LS.done, []), removed = WOSQ.load(WOSQ.LS.removed, []), edits = WOSQ.load(WOSQ.LS.edits, {});
       var nd = done.length, nr = removed.length, nu = Object.keys(edits).length, total = nd + nr + nu;
@@ -1016,9 +1147,19 @@ var WOSQ = (function () {
       bar.hidden = false;
       bar.appendChild(el("span", "pendtxt", total + " change" + (total > 1 ? "s" : "") +
         " pending · " + nd + " done · " + nu + " updated · " + nr + " removed"));
-      var tb = el("button", "pendtidy", "Tidy to commit");   // Tidy-from-bar = pass-controls ladder
-      tb.onclick = guard(tb, function () { firePassControl("tidy", null); });
-      bar.appendChild(tb);
+      if (mutRung === 3) {
+        // Clipboard floor (#88): no bridge, no queue files — the bar copies ONE composed
+        // change-list + tidy (the honest "buttons work in Claude Code" path). Copy-only: it
+        // commits nothing new (no rollback), so it keeps the async clipboard fallback and always
+        // toasts its real outcome, exactly like every other copy button (no syncOnly verdict).
+        var cb = el("button", "pendtidy", "Copy changes for chat");
+        cb.onclick = guard(cb, function () { copyText(composeBatch(), "changes copied — paste into your WorkOS chat"); });
+        bar.appendChild(cb);
+      } else {
+        var tb = el("button", "pendtidy", "Tidy to commit");   // bridged surfaces: Tidy-from-bar = pass-controls ladder (unchanged)
+        tb.onclick = guard(tb, function () { firePassControl("tidy", null); });
+        bar.appendChild(tb);
+      }
     }
 
     $("first-run").hidden = !!(tasks.generated || meetings.generated);
@@ -1034,9 +1175,11 @@ var WOSQ = (function () {
       firePassControl("sync my day", (tasks.taskIds && tasks.taskIds.sync) ? tasks.taskIds.sync : null);
     });
 
+    var lastRung = mutRung;
     function applyBridgeState() {
       mutRung = chooseMutRung();
       $("robadge").hidden = !!(send || rung1Available());
+      if (mutRung !== lastRung) { lastRung = mutRung; renderPendbar(); }   // #88: a late bridge flips the bar's button (Copy⇄Tidy)
     }
     function bridgeReport() {
       var ck = (typeof window !== "undefined" && window.cowork)

@@ -96,7 +96,8 @@ board computes (no pass stores or refreshes them).
      "1. Wait and retry / 2. Read-only run / 3. Take over — the other session is dead."
      Unattended: exit; report only in the run output (no state or board writes).
    - Live, ≥ 30 min → announce the recovery from the lock's OWN metadata — "recovering a
-     stale lock ({pass} pass on {surface}, last alive {startedAt})" — "last alive", not
+     stale lock ({pass} pass on {surface}, last alive {startedAt rendered per the
+     timezone resolution order — never the raw stored instant, #49})" — "last alive", not
      "started": heartbeats rewrite `startedAt` — and never a guess at which run left it
      (live attribution wart 2026-07-17); then overwrite with your own `runId`.
    - Present but UNPARSEABLE (truncated/garbage JSON — e.g. an interrupted rewrite; the
@@ -425,7 +426,10 @@ line).
    reported as failed, never as success (C9). Additionally rewrite `{memory_root}/Board.html`
    whole **with the same rendered HTML** (the mobile view — a regenerable render,
    C5-exempt). No board yet (no `Board.html`) → one line offering "build my board", skip
-   thereafter.
+   thereafter. **Encoding (this rebuild AND the BOARD build step):** every `state/` and
+   `Board.html` write is emitted as explicit UTF-8 — the laptop surface's default write
+   encoding must never decide it, since a mis-encoded write renders as mojibake under the
+   shell's declared `charset=utf-8`.
 5. Close summary, readable in 90 seconds: done (evidence-backed) · still open (max 3) ·
    next business day (meetings + queue) · attention items. A parked sweep additionally gets
    one close-summary line offering `workos-next-steps` to finalize — a pointer, never an

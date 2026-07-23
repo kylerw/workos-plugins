@@ -74,21 +74,26 @@ still works — you'll just see a "Team/ not set up" note in health checks until
 
 New-user tip: a chat that's still working shows a pulsing dot next to it in Recents.
 
-## F. Yours to customize — `user.md` (know this one)
+## F. Yours to customize — `user.md` and `voice.md` (know these two)
 
-Setup creates three files at the top of your folder. The ownership rule is simple:
+Setup creates four files at the top of your folder. The ownership rule is simple:
 
 | File | Whose | What it's for |
 |---|---|---|
 | `core.md` | **The engine's.** Don't edit — setup regenerates it. | Your config + the operating rules |
 | **`user.md`** | **YOURS. Edit freely, any time.** | How you want Claude to work *for you* |
-| `CLAUDE.md` | The engine's. Don't edit. | Glue — loads the other two every session |
+| **`voice.md`** | **YOURS. Edit freely, any time.** | Tone/formatting rules — what to strip before a paste lands in SFDC, Teams, or email |
+| `CLAUDE.md` | The engine's. Don't edit. | Glue — loads the other three every session |
 
-`user.md` is your tailoring space: your voice preferences ("terse, no filler," "always
-show times in Mountain Time"), how you triage email, personal tools you use, pet peeves,
-anything. **Nothing you put in `user.md` can break WorkOS** — the engine never reads it
-as configuration — and no update will ever overwrite it. If you want the assistant to
-behave differently, this file is almost always the answer.
+`user.md` is your tailoring space: how you triage email, personal tools you use, pet
+peeves, anything about how you want the assistant to work for you. `voice.md` is
+narrower — your tone/formatting rules ("terse, no filler," "no semicolons in customer
+email") — seeded from a template on your first run and `@import`ed beside `user.md`.
+Skills that draft prose (capture, sync's briefs, next-steps) check it and print a
+`voice check: …` line with their output, so you can see it was applied. **Nothing you
+put in either file can break WorkOS** — the engine never reads them as configuration —
+and no update will ever overwrite them. If you want the assistant to behave
+differently, one of these two files is almost always the answer.
 
 ## G. The daily rhythm
 
@@ -118,8 +123,11 @@ just resumes. A same-day duplicate unattended sync skips itself either way.
   stale lock that clears itself in 30 minutes.)
 - **Red trust notice** when adding the marketplace — standard for all third-party
   plugins.
-- **"READ-ONLY VIEW" badge** on the board — normal for now; the board is a display, and
-  you act through chat. Tappable buttons are on the roadmap.
+- **"read-only view" badge** on the board — only shows up on a bridgeless surface (Claude
+  Code's static snapshot, or the board link opened outside Cowork). Buttons still work
+  there: tapping one copies the exact chat ask to your clipboard with a "copied — paste
+  into your WorkOS chat" toast, so you paste it into your WorkOS chat to apply it. Inside
+  Cowork, buttons apply directly and the badge doesn't appear.
 - **"STALE — RUN A SYNC" badge** — the board is older than your day; say "tidy."
 
 ## I. Already have a working setup? (brownfield)

@@ -3,16 +3,21 @@
 One voice, applied and checked at the moment of emit. This file owns only the mechanism —
 the taxonomy, the mechanical tells, and the emit hook. It owns NO content: every actual
 preference lives in the user's root `voice.md` (user-owned; engine-seeded once; never
-engine-edited after). Consumers: workos-capture (drafts, meeting notes) · workos-sync
+engine-edited once user-authored — §1). Consumers: workos-capture (drafts, meeting notes) · workos-sync
 (briefs) · workos-next-steps (the prose around the locked line, team-publish update prose).
 Referenced by name; never restate these rules.
 
 ## 1. Purpose + ownership
 
 - **Content is user-owned.** The rules themselves live in root `voice.md`, `@import`ed by
-  the root `CLAUDE.md` beside `user.md`. The engine seeds the template (§5) once, then
-  never touches the file again — no overwrite, no re-seed, no lifting content out of
-  `user.md`. The user does the move; the engine only leaves a pointer behind.
+  the root `CLAUDE.md` beside `user.md`. The engine seeds the template (§5) once and
+  never edits a USER-AUTHORED voice.md. **Amendment (#85):** exactly one sanctioned
+  replacement exists — the setup skill's voice bootstrap may REPLACE the file only while
+  it is provably content-free: pristine per §5's two-part test. The first user edit is an
+  irrevocable ownership transfer (deleting the §5 marker line included); any non-pristine
+  state — and every drift-check result — gets a copy-ready block, never a write. No
+  lifting content out of `user.md`: the user does the move; the engine only leaves a
+  pointer behind.
 - **This file is engine-owned and holds only mechanism.** Expansion of voice happens by
   editing `voice.md`, NEVER by editing a skill or this contract. Adding a rule, a surface
   preference, or an audience preference is a `voice.md` edit with no engine/skill change.
@@ -78,6 +83,7 @@ user replaces each with their own. The engine ships no real preference, ever (C1
 
 ```markdown
 # Voice — {your name}
+{pristine-template marker — your first edit, or deleting this line, makes this file yours forever; while untouched, "build my voice file from my mail" may replace it with rules derived from your own sends}
 
 Move your existing user.md Voice section here; leave a pointer behind. The engine never moves it for you.
 
@@ -102,3 +108,23 @@ Audiences: customer · partner · internal team · manager · self.
 
 Add rules by adding bullets under the matching section — never a skill edit. A section left
 empty simply contributes nothing at its layer.
+
+**Pristine — the two-part test (#85; the ONLY state the bootstrap may replace):** (1) the
+`pristine-template marker` line is present, AND (2) the file body matches this fenced
+block, whitespace-normalized — drop blank lines, trim each remaining line, collapse every
+internal whitespace run to one space; the two normalized line sequences must be identical.
+Anything else — marker deleted, a bullet added, a word changed, or a template from a
+different bundle version — is user-owned: copy-ready block, never a write. A
+bootstrap-written file carries NO marker: it opens `# Voice — {user_name}` then the dated
+header `derived {YYYY-MM-DD} from {n} sends`, and is user-owned from its first byte —
+marker ABSENCE is permanent ownership, so a second bootstrap on it always ends in a
+copy-block.
+
+## 6. Bootstrap + drift (modes of workos-setup — pointer only)
+
+`build my voice file from my mail` derives a voice.md from the user's OWN sends (mail +
+Teams chats) and may write it only over a §5-pristine file — anything else gets a
+copy-ready block. `voice drift check` compares recent sends against the current rules and
+emits an audible summary plus ONE copy-ready update block — never a write. Flow, sampling
+rules, and the received-text boundary live in the setup skill; this contract owns only
+the marker, the §5 pristine test, and §1 ownership.

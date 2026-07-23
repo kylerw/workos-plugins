@@ -1,18 +1,19 @@
 ---
 name: workos-setup
 description: >
-  The WorkOS on-ramp and health check. Four jobs: initialize a new user's workspace
-  ("init my workspace" — scaffolds the memory root, builds the per-person identity config
-  from connected tools with minimal questions, seeds the first accounts; say "in floor
-  mode" to force the O365-only team floor for testing/simulation, or "let me pick
-  integrations" to choose), initialize or back-fill one account ("init {account}" —
-  additive-only scaffolding of the standard folder taxonomy, never overwrites anything),
-  seed voice.md alone ("seed my voice file"), and diagnose ("check my setup", "doctor",
-  "is my WorkOS healthy" — probes every configured integration, verifies the memory root,
-  reports installed vs latest engine version). Existing files are read-only, never
-  bulk-moved. Works from Cowork at the Office 365 floor; Salesforce/HiNotes/Graph light up
-  when connected. Draft-before-write throughout. DO NOT attempt without loading — it
-  enforces the config schema, invocation modes, and the brownfield rules.
+  The WorkOS on-ramp and health check. Jobs: initialize a workspace ("init my workspace" —
+  scaffolds the memory root, builds the identity config from connected tools, seeds the
+  first accounts; say "in floor mode" to force the O365-only floor, or
+  "let me pick integrations"), initialize or back-fill one account ("init {account}" —
+  additive-only, never overwrites), seed voice.md alone ("seed my voice file"), derive it
+  from your own sent mail and chats ("build my voice file from my mail" — replaces only
+  the untouched template, else a copy-ready block), check it for drift
+  ("voice drift check" — summary + a copy-ready update block, never a write), and diagnose
+  ("check my setup", "doctor" — probes every configured integration, verifies the memory
+  root, reports installed vs latest version). Existing files are read-only, never
+  bulk-moved. Works from Cowork at the Office 365 floor. Draft-before-write throughout. DO
+  NOT attempt without loading — it enforces the config schema, invocation modes, and the
+  brownfield rules.
 ---
 
 # setup — the WorkOS on-ramp (L1) + doctor
@@ -23,7 +24,7 @@ You stand up a teammate's WorkOS memory, generate their config, and diagnose the
 Additive, idempotent, boring on purpose. Contracts by number (`assets/shared/` carries the
 injected resources): C1 engine-memory-split · C2 identity-config · C5 draft-before-write ·
 C7 salesforce-read-only-and-optional · C11 structured-options · C13
-presence-is-not-capability. All examples fictional.
+presence-is-not-capability · C14 render-before-gate. All examples fictional.
 
 **Bundle location:** resolve every `assets/` path in this file relative to THIS skill's
 own folder — the folder containing this SKILL.md. Under direct .skill upload that is
@@ -39,6 +40,13 @@ plugin's skill folder. Never resolve `assets/` in the memory root or project fol
    config, or account work. Seeds `voice.md` from the template when absent, adds
    `@voice.md` to the root CLAUDE.md import line beside `@user.md` when missing; both
    steps idempotent (skip when already present).
+5. **`build my voice file from my mail`** — voice bootstrap (§D): derive voice.md from the
+   user's own sent mail + Teams chats. May REPLACE the file only when it passes the
+   two-part pristine test in `assets/shared/voice-contract.md` §5; every other state —
+   user-edited, bootstrap-written, cross-version template, or absent — ends in a
+   copy-ready block.
+6. **`voice drift check`** — compare the user's recent sends against the current voice.md
+   (§E): audible summary + ONE copy-ready update block; never a write.
 
 **"Today" comes from the surface-provided date.** Every question is asked through the
 platform's structured-question tool so the options are SUBMITTABLE — a prose-rendered
@@ -129,7 +137,10 @@ and the record is still explicit.
   from the fenced block in `assets/shared/voice-contract.md` §5 (copy the fenced
   block only, never the whole asset). **If present, never touch it — not on init, not on
   regeneration, ever** (same rule as `user.md`: the user moves their own Voice content
-  in; the engine only leaves the template pointer). This bullet plus §A6's import-line
+  in; the engine only leaves the template pointer). The template's second line is the
+  `pristine-template marker` — part of the verbatim copy, so seed behavior is unchanged;
+  its meaning and the two-part pristine test live in `assets/shared/voice-contract.md` §5,
+  and §D's bootstrap is their only consumer. This bullet plus §A6's import-line
   addition are Mode 4's full behavior.
 - **Brownfield split (gated, C5/C11):** an existing `core.md` (or root `CLAUDE.md`)
   carrying personal prose — voice rules, identity narrative, personal tooling like a
@@ -204,9 +215,13 @@ last_verified`), approved before writing. Skipping is fine; capture fills these 
    cadence day when present, else Thursday), then offer to create the task by exact
    recipe — "do NOT run it now — prompt exactly `weekly next steps (scheduled,
    unattended)`, scheduled the PREVIOUS BUSINESS DAY at 5:00 PM, enabled" (due
-   Thursday → runs Wednesday 5:00 PM; due Monday → Friday 5:00 PM). Never at the daily
-   sync's minute — two unattended runs contending on the C4 lock means the loser exits,
-   silently costing that day's run. Whichever task(s) the platform creates, capture any
+   Thursday → runs Wednesday 5:00 PM; due Monday → Friday 5:00 PM). A decline is
+   written into core.md's setup record — a `declined_offers:` line listing offer keys,
+   preserved across regeneration per the schema row (`assets/shared/identity.schema.md`);
+   core.md is engine-owned and regenerated, so this rides the existing generation, and
+   C5's normal confirmation covers it. Never at the daily sync's minute — two
+   unattended runs contending on the C4 lock means the loser exits, silently costing
+   that day's run. Whichever task(s) the platform creates, capture any
    id or reference it returns or displays into `scheduled_task_ids` (`sync`/`sweep`) at
    the config write below — an id the platform never reveals stays absent, never guessed.
 3. Report what was created vs already present, write the config, then OFFER the board (C11 — live gap 2026-07-17: the first non-founder install ended with no board offer): "1. Build my board now / 2. Skip — say 'build my board' any time." On 1, hand off to workos-sync's BOARD entry point. Then close.
@@ -264,8 +279,20 @@ is "issues found," never green-with-asterisks** (C13):
    strictly (personal prose inside it = a finding: offer the A2 split). `user.md` is user
    space — NEVER validated, parsed, or reported on beyond "present/absent". Root
    `CLAUDE.md` should import both (`@core.md` + `@user.md`); a missing user.md import is
-   a one-line finding. `voice.md` (optional equipment, never required — same
-   presence/absent-only treatment as `user.md`): present AND imported → one ok line.
+   a one-line finding. `voice.md` (optional equipment, never required — `user.md`'s
+   never-parse treatment with exactly ONE exception, the #85 carve-out: doctor may read
+   the file's FIRST TWO LINES only, looking for the `pristine-template marker` line or a
+   dated `derived {YYYY-MM-DD} from {n} sends` header — never rule content): present AND
+   imported → one ok line, plus at most one INFO nudge — an OFFER, never a run, claiming
+   only what those two lines showed, and carrying its own off-switch in its text:
+   marker line present → `voice.md still carries the pristine-template marker —
+   say "build my voice file from my mail" to derive it from your own sends, or delete
+   the marker line to take ownership and silence this nudge` · a `derived` header dated
+   more than 60 days before the surface-provided date → `voice.md last derived {date} —
+   say "voice drift check" to see what's changed; pasting its refresh block resets this
+   60-day clock, and removing the dated header makes the file ageless (never nudged)` ·
+   neither line in the first two lines (hand-authored — age unknown) → no nudge, ever ·
+   a fresh `derived` header → silent.
    Absent → INFO, never a finding — `voice.md not seeded — say "seed my voice file"
    (optional equipment)`. Present but NOT imported → a finding, one-line fix: add
    `@voice.md` to the root CLAUDE.md import line beside `@user.md`.**
@@ -350,13 +377,15 @@ is "issues found," never green-with-asterisks** (C13):
    doctor never touches them. **Additionally (#68): (a) NO conforming sweep task → one
    INFO line + the C11-gated offer to create it by A6.2's exact due-day recipe (ask the
    due day; previous business day 5:00 PM); never-re-offer holds ONLY when a prior
-   decline is RECORDED (the setup close-out record) — with no such record, doctor is
-   diagnose-never-modify and sessions are memoryless, so offering again is correct,
-   not a nag (#70). (b) A conforming sweep task scheduled at the SAME
-   minute as the sync task is a finding — "lock contention: one run will exit; offset
-   the sweep (recipe: previous business day 5:00 PM)." (c) A conforming sweep task with
-   NO `lastUnattendedRun.sweep` entry after its first scheduled day → "the task may be
-   executing a pre-sweep bundle snapshot — offer (C11-gated) to re-create it (#52)."**
+   decline is RECORDED (core.md's `declined_offers:` line, §A6.2) — with no such
+   record, doctor is diagnose-never-modify and sessions are memoryless, so offering
+   again is correct, not a nag (#70). The record is per-offer-key — re-offer happens
+   ONLY when the user asks or the key's precondition changes. (b) A conforming sweep
+   task scheduled at the SAME minute as the sync task is a finding — "lock contention:
+   one run will exit; offset the sweep (recipe: previous business day 5:00 PM)." (c) A
+   conforming sweep task with NO `lastUnattendedRun.sweep` entry after its first
+   scheduled day → "the task may be executing a pre-sweep bundle snapshot — offer
+   (C11-gated) to re-create it (#52)."**
 10. **Last unattended runs (#52/#67/#68) — report-only, never a finding by itself:**
     for EACH key of `state/tasks.json → lastUnattendedRun` ({sync, sweep}): one line,
     values verbatim: `last unattended {key}: {at} ({localDate}, or "no local date") on
@@ -371,6 +400,87 @@ is "issues found," never green-with-asterisks** (C13):
 Output ends with: `doctor: {N} ok · {M} findings · {K} skipped` + the shortest fix list,
 ordered by what blocks the most.
 
+## §D. Voice bootstrap — `build my voice file from my mail`
+
+Derive a voice.md from the user's OWN sends — explicitly invoked, never a default or
+scheduled behavior. Uses the config (C2) for `manager_email` and the root path; no
+memory-root scaffolding, no config regeneration, no state, no lock. Everything mined
+lives in the session and the user's own root file — never an engine file, never an
+issue or PR (C1).
+
+1. **Probe (C13):** mail-search + chat-search on this surface (harmless one-result
+   reads). Either absent → offer the floor path (C7) instead of stopping: "paste 3–5
+   sent emails per audience (manager / customer / internal) and I'll derive from
+   those" — from pasted text the rest of this flow is identical.
+2. **Sample:** ~30–50 of the user's own sends from the last 90 days across four axes —
+   manager (addressed to `manager_email`) · customer-external (recipient domain differs
+   from the user's own send domain) · internal (same domain, not the manager) · Teams
+   chat sends. Spread customer picks across distinct situations: scheduling · pricing ·
+   escalation · re-engage · technical. A thin cell is sampled thin and MARKED — never
+   padded. `manager_email` unset → the manager cell is SKIPPED and named at close,
+   never guessed (the schema row's missing-value rule, C2).
+3. **Received-text boundary (absolute):** strip quoted/forwarded trails from every
+   sampled send before analysis; discard chat messages not authored by the user,
+   unanalyzed. Derived rules and any evidence excerpt quote ONLY the user's own words —
+   never received text. Counterparty and customer names never enter the derived
+   voice.md: every rule is a pattern statement ("short openers to executives"), never an
+   example naming a person or account. Sampled bodies are trail-stripped and capped at
+   roughly the first 1,500 characters (the context-cost control).
+4. **Analyze** per audience × situation: greetings/sign-offs · rhythm and sentence
+   length · formatting habits · punctuation tells · ask-style · pushback-style.
+   Evidence is COUNTED in-session ("12 of 14 customer sends open without a greeting");
+   counts never enter voice.md. **Thin-cell floor:** a cell with fewer than 3 sends
+   yields PROVISIONAL rules by rule — marked in the draft, named aloud at close (the
+   drift check firms them up over time).
+5. **Open choices (the core):** every stated-vs-practice contradiction — against the
+   template placeholders the user kept, or against their `user.md`/current voice.md if
+   they point at one — becomes ONE structured question (C11): at most 4 options, the
+   recommended default being encode-what-practice-shows. **Batch rule:** at most 4
+   questions per turn, ordered by evidence strength; beyond ~8 contradictions the
+   weakest default to encode-practice, but each is NAMED in step 6's render and any one
+   is pullable back into a question. No contradiction is ever silently resolved.
+6. **Render + gate (C5/C14):** render the COMPLETE resolved voice.md body, then one
+   structured gate in that same turn. The gate names what approval does — pristine file
+   (the §5 two-part test in `assets/shared/voice-contract.md`, compared against THIS
+   bundle's fenced block; a cross-version template mismatch therefore degrades to
+   copy-block by design) → "replacing the pristine template — no user rules detected",
+   and approval WRITES the file; any other state (user-edited · marker deleted ·
+   bootstrap-written · absent) → the same body emits as a copy-ready block the user
+   pastes themselves — for an ABSENT voice.md, with one pointer line: seed first ("seed
+   my voice file") or paste this block as the new file. Copy-block is always the offered
+   escape option.
+7. **The write** (pristine-approved only): whole-file replace. The written file has NO
+   marker — line 1 `# Voice — {user_name}`, line 2 the dated header
+   `derived {YYYY-MM-DD} from {n} sends` (surface-provided date, this run's sample
+   count). Engine-written once, user-owned from birth: marker ABSENCE is permanent
+   ownership, so a second bootstrap on a bootstrapped root always ends in a copy-block.
+   If `@voice.md` is missing from the root CLAUDE.md import line, add it per Mode 4's
+   idempotent rule.
+8. **Audible close:** `voice bootstrap: {n} sends sampled · {k} choices resolved ·
+   {written|copy-block}` — plus one line naming each provisional (thin-cell) section.
+
+## §E. Voice drift check — `voice drift check`
+
+User-invoked, doctor-nudged (§C.2), never scheduled. No state, no lock; voice.md is
+byte-untouched by this mode, always.
+
+1. **Probe + sample:** §D1's probe and floor path verbatim; then ~15–25 of the user's
+   own sends from the last ~30 days — §D2's axes, lighter, and §D3's received-text
+   boundary applies unchanged.
+2. **Compare practice against the CURRENT voice.md rules.** The MODEL reads the user's
+   rules to compare — the engine never parses rule content (#74's design stands; this
+   is a model reading a user file, not machinery consuming it).
+3. **Output — never a write:** `voice drift: {m} rules holding · {d} drifting`, then one
+   line per drifting rule — the rule · what recent practice shows (counted, §D3's
+   boundary: no received text, no names) · the suggested edit — then ONE copy-ready
+   update block: the user's full voice.md with the suggested edits applied, for the
+   user to paste or ignore. A thin-evidence cell says so ("chat: 2 sends — too thin to
+   judge") and contributes no suggestions. If the file opens with the dated `derived`
+   header, the block's header line is refreshed to `derived {YYYY-MM-DD} from {n} sends`
+   — this check's surface-provided date and sample count — so pasting the block restarts
+   §C.2's 60-day clock; a file with no dated header gets none added (hand-authored files
+   stay ageless by design).
+
 ## Anti-patterns — never
 
 - Bulk-moving, renaming, or "organizing" existing user files — under any prompt.
@@ -379,3 +489,5 @@ ordered by what blocks the most.
 - Hand-editing config values instead of regenerating through the question flow (C2).
 - Seeding the whole account book at once — top 3–5, rest on-touch.
 - Blocking any other skill's work on scaffolding or tidiness.
+- A voice.md write outside §A2's seed and §D7's pristine-approved case — drift NEVER writes;
+  quoting received text, or naming a counterparty or customer, inside a derived voice.md.

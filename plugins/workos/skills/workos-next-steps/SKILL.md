@@ -26,7 +26,7 @@ ritual leadership actually asks for. No summaries. No commentary. Precision.
 `no-shadow-store` (including its identity clause and `next-step-history` clause),
 `draft-before-write`, `structured-options`, `render-before-gate`, `no-customer-data-in-repo`.
 **Injected resources** (single source `shared/`, copied into this bundle's `assets/` at
-build): `assets/locked-next-step-format.md`, `assets/team-update-template.md`.
+build): `assets/shared/locked-next-step-format.md`, `assets/shared/team-update-template.md`.
 All examples in this file are fictional per `no-customer-data-in-repo`.
 
 ## Step 0: Resolve identity and capability tier (always first)
@@ -202,13 +202,13 @@ next-step lines (length-verified per §D), close-date change proposals (old → 
 Notes blocks for flagged rows (three headings — Why NICE / Why Now / Approval Signature
 Process — sourced from `Account_Context.md`, `Account_Notes.md` Strategy Notes, and the
 Sphere's Financial Approver / Decision Maker chain; drafted from evidence, never invented —
-thin evidence goes into the batched question of A3.3), the manager-email preview, and the
-persistence diff (what will be appended to which logs).
+thin evidence goes into the batched question of A3.3), the shared-body preview (per the template's §Body — the email/Team
+rendering), and the persistence diff (what will be appended to which logs).
 
 ### A5. ONE consolidated approval — on the real artifacts
 
 Present the sweep table: every row, its bucket/class/flags, the **actual proposed line**
-(not a description of one), Notes blocks, close-date proposals, the email preview, and the
+(not a description of one), Notes blocks, close-date proposals, the shared-body preview, and the
 persistence diff. Structured options per `structured-options`: accept all as-is · adjust
 named rows · drop named rows · stop. **One approval pass for the whole sweep** — this is
 the `draft-before-write` gate for everything below. **Any adjustment invalidates the
@@ -226,17 +226,30 @@ own question — the plan requires that one to be asked every time.)
    pasted, the log's CRM status may be upgraded to `user_confirmed_pasted`.
 2. **Manager email** — probe for a mail-draft capability (ms365 `outlook_create_draft` or
    equivalent); if present, create the draft to `{manager_email}`; if not, emit copy-ready
-   subject + body and continue. Structure: coverage summary (incl. partial-sweep label if
-   applicable) · changed steps (one line each) · close-date decisions · material changes
-   (old → new) · new next-quarter opps · at-risk renewal status · unresolved items. Before
-   emitting, run the voice pass per assets/shared/voice-contract.md (plain-text-paste as
-   this output's destination) and render its audible line with the output. The locked
+   subject + body and continue. Structure: subject + salutation, then THE SHARED BODY —
+   built once per the template's §Body (assets/shared/team-update-template.md): coverage
+   line · per-opp Old/New/Reason/Flags blocks for every CHANGED opp (grouped by account,
+   sorted per the template's ordering rule; Old from the log's last accepted/Observed line,
+   New = the presentation transform of the accepted line, Reason = the persist Reason,
+   Flags per the template's §Flags vocabulary — mechanical from the named sources (A3
+   checks; A1's ownership rule; Competitive from the account's recorded competitive context,
+   never new research; First step from prior-log absence), omitted when empty) ·
+   close-date decisions · the Kept roster · open-items footer. The email and the Team/
+   update are byte-identical below this header (the template's shared-body rule).
+   Before composing further, run the voice pass per assets/shared/voice-contract.md (in-chat
+   as the shared body's destination; block scaffolding is exempt structure) ONCE on the
+   shared body, and render its audible line with the output; the subject + salutation take
+   their own voice pass (plain-text-paste). The locked
    next-step line itself is exempt — byte-identical before/after the voice pass
    (locked-next-step-format.md stays sole authority). Draft only; the user sends.
 3. **Team/ publish gate (one question, last):** FIRST compose the complete update — the
-   exact file body, `assets/team-update-template.md` filled from the sweep data. Before
-   emitting, run the voice pass per assets/shared/voice-contract.md (in-chat as this
-   output's destination) and render its audible line with the output. Then render it and
+   exact file body — the template's frontmatter filled from the sweep data (frontmatter is
+   the rollup's parse contract, PLAN §4.4 — keys unchanged) above THE SAME shared body A6.2
+   rendered (byte-identical below the header; never re-composed). The body is already voiced
+   (A6.2's single voice pass per assets/shared/voice-contract.md) — attach it verbatim.
+   Frontmatter is machine data for the rollup and is NEVER voice-passed. Re-render the body
+   pass's audible line beside the gate question; voice-check lines are chat output, never
+   part of the written file or the byte-identical payload. Then render it and
    ask in the same turn (`render-before-gate`): "Publish this week's update to `Team/`?"
    On yes, write that rendered body to
    `{memory_root}/Team/updates/{user_name}/{YYYY-WW}_update.md` (write-your-own-subfolder
@@ -314,7 +327,7 @@ record of observations and approved lines** — never read back as current deal-
 
 ---
 
-## §D. The line kernel (spec source: `assets/locked-next-step-format.md`)
+## §D. The line kernel (spec source: `assets/shared/locked-next-step-format.md`)
 
 ```
 {Today MM/DD} {initials} {future action + future date + Name (Title) + specific outcome + brief context}

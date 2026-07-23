@@ -127,7 +127,8 @@ just resumes. A same-day duplicate unattended sync skips itself either way.
   Code's static snapshot, or the board link opened outside Cowork). Buttons still work
   there: tapping one copies the exact chat ask to your clipboard with a "copied — paste
   into your WorkOS chat" toast, so you paste it into your WorkOS chat to apply it. Inside
-  Cowork, buttons apply directly and the badge doesn't appear.
+  Cowork, tapping sends the ask straight into your WorkOS chat for the skill to apply
+  (with its normal confirmation), and the badge doesn't appear.
 - **"STALE — RUN A SYNC" badge** — the board is older than your day; say "tidy."
 
 ## I. Already have a working setup? (brownfield)

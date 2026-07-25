@@ -821,6 +821,9 @@ var WOSQ = (function () {
       if (m.cancelled === true) flags.appendChild(el("span", "chip", "cancelled"));
       if (flags.childNodes.length) body.appendChild(flags);
       var acts = el("div", "cardacts");
+      var mrp = el("button", "linkbtn", "⚑ report");            // #108 per-row affordance
+      mrp.onclick = guard(mrp, function () { copyText(composeIssueReport({ file: "meetings.json", id: m.id, raw: m }), "issue prompt copied — paste into a dev session"); });
+      acts.appendChild(mrp);
       var panel = null;
       if (briefFilled(m.brief)) {
         panel = el("div", "briefpanel"); panel.hidden = true;
@@ -910,6 +913,9 @@ var WOSQ = (function () {
       if (item.signal) sub.appendChild(el("span", "chip", item.signal));
       if (item.due) dueChip(sub, item.due);
       if (ms.edited) sub.appendChild(el("span", "chip", "edited"));
+      var qrp = el("button", "linkbtn", "⚑ report");            // #108 per-row affordance — lane
+      qrp.onclick = guard(qrp, function () { copyText(composeIssueReport({ file: "tasks.json", id: id, lane: idLane[item.taskId] || null, raw: item }), "issue prompt copied — paste into a dev session"); });  // never fabricated in a report
+      sub.appendChild(qrp);
       body.appendChild(sub);
       li.appendChild(body);
       var acts = actionButtons(id, idLane[item.taskId] || laneFallback, item.title, item, li);
@@ -926,6 +932,9 @@ var WOSQ = (function () {
       if (t.context) sub.appendChild(el("span", "chip", t.context));
       if (t.due) dueChip(sub, t.due);
       if (ms.edited) sub.appendChild(el("span", "chip", "edited"));
+      var trp = el("button", "linkbtn", "⚑ report");            // #108 per-row affordance
+      trp.onclick = guard(trp, function () { copyText(composeIssueReport({ file: "tasks.json", id: t.id, lane: lane, raw: t }), "issue prompt copied — paste into a dev session"); });
+      sub.appendChild(trp);
       body.appendChild(sub);
       li.appendChild(body);
       var acts = actionButtons(t.id, lane, t.title, t, li);
@@ -977,6 +986,12 @@ var WOSQ = (function () {
     }
     function renderHealth() {
       $("whoami").textContent = (tasks.identity && tasks.identity.display_name) ? tasks.identity.display_name : "";
+      var rep = document.getElementById("reportbtn");           // #108 hero control — create once,
+      if (!rep) {                                               // beside Tidy/Full sync (brief §NEW-1)
+        rep = el("button", null, "report engine issue"); rep.id = "reportbtn";
+        $("passbtns").appendChild(rep);
+      }
+      rep.onclick = guard(rep, function () { copyText(composeIssueReport(null), "issue prompt copied — paste into a dev session"); });
       var dayId = tasks.dayTask.id || (tasks.dayTask.date ? "day-" + tasks.dayTask.date : "");
       if (dayId) { $("daybadge").textContent = dayId; $("daybadge").hidden = false; }
       $("staledot").className = "dot" + (stale ? " stale" : "");
@@ -1138,6 +1153,42 @@ var WOSQ = (function () {
       });
       lines.push("— then tidy");
       return lines.join("\n");
+    }
+    // #108 engine-issue prompt: a self-contained dev-session report composed ONLY from the
+    // embedded data blocks (never a fresh read). Plain text, unwrapped paragraphs (#101 rule).
+    // Copy-only, zero bridge — works on every rung. The closing instruction routes the durable
+    // artifact to the engine repo per the #122 decision, with the C1 gate named BEFORE filing.
+    function composeIssueReport(ctx) {
+      var lur = tasks.lastUnattendedRun || {}, best = null;
+      ["sync", "sweep"].forEach(function (k) {          // freshest stamp wins (max at), never
+        var m = lur[k]; if (!m) return;                 // sync-shadows-sweep
+        if (!best || String(m.at || "") > String(best.at || "")) best = m;
+      });
+      var ver = (best && best.version) || "", surf = (best && best.surface) || "";
+      var where = curTab || ("at-a-glance " + curView); // default view has no tab — name the window
+      var L = [];
+      L.push("Engine issue report — composed by Board.html from its embedded data blocks (no fresh reads).");
+      L.push("engine version: " + (ver || "not embedded — take it from the next sync's run header") +
+        " · last-unattended surface: " + (surf || "not embedded") +
+        " · board generated " + (tasks.generated || "(unstamped)") + " by " + (tasks.generatedBy || "?") +
+        " · scope " + (tasks.boardScope || "(none)"));
+      L.push("page: " + bridgeReport() + " · stale " + stale);
+      if (ctx) {
+        L.push("observed row (" + ctx.file + "): " + JSON.stringify(ctx.raw));
+        L.push("state keys involved: " + ctx.file + " · id " + (ctx.id || "(none)") +
+          (ctx.lane ? " · lane " + ctx.lane : ""));
+        L.push("repro: open Board.html (generated above) · view " + where + " · the row for id " + (ctx.id || "(see the observed-row JSON above)"));
+      } else {
+        L.push("board area: view " + where + " · lane tasks " + laneTaskTotal() +
+          " · meetings this week " + meetingsInWeek().length +
+          " · pendingApprovals " + (Array.isArray(tasks.pendingApprovals) ? tasks.pendingApprovals.length : 0));
+        L.push("state keys involved: tasks.json / meetings.json (global report — name the exact row via its own report button when one card is wrong)");
+        L.push("repro: open Board.html (generated above) · view " + where);
+      }
+      L.push("what looks wrong (fill in): {the exact rendered value or state fact observed, vs what you expected}");
+      L.push("proposed acceptance (fill in): {the board shows EXPECTED here instead of the observed value}");
+      L.push("Dev session: reproduce from the facts above, then FILE THIS AS A GITHUB ISSUE in the engine repo before fixing — and C1-scan FIRST: strip account names, contact names, and customer identifiers from the observed row and values BEFORE any issue text is written (gate before, not after). Where a board-spec section applies, derive it from the view named above.");
+      return L.join("\n\n");
     }
     function renderPendbar() {
       var done = WOSQ.load(WOSQ.LS.done, []), removed = WOSQ.load(WOSQ.LS.removed, []), edits = WOSQ.load(WOSQ.LS.edits, {});

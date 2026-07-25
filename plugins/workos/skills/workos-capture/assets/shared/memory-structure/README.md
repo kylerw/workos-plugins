@@ -10,7 +10,16 @@ nothing here is created by hand.
 │                                  setup regenerates it whole — no personal prose here
 ├── user.md                        USER-OWNED: voice, identity notes, personal tooling —
 │                                  the engine never writes, parses, or requires it
-├── CLAUDE.md                      engine-generated; @imports core.md + user.md
+│                                  (gated split-offer moves are the one approved append)
+├── voice.md                       USER-OWNED: tone/formatting rules — engine-seeded once
+│                                  from the voice-contract template, then never touched
+│                                  (optional equipment)
+├── workspace.md                   USER-OWNED: durable workspace notes — the engine
+│                                  appends only via §A6.1's gated move, never regenerates
+├── CLAUDE.md                      engine-generated, regenerated WHOLE; @imports core.md +
+│                                  user.md + voice.md + workspace.md; root map +
+│                                  frozen-legacy DERIVED (registry: workos-setup §A6.1;
+│                                  manifest: shared/retired-legacy.md)
 ├── Accounts/{Account}/            one folder per tracked account — a folder existing here
 │   │                              IS the definition of "tracked"; stubs in this directory
 │   ├── CLAUDE.md                  @import stub (account-CLAUDE.md, {Account Name} filled)
@@ -24,6 +33,8 @@ nothing here is created by hand.
 │                                  Thought-Leadership; pointer-first, never a mirror
 │                                  (optional — `library_path`)
 ├── lanes/                         lane-state prose
+├── Board.html                     engine-written board shell — rebuilt by sync S7.4
+│                                  (data blocks only, C9)
 └── Team/                          shared OneDrive shortcut — publication surface, not
                                    memory (write your own subfolder only)
 ```

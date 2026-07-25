@@ -39,7 +39,8 @@ plugin's skill folder. Never resolve `assets/` in the memory root or project fol
 4. **`seed my voice file`** — runs §A2's voice.md seed step alone: no memory root, identity
    config, or account work. Seeds `voice.md` from the template when absent, adds
    `@voice.md` to the root CLAUDE.md import line beside `@user.md` when missing; both
-   steps idempotent (skip when already present).
+   steps idempotent (skip when already present). The same additive rule covers
+   `@workspace.md` — added ONLY when that file exists; this mode never creates it.
 5. **`build my voice file from my mail`** — voice bootstrap (§D): derive voice.md from the
    user's own sent mail + Teams chats. May REPLACE the file only when it passes the
    two-part pristine test in `assets/shared/voice-contract.md` §5; every other state —
@@ -120,7 +121,7 @@ and the record is still explicit.
    confirmed in the same pass); the escape option "my screenshots aren't named like the
    default" collects a `pattern` template (the schema's literal-token grammar).
 
-**Write the four-file config layer after the confirmations** (draft-before-write; schema:
+**Write the five-file config layer after the confirmations** (draft-before-write; schema:
 `assets/shared/identity.schema.md`). Ownership is by FILE, never by section:
 
 - **`core.md` — wholly engine-owned.** The generated config block plus generated engine
@@ -129,10 +130,14 @@ and the record is still explicit.
   `voice pass per assets/shared/voice-contract.md` on any ad-hoc paste-ready chat output,
   surface = plain-text-paste when the text is pasted onward, in-chat otherwise) and NOTHING
   personal. Setup
-  regenerates it **whole-file** — which is exactly why no user prose may live in it.
+  regenerates it **whole-file** — which is exactly why no user prose may live in it
+  (sections carried on a recorded split decline excepted — doctor folds those into its
+  carried-sections INFO, never a finding).
 - **`user.md` — wholly user-owned.** If absent, create a short commented stub ("yours —
   voice, identity notes, personal tooling, anything; the engine never writes or parses
-  this file"). **If present, never touch it — not on init, not on regeneration, ever.**
+  this file"). **If present, never touch it — not on init, not on regeneration, ever;
+  the ONLY engine write is a gated, approved verbatim MOVE of personal prose** (the
+  split offer below / §A6.1's guard — appended with your approval, never rewritten).
 - **`voice.md` — wholly user-owned, engine-seeded once.** If absent, seed it verbatim
   from the fenced block in `assets/shared/voice-contract.md` §5 (copy the fenced
   block only, never the whole asset). **If present, never touch it — not on init, not on
@@ -142,11 +147,25 @@ and the record is still explicit.
   its meaning and the two-part pristine test live in `assets/shared/voice-contract.md` §5,
   and §D's bootstrap is their only consumer. This bullet plus §A6's import-line
   addition are Mode 4's full behavior.
-- **Brownfield split (gated, C5/C11):** an existing `core.md` (or root `CLAUDE.md`)
-  carrying personal prose — voice rules, identity narrative, personal tooling like a
-  memory system — gets a **split offer**: show exactly which sections move to `user.md`
-  and what the regenerated engine files will say, apply only on approval. Existing
-  personal content is MOVED verbatim, never rewritten, never dropped.
+- **`workspace.md` — wholly user-owned, engine-appended only under §A6.1's gated
+  move.** If absent, create a short commented stub ("yours — filing rules, operating
+  notes, workspace conventions; the engine never regenerates or parses this file;
+  sections it relocates from the root `CLAUDE.md` land here verbatim, only on your
+  approval"). **If present, never regenerated, never rewritten — not on init, not on
+  regeneration, ever; the ONLY engine write is a guard-approved verbatim append**
+  (same rule as `user.md`, plus the one named append path).
+- **Brownfield split (gated, C5/C11) — `core.md` only:** an existing `core.md` carrying
+  non-engine content gets a **split offer**: each section shown verbatim with its
+  destination — personal prose (voice rules, identity narrative, personal tooling like
+  a memory system) → `user.md`; workspace operating notes (filing rules, invariants,
+  trigger conventions) → `workspace.md` — applied only on approval, MOVED verbatim,
+  never rewritten, never dropped. A decline ⇒ core.md's regeneration is skipped
+  honestly THAT run (zero writes for this step; the close report names it) and the
+  decline is RECORDED (`declined_offers:` key `coremd-move:{heading-slug}` — never
+  re-asked; "let me re-decide" reopens); later regenerations proceed, carrying each
+  recorded section verbatim, exactly as §A6.1's guard does for the root file. The root
+  `CLAUDE.md` is NOT examined here — §A6.1's standing guard owns that file's split.
+  One flow per file.
 
 ### A3. Scaffold the root structure
 
@@ -192,11 +211,43 @@ last_verified`), approved before writing. Skipping is fine; capture fills these 
 
 1. **Generate BOTH instruction artifacts, unprompted** (live gap 2026-07-16 — this step
    was improvised until it was asked for):
-   - the root `CLAUDE.md` (Claude Code surface) — engine-generated and
-     regeneration-safe: it `@imports core.md`, `@imports user.md`, AND `@imports voice.md`
-     (personal content lives there, so regenerating this file clobbers nothing) — the
-     `voice.md` import is additive/idempotent, added beside `@user.md` only when missing,
-     never duplicated — then the folder map and account-folder handoff, and
+   - the root `CLAUDE.md` (Claude Code surface) — **fully engine-owned, regenerated
+     whole**, containing exactly, in order: (i) the import line — `@core.md` `@user.md`
+     `@voice.md` `@workspace.md`, each import additive/idempotent (added only when
+     missing, never duplicated; `@voice.md`/`@workspace.md` only when those files
+     exist); (ii) the **derived root map** — derived, never transcribed, from config
+     plus this registry list (THE one place to extend when a skill starts writing a new
+     root artifact): `Accounts/` · `state/` · `journal/` · `lanes/` ·
+     `{library_path}/` (resolved value — describes the configured layout whether or not
+     §A3 scaffolded it yet) · `Board.html` (sync S7.4 output) · the `Team/` shortcut
+     when configured; (iii) the account-folder handoff; (iv) the **frozen-legacy
+     section, derived from `assets/shared/retired-legacy.md`** — rendered as that
+     asset's canonical byte-fixed block, never authored inline, re-derived on every
+     regeneration so it cannot be lost (byte-fixed is what makes the guard's
+     exact-match decidable). The generated file opens
+     with an ownership comment: "engine-generated — regenerated whole by setup; do not
+     edit. Durable notes belong in workspace.md."
+     **Standing guard — runs at EVERY regeneration of this file** (this guard IS the
+     split flow for the root file; §A2's split offer never examines it): (1) CLASSIFY
+     the existing file against the generation set above — frozen-legacy lines that
+     EXACT-MATCH the expected derived rendering are engine content (re-derived);
+     frozen-legacy-like content that does NOT exact-match, including a hand-added
+     frozen path, is NON-ENGINE and gated like any other section with the options
+     "drop as superseded by the derived section (shown side-by-side)" / "move" — never
+     a silent re-derive over a delta. (2) COLLECT all decisions before writing
+     anything: each non-engine section rendered VERBATIM with its proposed destination
+     (`workspace.md`; `user.md` when personal prose — §A2's destination doctrine), one
+     section per question, at most four questions per turn (C11, C14); a section
+     already present verbatim in its destination is skipped-and-reported, never
+     re-appended. (3) Any decline ⇒ ZERO writes this run for this file — approved
+     appends and the regenerated file are one transaction; the abort covers this
+     generation step only (config write and scaffolding stand; the close report names
+     the skip) — and the decline is RECORDED: `declined_offers:` key
+     `claudemd-move:{heading-slug}` in core.md's setup record. (4) A RECORDED decline
+     is never re-asked: later regenerations PROCEED, carrying each recorded section
+     into the regenerated file verbatim (visible at the pre-write gate); "let me
+     re-decide" reopens. The first run on a workspace with an accreted root file IS
+     the migration — no separate mode. And
    - the **Cowork project-instructions paste text** — short: memory root, config lives in
      core.md, the workos skills (sync's vocabulary: sync my day / tidy / build my board /
      rebuild my board; next-steps: run my weekly next steps; capture: log a call /
@@ -276,10 +327,18 @@ is "issues found," never green-with-asterisks** (C13):
    type-conformance-only: checked when present, never flagged for being absent** (their
    schema rows name absence as the rung simply not existing yet). The fix is always the
    setup question flow, never a hand-edit (C2). **Ownership boundary: `core.md` is all-generated — validate it
-   strictly (personal prose inside it = a finding: offer the A2 split). `user.md` is user
+   strictly (personal prose inside it = a finding: offer the A2 split — EXCEPT sections
+   carried on record, `coremd-move:*` keys, which fold into the carried-sections INFO
+   below, never a finding). `user.md` is user
    space — NEVER validated, parsed, or reported on beyond "present/absent". Root
-   `CLAUDE.md` should import both (`@core.md` + `@user.md`); a missing user.md import is
-   a one-line finding. `voice.md` (optional equipment, never required — `user.md`'s
+   `CLAUDE.md` should import `@core.md` + `@user.md`, plus `@voice.md`/`@workspace.md`
+   when those files exist; a missing import for a present file is a one-line finding
+   (fix: add the import beside `@user.md`, per Mode 4's idempotent rule).
+   `workspace.md` gets `user.md`'s never-parse treatment (present/absent only, NO
+   carve-out): absent → INFO, never a finding — `workspace.md not created — run "init
+   my workspace" to add it`. Sections carried on record — `claudemd-move:*` /
+   `coremd-move:*` decline keys → ONE INFO line naming the count, with the
+   `let me re-decide` reopen phrase — never a finding. `voice.md` (optional equipment, never required — `user.md`'s
    never-parse treatment with exactly ONE exception, the #85 carve-out: doctor may read
    the file's FIRST TWO LINES only, looking for the `pristine-template marker` line or a
    dated `derived {YYYY-MM-DD} from {n} sends` header — never rule content): present AND
@@ -455,7 +514,7 @@ issue or PR (C1).
    count). Engine-written once, user-owned from birth: marker ABSENCE is permanent
    ownership, so a second bootstrap on a bootstrapped root always ends in a copy-block.
    If `@voice.md` is missing from the root CLAUDE.md import line, add it per Mode 4's
-   idempotent rule.
+   idempotent rule (likewise `@workspace.md`, only when that file exists).
 8. **Audible close:** `voice bootstrap: {n} sends sampled · {k} choices resolved ·
    {written|copy-block}` — plus one line naming each provisional (thin-cell) section.
 

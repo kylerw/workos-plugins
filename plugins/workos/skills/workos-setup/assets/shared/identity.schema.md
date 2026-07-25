@@ -32,8 +32,11 @@ for that run (unless a key's row states a different probe-failure behavior —
 **User-space guarantee (ownership is by file):** the engine consumes ONLY the keys above,
 from the generated block in `core.md` — which is wholly engine-owned and regenerated
 whole-file by `setup`. Everything personal (voice, identity prose, email triage
-preferences, personal tooling such as a memory system) lives in **`user.md`**, which the
-engine NEVER writes, parses as config, validates, or requires to exist. The root
-`CLAUDE.md` (also engine-generated) imports both, so personal context still loads every
-session. Nothing a user puts in `user.md` can break the engine; nothing the engine
-regenerates can clobber `user.md`.
+preferences, personal tooling such as a memory system) lives in **`user.md`**, and
+durable workspace notes (filing rules, operating conventions) live in **`workspace.md`**
+— files the engine never parses as config, validates, or requires to exist, and writes
+ONLY as a gated, user-approved verbatim move/append (workos-setup §A2 / §A6.1's guard).
+The root `CLAUDE.md` (also engine-generated, regenerated whole) imports all four —
+`@core.md` `@user.md` `@voice.md` `@workspace.md`, the last two when present — so
+personal context still loads every session. Nothing a user puts in `user.md` or
+`workspace.md` can break the engine; nothing the engine regenerates can clobber them.

@@ -1,9 +1,14 @@
 # WorkOS — Setup Guide (Day 1, ~15 minutes)
 
-WorkOS is the team's AE daily driver: every weekday morning it reads your calendar and
-inbox, stages your day on a board, and captures your commitments into each account's own
-files — everything reviewed by you before it's saved. Two things it will **never** do:
-write to Salesforce (you always paste), or send email by itself (you always send).
+WorkOS is the team's AE daily driver: it stages your day on a board from your calendar
+and inbox (connected where your surface allows it — otherwise from what you paste), and
+captures your commitments into each account's own files — everything reviewed by you
+before it's saved. Two things it will **never** do: write to Salesforce
+(you always paste), or send email by itself (you always send).
+
+You'll set this up in the **Claude desktop app** — one app, one plugin, one folder.
+(Using Cowork instead? That path still works — see the **Alternate surface: Cowork**
+section near the end.)
 
 If anything on this page confuses you, that's a bug in the page — tell whoever sent you this link.
 
@@ -22,8 +27,7 @@ Already have an old personal folder buried somewhere deep? Start with a FRESH fo
 
 This connects you to the shared leadership folder (weekly updates, engine version).
 
-1. Open your **Team SharePoint site** → **Documents → WorkOS →
-   Team**.
+1. Open your **Team SharePoint site** → **Documents → WorkOS → Team**.
 2. Click the **⋯** next to the `Team` folder → **"Add shortcut to OneDrive."**
 3. A shortcut appears at the top level of your OneDrive ("My Files"), named something
    like **"{Site Name} Team."** **Move it into your WorkOS folder**, then
@@ -32,112 +36,141 @@ This connects you to the shared leadership folder (weekly updates, engine versio
 Done right, `WorkOS/Team/` opens to the shared folder. (If you skip this, everything
 still works — you'll just see a "Team/ not set up" note in health checks until you do it.)
 
-## C. The Cowork project (3 min)
+## C. The Claude desktop app (2 min)
 
-4. In Cowork: create a project named **WorkOS**.
-   Cowork may auto-rename the project when it's created. Renaming it back is safe — **⋯ → Edit details → rename** — nothing breaks.
-5. In the project's settings, add **folder access** pointed at your WorkOS folder — this
-   is what stops constant file-permission prompts.
-6. Connectors (account-level, one time): make sure **Microsoft 365** is connected. If
-   your list offers **"Graph - Production"**, connect it too — setup will then know your
-   name and manager automatically instead of asking.
+1. Install the **Claude desktop app** (claude.ai/download) and sign in with your work
+   Claude account.
+2. Open **Claude Code** in the app and start a session **in your WorkOS folder**
+   (choose the folder when the session asks, or open it via the folder picker — the
+   folder lives at `C:\Users\{you}\OneDrive - {Company}\WorkOS`).
+   *Done when: the session shows your WorkOS folder as its working folder.*
 
-## D. The skills — one plugin, no downloads (2 min)
+That folder choice is the whole integration: every chat opened in this folder
+automatically loads your config and your personal files — **there is no
+"paste the project instructions" step on this surface.**
 
-7. **Settings → Plugins → Add marketplace** (some builds: **Customize** top-left, then Plugins — the Plugins entry is the one you want) → paste **`kylerw/workos-plugins`**
-   → Sync. (You'll see a red "make sure you trust this plugin" notice — that's standard
-   for any non-Anthropic plugin. This one is ours.)
-8. Install the **workos** plugin — the `workos-…` skills appear automatically.
-9. Turn auto-updates on — the exact path: **Browse plugins → Personal → click the
-   marketplace entry itself (NOT Edit) → scroll to the Plugins section at the bottom →
-   ⋯ menu on the workos plugin → "Sync automatically" ON → then "Check for update".**
-   ← Don't skip: it's off by default, and it's how updates reach you without
-   re-installing. *Missed it during install? Come back any time — same path.*
+## D. The plugin — one marketplace, no downloads (2 min)
+
+3. In the session, type: **`/plugin marketplace add kylerw/workos-plugins`**
+   (You'll see a red "make sure you trust this plugin" notice — that's standard for any
+   non-Anthropic marketplace. This one is ours.)
+4. Install the **workos** plugin from that marketplace — if the add step doesn't offer
+   installation on the spot, open **`/plugin`** and install it from the marketplace
+   listing there. *Done when: typing `/workos-` in the chat box shows the workos
+   skills.*
+5. **Know how updates work — two steps, not one.** Third-party marketplaces do NOT
+   auto-update by default; turn auto-update on for this marketplace if offered. Either
+   way, when a new engine version ships: open **`/plugin`**, find this marketplace, and
+   run its update/sync action (the exact menu wording varies by app version), then
+   **reload the app window** — an update that has downloaded is *staged*, not
+   *running*; the reload is what loads it. *Done-check: the next sync's first line
+   shows the new version (`workos-sync {version} on claude-code`).*
 
 ## E. First run (5 min)
 
-10. In your WorkOS project, new chat: **`/workos-setup init my workspace`**
-11. Answer its questions — they come as numbered options; pick a number. It shows you
-    everything it's about to create **before** creating anything.
-12. When it asks which accounts to start with: your **top 3–5**, not your whole book.
-    The rest get set up automatically as you touch them.
-13. Say **yes** when it offers the scheduled task (your 7:00 AM sync). Its prompt ends
-    with `(scheduled, unattended)` — leave that in; it's how the skill knows nobody is
-    watching.
-14. **The last thing init hands you is your project instructions** — a text block it
-    generates for you. Open your WorkOS **project's settings → instructions field** and
-    paste it in. This is what loads your config and your `user.md` into every chat in
-    the project — skip it and each new chat starts blind.
-    *Done when: the project's instructions field shows the pasted text.*
-    (Already had instructions in that field? Copy the old ones to a note first —
-    pasting replaces them.)
+6. In your WorkOS-folder session: **`/workos-setup init my workspace`**
+7. Answer its questions — they come as numbered options; pick a number. It shows you
+   everything it's about to create **before** creating anything.
+8. When it asks which accounts to start with: your **top 3–5**, not your whole book.
+   The rest get set up automatically as you touch them.
+9. **Scheduling, honestly:** on this surface the rhythm is *attended-first* — say
+   **"sync my day"** when you sit down, and questions get answered live. If setup
+   offers a scheduled task and you want a 7:00 AM attempt anyway, say yes — its prompt
+   ends with `(scheduled, unattended)`; **leave that in** if you ever edit the task —
+   and know it only runs while your laptop is on and awake, so treat it as a bonus,
+   not the plan.
+10. **Prove it works:** say **"sync my day"**. *Done when: the reply's first line reads
+    `workos-sync {version} on claude-code` and your day appears staged.* First runs ask
+    permission before writing files — that's Claude Code being careful, and it's
+    normal; approve what setup shows you.
 
-New-user tip: a chat that's still working shows a pulsing dot next to it in Recents.
+New-user tip: a chat that's still working shows a pulsing dot next to it in the
+session list.
 
-## F. Yours to customize — `user.md` and `voice.md` (know these two)
+## F. Yours to customize — `user.md`, `voice.md`, and `workspace.md`
 
-Setup creates four files at the top of your folder. The ownership rule is simple:
+Setup created five files at the top of your folder. The ownership rule is simple:
 
 | File | Whose | What it's for |
 |---|---|---|
 | `core.md` | **The engine's.** Don't edit — setup regenerates it. | Your config + the operating rules |
 | **`user.md`** | **YOURS. Edit freely, any time.** | How you want Claude to work *for you* |
 | **`voice.md`** | **YOURS. Edit freely, any time.** | Tone/formatting rules — what to strip before a paste lands in SFDC, Teams, or email |
-| `CLAUDE.md` | The engine's. Don't edit. | Glue — loads the other three every session |
+| **`workspace.md`** | **YOURS. Edit freely, any time.** | Durable workspace notes — filing rules, operating conventions |
+| `CLAUDE.md` | The engine's. Don't edit. | Glue — loads the other four every session |
 
 `user.md` is your tailoring space: how you triage email, personal tools you use, pet
-peeves, anything about how you want the assistant to work for you. `voice.md` is
-narrower — your tone/formatting rules ("terse, no filler," "no semicolons in customer
-email") — seeded from a template on your first run and `@import`ed beside `user.md`.
-Skills that draft prose (capture, sync's briefs, next-steps) check it and print a
-`voice check: …` line with their output, so you can see it was applied. **Nothing you
-put in either file can break WorkOS** — the engine never reads them as configuration —
-and no update will ever overwrite them. If you want the assistant to behave
-differently, one of these two files is almost always the answer.
+peeves. `voice.md` is narrower — tone/formatting rules ("terse, no filler") — seeded
+from a template on your first run; skills that draft prose check it and print a
+`voice check: …` line so you can see it was applied. `workspace.md` holds durable
+workspace notes; if setup ever finds notes of yours living in `CLAUDE.md`, it OFFERS to
+move them here — shown verbatim, only with your approval, never silently. **Nothing you
+put in these three files can break WorkOS** — the engine never reads them as
+configuration — and no update will ever overwrite them. If you want the assistant to
+behave differently, one of these three files is almost always the answer.
 
 ## G. The daily rhythm
 
-- **7:00 AM weekdays**: your sync runs by itself. Open the chat to see the day staged,
-  and say **"build my board"** once to get the visual board (it refreshes automatically
-  after that).
-- **Any time**: **"tidy"** = quick refresh · **"sync my day"** = full pass ·
-  **"log a call"** / **"capture the meeting with …"** = save a touchpoint or meeting
-  into the account's files (arriving in the next update).
-- **Weekly**: the sweep runs by itself the evening before your update is due and parks
-  a draft (nothing is sent). Next morning the board flags it — say **`weekly next
+- **When you sit down**: **"sync my day"** — the day gets staged; say **"build my
+  board"** once and `Board.html` appears in your folder (open it in your browser; it
+  refreshes on every sync after that).
+- **Any time**: **"tidy"** = quick refresh · **"log a call"** / **"capture the meeting
+  with …"** = save a touchpoint or meeting into the account's files.
+- **Weekly**: on your update's due day (or the evening before), say **`weekly next
   steps`**, choose **Finalize**, review the one approval screen, then paste the lines
-  into Salesforce and send the email yourself. (No Salesforce connection? The parked
-  draft builds from your own logs and says so.) Per-account projects: see the Day-1
-  guide's pattern — one project per active account.
-
-**If Cowork is paused (usage limits, an outage):** open Claude Code in the same folder
-and run `sync my day` when you sit down — attended beats the scheduled run (questions
-get asked; approvals apply instead of queuing). Don't create a second scheduled task in
-Claude Code: one scheduler (Cowork) is the design, and when Cowork resumes its schedule
-just resumes. A same-day duplicate unattended sync skips itself either way.
+  into Salesforce and send the email yourself. (No Salesforce connection? The draft
+  builds from your own logs and says so.)
+- **Deep work on one account?** Open a session in that account's folder under
+  `Accounts/` — it carries its own instructions. (On Cowork: one project per active
+  account — see the Day-1 guide's pattern.)
 
 ## H. Things that look scary but aren't
 
-- **"Allow Claude to permanently delete files?"** at the end of a sync — that's the sync
-  releasing its own run-lock file, not your data. **Allow it.** (Denying just leaves a
-  stale lock that clears itself in 30 minutes.)
+- **No permission prompt appears when a sync finishes** — lock release is a normal
+  file write. If you ever DO see a **"permanently delete files?"** ask after a sync,
+  that's an older engine build releasing its run-lock — not your data. Allowing or
+  denying are both safe (a denied one clears itself in 30 minutes) — then update the
+  plugin (§D step 5).
 - **Red trust notice** when adding the marketplace — standard for all third-party
   plugins.
-- **"read-only view" badge** on the board — only shows up on a bridgeless surface (Claude
-  Code's static snapshot, or the board link opened outside Cowork). Buttons still work
-  there: tapping one copies the exact chat ask to your clipboard with a "copied — paste
-  into your WorkOS chat" toast, so you paste it into your WorkOS chat to apply it. Inside
-  Cowork, tapping sends the ask straight into your WorkOS chat for the skill to apply
-  (with its normal confirmation), and the badge doesn't appear.
-- **"STALE — RUN A SYNC" badge** — the board is older than your day; say "tidy."
+- **Board buttons copy instead of clicking through** — on this surface the board is a
+  read-only view: tapping a button copies the exact chat ask to your clipboard with a
+  "copied — paste into your WorkOS chat" toast. Paste it into your session and the
+  skill applies it with its normal confirmation.
+- **"STALE — RUN A SYNC" badge** on the board — the board is older than your day; say
+  "tidy."
 
 ## I. Already have a working setup? (brownfield)
 
-Run the same `init my workspace`. It detects a mature root and **will not bulldoze it**:
-existing files are read-only inputs, everything is additive-only, and anything it wants
-to change is shown to you first. If your existing files mix personal content into
-`core.md`, it offers a **split** — moving your personal content verbatim into `user.md` —
-and does nothing without your approval.
+Run the same `init my workspace`. It detects a mature root and **will not bulldoze
+it**: existing files are read-only inputs, everything is additive-only, and anything it
+wants to change is shown to you first. If personal content lives in `core.md`, it
+offers a **split** (moved verbatim into `user.md`); if durable notes of yours live in
+`CLAUDE.md`, it offers the same **move** into `workspace.md` — and it does nothing
+without your approval.
+
+## Alternate surface: Cowork (works, currently the alternate)
+
+The same engine runs in Cowork against the same folder — kept supported for anyone who
+prefers it or whenever the desktop app isn't an option:
+
+1. Create a Cowork project named **WorkOS** (Cowork may auto-rename it on creation —
+   renaming it back is safe: **⋯ → Edit details → rename**); in its settings add
+   **folder access** pointed at your WorkOS folder, and connect **Microsoft 365** at
+   the account level. If your connector list offers **"Graph - Production"**, connect
+   it too — setup will then know your name and manager automatically instead of asking.
+2. Skills: **Settings → Plugins → Add marketplace** → `kylerw/workos-plugins` → Sync →
+   install **workos** → turn "Sync automatically" ON (Browse plugins → Personal → click
+   the marketplace entry itself (NOT Edit) → Plugins section → ⋯). If plugins aren't
+   available to you, download the `.skill` bundles from the marketplace's GitHub
+   **Releases** page and upload them to the project instead.
+3. Run `init my workspace` there. **One Cowork-only step:** the LAST thing init hands
+   you is a project-instructions text block — paste it into the project's settings →
+   instructions field (copy your old instructions to a note first; pasting replaces
+   them). Skip it and each new chat starts blind.
+4. Cowork can hold the **7:00 AM weekday scheduled sync** — if you set one up, keep it
+   as the ONLY scheduler (don't add a desktop one too; a same-day duplicate sync skips
+   itself either way).
 
 ## If something's off
 

@@ -419,7 +419,11 @@ line).
    mechanics unchanged). **Then the
    mechanical self-check before reporting** (Python or equivalent): exactly one BEGIN/END
    pair per block · script wrappers intact · each block's inner text parses as JSON · no
-   raw `</` and no marker literal inside the JSON. Self-check fails, or no update path
+   raw `</` and no marker literal inside the JSON · the tasks block still carries its
+   config-derived meta keys (`identity.display_name` and `boardScope` always;
+   `taskIds` iff config `scheduled_task_ids` is present; `boardQueueTool` iff config
+   `board_queue_tool` is set — a verbatim `tasks.json` copy-through FAILS this
+   check, #100). Self-check fails, or no update path
    from this run (no such tool, or the board lives in another chat) → not an error: one
    close-summary line ("native board not refreshed — the snapshot is current; say
    'rebuild my board' from a Cowork chat to refresh the artifact"). A failed update is
@@ -548,10 +552,13 @@ lock. In an unattended run, board vocabulary is reported in the run output and s
    (namespaces the shell's localStorage as `wos.{boardScope}.*`; absent → legacy `wos.*` keys).
    Run S7.4's mechanical self-check
    before presenting, **plus emission completeness: the emitted HTML ends with
-   `</html>`, every `<script` has a matching `</script>`, and the four script ids
-   (`workos-data-tasks`, `workos-data-meetings`, `workos-derive`, `workos-render`) are
-   all present** — copying a long file is where truncation happens, and a truncated
-   shell renders as a half-dead board. Never restyle, trim, or "improve" the shell — it
+   `</html>` (modulo trailing whitespace), every `<script` has a matching `</script>` —
+   counted AFTER stripping HTML comments (`<!--…-->`, non-greedy, across lines): the
+   shell ships a literal `<script>` token inside a comment, so a raw count false-fails
+   6/5 on a healthy shell (#100) — and all five script ids (`workos-data-tasks`,
+   `workos-data-meetings`, `workos-derive`, `workos-actions`, `workos-render`) are
+   present** — copying a long file is where truncation happens, and a truncated shell
+   renders as a half-dead board. Never restyle, trim, or "improve" the shell — it
    ships as-is or not at all.
 3. **Write the static snapshot:** the same rendered HTML to `{memory_root}/Board.html` —
    stable name (mobile bookmarks point at it), C5-exempt (a regenerable render;

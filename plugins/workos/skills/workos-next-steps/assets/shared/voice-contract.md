@@ -38,9 +38,9 @@ still applies.
 
 ## 3. Mechanical tells (v1 validator list)
 
-Run every tell against the composed output before it emits. The first four are
-mechanically checkable; the last two are model-checked and are NAMED in the audible line
-(§4) when fixed.
+Run every tell against the composed output before it emits. Tells 1–4 are mechanically
+checkable; tell 5 pairs a mechanical candidate scan with a model confirm; the last two
+are model-checked and are NAMED in the audible line (§4) when fixed.
 
 1. **em-dash on `plain-text-paste`** — an em-dash (—) in a plain-text-paste output. Other
    surfaces are exempt; this tell is surface-scoped.
@@ -51,9 +51,20 @@ mechanically checkable; the last two are model-checked and are NAMED in the audi
 4. **bold-phrase count > limit** — on surfaces where bold DOES render (`in-chat`,
    `customer-facing-doc`), more bolded phrases than the limit (from `voice.md`, default 2).
    On `plain-text-paste`, bold is already stripped by tell 3.
-5. **explanatory tail** (model-checked) — commentary after the payload the reader did not
+5. **hard-wrapped paragraph on `plain-text-paste`** — a newline INSIDE a paragraph.
+   Mechanical candidate scan: every newline whose next line is non-blank and not a
+   structural line (list item `- ` / `1. `, or a `Label:` field line); the model then
+   confirms the two lines belong to the SAME paragraph — a split sentence OR
+   consecutive sentences of one paragraph both fire (a column-wrap that lands on a
+   sentence boundary is still a hard wrap). Salutations, sign-offs, and deliberate
+   one-line rows are structure, not paragraphs — never fire. Fix by rejoining: one
+   paragraph = one unbroken line, a blank line separates paragraphs, the DESTINATION
+   does the wrapping (#101 — hand-stripped ~90-column breaks after an Outlook paste).
+   The locked next-step line is already exempt below. Surface-scoped: other surfaces
+   are exempt.
+6. **explanatory tail** (model-checked) — commentary after the payload the reader did not
    ask for.
-6. **closing offer / meta line** (model-checked) — a trailing offer about the output itself
+7. **closing offer / meta line** (model-checked) — a trailing offer about the output itself
    ("want the shorter version").
 
 **The locked next-step line is exempt from every tell.** A voice pass NEVER touches it —

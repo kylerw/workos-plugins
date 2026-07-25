@@ -5,7 +5,8 @@ docs/spikes/spike-4-single-writer.md). Derived values (scores, importance levels
 computed at render time and never stored (C6). **Extension rule:** power-user extensions may
 add fields; engine skills and the board ignore unknown fields; CI validates the baseline
 only. Fixtures: `ci/fixtures/state/` — `ci/validate-state.sh` enforces the state
-files; `.pass-lock.json` is protocol, validated live (doctor step 7, spike 4).
+files (every `ci/…` or `docs/…` path in this file is the ENGINE REPO's, not shipped in
+the bundle); `.pass-lock.json` is protocol, validated live (doctor step 7, spike 4).
 
 ## tasks.json
 ```json
@@ -87,7 +88,8 @@ derivations from `due`/`start` (C6); the board computes them, no pass refreshes 
   separator before listing/reading anything. Intake targets = lowercase(`{source
   label}/{basename}`) — the label from `intake_sources` (sources live OUTSIDE the memory
   root; the root-relative form doesn't apply). The intake `fingerprint` extension field
-  is `{size}:{mtime ISO}` (+ `:{hash}` when hashed).
+  is `{size}:{mtime ISO, UTC Z form}` (+ `:{hash}` when hashed) — the UTC capture rule
+  lives in the intake skill's sweep step 1 (#94).
 - **Dedupe on raise:** same normalized `kind`+`target` as a pending item → update that
   item's `summary`/`diff` and `lastSeenAt`; id kept; **`raisedAt` immutable** (the age
   signal). Never a duplicate. A dedupe update emits NO raise pointer — only a NEW id does
@@ -142,8 +144,8 @@ board-queue file — applying it, quarantining it, deleting it after — belongs
 
 **Drain:** sync and tidy read and apply `state/board-queue/*.json` inside the C4 lock and
 stamp `lastBoardDrain` on completion; the full algorithm (read order, malformed-file
-quarantine, journal-before-delete, receipt) lives in `skills/workos-sync/SKILL.md` — this
-file defines only the shape and the create-only write contract.
+quarantine, journal-before-delete, receipt) lives in the `workos-sync` skill's own
+SKILL.md — this file defines only the shape and the create-only write contract.
 
 `tasks.json` meta gains optional keys for the board-queue flow:
 - **`lastBoardDrain`** — the most recent drain's high-water `ts`: the max `ts` of the queue
@@ -234,6 +236,10 @@ new again); reconsiderAt past → the maintain pass re-surfaces it. Absent `inta
 
 ## intake.json (#61 — intake watermarks)
 `{ "generated": "ISO", "generatedBy": "intake", "lastSweep": "ISO|null", "lastMaintain": "ISO|null" }`
+Every intake-written instant — both watermarks here, and `suppressed.intake`'s
+`decidedAt`/`reconsiderAt` — is the **UTC `Z` form** (#94: a naive-local stamp on a
+UTC-positive surface silently under-scopes the next maintain; capture/compare rule in
+the intake skill's sweep step 1).
 Written only by the attended `intake` pass under the C4 lock — read-modify-write:
 each mode stamps ITS watermark and preserves the sibling verbatim (the
 `lastUnattendedRun` pattern), restamping `generated`/`generatedBy: "intake"`. Sync

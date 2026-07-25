@@ -73,7 +73,16 @@ canonical target recipe), `suppressed.intake` (LEAVE snooze records), and
 ## SWEEP — full classification
 
 1. **Scan:** stat every immediate-child regular file of each resolved source (names,
-   size, mtime). Read no content — EXCEPT hashing, which is computed ONLY for
+   size, mtime). **Mtimes are captured as explicit-UTC instants (`Z` form) at stat
+   time, and every time comparison in EITHER pass — retention windows, `reconsiderAt`
+   expiry, maintain's watermark scope — parses BOTH sides as UTC, never the surface's
+   default parse** (stored instants are Z-suffixed per the schema; #94: a default-local
+   parse mis-scoped maintain in the #61 staged run and, uncaught, would have reported
+   "nothing new"). Fingerprints record the UTC form — timezone-portable by
+   construction (residual mtime precision/sync drift across machines can still
+   mismatch; that mismatch re-enters classification, the fail-safe direction, and is
+   not by itself evidence the file changed). A legacy local-form fingerprint behaves
+   the same way. Read no content — EXCEPT hashing, which is computed ONLY for
    delete-candidates (duplicate pairs, superseded version-chain members).
    "Exact duplicate" is claimed only after content verification (hash match);
    otherwise render "probable duplicate", which can justify LEAVE — never DELETE.
@@ -108,7 +117,9 @@ canonical target recipe), `suppressed.intake` (LEAVE snooze records), and
    retention window}`. Before raising anything, consult `suppressed.intake`: an
    unexpired match with an unchanged fingerprint is SKIPPED into one aggregate line
    ("{N} items suppressed by earlier LEAVE decisions"); a changed fingerprint or a
-   past `reconsiderAt` re-enters classification.
+   past `reconsiderAt` re-enters classification. LEAVE-record instants
+   (`decidedAt`/`reconsiderAt`) are written in the UTC `Z` form (step 1's rule governs
+   writes as well as reads, #94).
 4. **THE GATE (C14; the #62-approved shape):** render the FULL manifest with stable
    ids, grouped by verdict. **MOVE/COPY**: approvable as a rendered batch with
    per-item opt-out (drop named ids). **DELETE: per item, always** — each renders its
@@ -124,8 +135,10 @@ canonical target recipe), `suppressed.intake` (LEAVE snooze records), and
    its LEAVE record to `suppressed.intake` in the same batch as the declined exit
    (target + fingerprint from the item, `reconsiderAt` per the source's window) —
    declines never re-litigate either.
-5. **Close:** write `state/intake.json → lastSweep` (this run's captured now) in the
-   final state batch — **read-modify-write: preserve the sibling watermark verbatim,
+5. **Close:** write `state/intake.json → lastSweep` (this run's captured now, UTC `Z`
+   form — a naive-local stamp on a UTC-positive surface silently under-scopes the next
+   maintain, #94) in the final state batch — **read-modify-write: preserve the
+   sibling watermark verbatim,
    restamp `generated`/`generatedBy: "intake"`** (two passes share this file; a whole
    rewrite that nulls the other watermark breaks sync's overdue line and maintain's
    guard); one summary — counts per pile, applied/declined/left, bytes reclaimed,
@@ -137,7 +150,9 @@ canonical target recipe), `suppressed.intake` (LEAVE snooze records), and
 Read-set: config · the lock · `state/intake.json` · `suppressed.intake` · source
 listings (stat only). Scope, exactly three item classes:
 1. Files newer than `lastMaintain` (else `lastSweep`; both null → say "no sweep has
-   run — run intake first" and exit without writes).
+   run — run intake first" and exit without writes) — the newer-than comparison obeys
+   sweep step 1's explicit-UTC rule (#94: this exact check is where the local parse
+   misfired).
 2. `suppressed.intake` records past `reconsiderAt`, or whose fingerprint changed.
 3. Unpromoted screenshots older than their source's retention window — these are
    ordinary trash-first DELETEs: **promote-to-keep means the retention window itself
@@ -145,9 +160,10 @@ listings (stat only). Scope, exactly three item classes:
    every meeting capture and every maintain pass; the journal line names the window,
    e.g. "unpromoted past 30-day screenshot retention").
 Classify and gate EXACTLY as sweep steps 2–4 (same piles, same manifest machinery,
-same #62 gate shape), then stamp `lastMaintain` — same read-modify-write rule as
-sweep's close: preserve `lastSweep` verbatim, restamp `generated`/`generatedBy` — and
-release. A maintain pass never re-litigates an unexpired, unchanged LEAVE.
+same #62 gate shape), then stamp `lastMaintain` (UTC `Z` form, #94) — same
+read-modify-write rule as sweep's close: preserve `lastSweep` verbatim, restamp
+`generated`/`generatedBy` — and release. A maintain pass never re-litigates an
+unexpired, unchanged LEAVE.
 
 ## Anti-patterns — never
 

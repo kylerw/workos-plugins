@@ -103,7 +103,7 @@ opportunity registry when Salesforce isn't connected (contract C7).
 - **C6:** externally-researched facts ARE persisted (About, stack, competitive, contact
   identity) with `source` / `confidence` / `last_verified` provenance; append-only histories
   (Next_Step_Log.md) are records, never current state.
-- **The locked Next Step format** (shared/locked-next-step-format.md) — always via the
+- **The locked Next Step format** (assets/shared/locked-next-step-format.md) — always via the
   `next-steps` skill, never freeform.
 - **Sphere_of_Influence.md is customer-side only** (the CCS rule): partner reps and internal
   coverage do NOT go there — contact identity for all sides lives in `Contacts.md`.

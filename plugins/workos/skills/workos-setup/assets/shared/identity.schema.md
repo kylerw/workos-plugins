@@ -11,8 +11,8 @@ that hardcodes any of them fails review.
 | `user_name` | string | `Jane Doe` (as it appears in Salesforce Owner fields / report owner columns) | Ask once, offer to persist via `setup` |
 | `initials` | string (2–3) | `JD` — used by the locked next-step format | Derive from `user_name`, confirm once |
 | `manager_name` / `manager_email` | string / email | `Jordan Doe` / `jordan@…` | Manager email output degrades to copy-ready text addressed to no one; flag it |
-| `sfdc_tier` | enum | `mcp` (read-only Salesforce MCP present) · `manual` (default) | Assume `manual` — the safe floor |
-| `integrations` | list | e.g. `[ms365]`, `[ms365, graph]`, `[ms365, graph, hinotes, sfdc-mcp]` — what `setup`/`doctor` verified WORKS (probed, not just present) | Treat unlisted integrations as absent; skip their blocks silently |
+| `sfdc_tier` | enum | `mcp` (read-only Salesforce MCP present) · `manual` (default) — never downgraded on session absence alone; `mcp` → `manual` only through an explicit user act (the custom pick, or floor mode) | Assume `manual` — the safe floor |
+| `integrations` | list | e.g. `[ms365]`, `[ms365, graph]`, `[ms365, graph, hinotes, sfdc-mcp]` — what `setup` ADOPTED: exposed on the surface and accepted, never probe-verified. Setup PRESERVES a recorded entry that is not exposed in the current session when regenerating core.md | Treat unlisted integrations as absent; skip their blocks silently |
 | `fiscal_q1_start_month` | 1–12 | e.g. `2` | Ask once during the first sweep, persist via `setup` |
 | `timezone` | IANA zone | `America/Denver` — the zone for times that arrive WITHOUT an offset of their own (screenshot filenames, wall-clock notes); a calendar event carries its own offset and never needs this key. Zone labels come from here or the source offset — never from `user.md`, never a bare 'MT'; resolution order for any time: source offset → source timezone identifier → this key → unresolved (never invent an instant). **Render rule (#49, one rule — every skill, not just sync): every user-facing or file-written clock value converts per this resolution order BEFORE any zone label attaches; a label is never suffixed onto an unconverted value; unresolvable → `{time} (timezone unset)`.** | Doctor FINDING (ask via `setup`, like `fiscal_q1_start_month`); until set, an offset-less time renders as `{time} (timezone unset)` — NEVER a 'UTC' label (that would change the instant, not expose uncertainty) — and any operation needing a real instant (correlation, conversion) loud-skips |
 | `team_publish_folder` | relative path | `Team/updates/{user_name}` (per the recorded manager-decision file) | Team/ publish gate is skipped with a stated reason until recorded |
@@ -21,8 +21,23 @@ that hardcodes any of them fails review.
 | `intake_retention_days` | map | per-source, keyed by `intake_sources` label — e.g. `{downloads: 60, shots: 30}`; governs LEAVE `reconsiderAt`, transient-junk delete-eligibility, and unpromoted-screenshot retention | Defaults: downloads-kind 60 · screenshots-kind 30, one info line naming the default used |
 | `account_aliases` | map | optional `{initialism-or-alias: Account Folder Name}` — grown ONLY via gate-confirmed offers (the #40 pattern); the engine never hand-guesses an entry; a configured hit resolves as EXACT — no confirmation; entries are written ONLY via a gate-confirmed offer, and setup PRESERVES existing entries when regenerating core.md | Treat as empty — every initialism/nickname match asks its C11 confirmation |
 | `declined_offers` | list | optional `[offer-key, …]` (e.g. `[sweep-task]`) — grown ONLY via a gate-confirmed offer decline (the #70 pattern, same shape as `account_aliases`'s #40 pattern); the engine never hand-adds an entry; a listed key resolves as DECLINED — no re-offer; entries are written ONLY via a gate-confirmed offer decline, and setup PRESERVES existing entries when regenerating core.md | Treat as empty — every offer-key re-offers per its own gate (doctor's #70 never-re-offer clause names this row) |
+| `boilerplate_schema` | integer | engine-owned generation marker for `core.md`'s GENERATED boilerplate — the current value is the LAST row of the changelog table below (one number, one place); bumped by the engine whenever that boilerplate gains, loses, or changes a section, never by a user, and every bump adds a row. Distinct from the engine version, which records only WHEN setup last ran | **Absent ≡ `0`** (written before the marker existed) — checked when present, never flagged for being absent by §C.2; §C.5 owns its currency |
 | `scheduled_task_ids` | map | optional `{sync?, sweep?}` — the platform's ids for the two exact-recipe scheduled tasks (setup §A6.2), captured at `setup`/`doctor` when the platform reveals them; embedded into the board (as `taskIds`, schema §tasks.json meta) for the shell's `runScheduledTask` rung | Absent map, or an absent per-kind id → that scheduled-run rung is simply absent — never a doctor finding |
 | `board_queue_tool` | string | optional — the probe-A (#14) verified tool name for the board's `state/board-queue/` file-create rung, embedded into the board (as `boardQueueTool`); written ONLY by that adoption step | Absent until probe A passes → rung 1 stays dormant — never a doctor finding |
+
+**`boilerplate_schema` changelog** — the source of truth for what a stale `core.md` is
+missing. `doctor` §C.5 names the delta from this table; without it the check could only
+guess. Every bump adds a row, newest last:
+
+**Every row is a DELTA, never a cumulative list** — doctor names the rows for values
+`M+1 … N`, so a cumulative row would make it report the whole boilerplate as missing.
+§A2's `core.md` bullet stays canonical for what setup emits TODAY; this table is canonical
+only for WHEN each section arrived.
+
+| value | what this bump ADDED or CHANGED |
+|---|---|
+| `0` | baseline (pre-marker): write-routing table · operating invariants |
+| `1` | adds the ad-hoc voice hook (voice spec §4 fourth emit point) |
 
 Runtime rule: a configured capability is still **probed before first use each session**
 ("presence is not capability"); a probe failure downgrades to the missing-value behavior

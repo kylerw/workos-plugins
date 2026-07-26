@@ -28,9 +28,19 @@ Attention entry classes (CI-validated in `ci/state-rules.js`):
 | `action` | parked-sweep line, approvals-pending count, intake-overdue, anything asking the user to act |
 
 **Note:** legacy plain strings remain valid during transition — the shell renders them as
-`action` (visibility-preserving — v1 rendered every line loud); each pass re-derives the
-whole array, so the transition self-heals at the first rc26 run. `class` rides attention's
-stored-derived status (C6 note, spec §4).
+`action` (visibility-preserving — v1 rendered every line loud). A full sync rebuilds the
+array, so a legacy bare string self-heals there; Tidy refreshes only the lines it owns and
+carries the rest forward verbatim. `class` rides attention's stored-derived status (C6
+note, spec §4).
+
+**Text rule — absolute dates only (#106).** A line survives passes that do not rebuild it,
+so attention text must be true whenever it is next READ, not only when written. Dates in
+`text` are absolute (`2026-07-21`, or `MM/DD` where the line is already terse); relative
+day-words never appear. `ci/state-rules.js` (engine repo) enforces the floor —
+`today`/`yesterday`/`tomorrow`/`this morning`/`last night`, typed entries and legacy strings
+alike — across the fixtures and the board's embedded block, NOT a live root's `tasks.json`.
+`this week` and `3 days ago` rot identically and are equally banned though no check catches
+them.
 
 `lastUnattendedRun` (optional; #67/#68/#52): a MAP keyed by unattended pass kind —
 `sync` (workos-sync) and `sweep` (workos-next-steps); intake is attended-only and never

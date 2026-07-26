@@ -77,7 +77,17 @@ path never re-asks and never runs pre-verification probes (first real use reveal
 
 - **Default** ("init my workspace"): adopt what the surface exposes. Enumerate the visible
   tools (no calls needed to list them) → `integrations` = the exposed set; `sfdc_tier` =
-  `mcp` if Salesforce read tools are exposed, else `manual`.
+  `mcp` if Salesforce read tools are exposed, else `manual`. **On a root that already has a
+  `core.md`, READ its config block first and treat absence as session scope, not removal**
+  (doctor check 3's split, applied at write time): a recorded integration not exposed this
+  session is RETAINED with one INFO line, rendered in the same config confirmation as the
+  integrations line below — "`{name}` recorded but not exposed in this session — retained;
+  say 'let me pick integrations' to remove it" — and **`sfdc_tier` never
+  downgrades on absence alone** (`mcp` → `manual` only through an explicit pick). Newly
+  exposed integrations are adopted; narrowing belongs to the custom mode. An absent
+  `core.md` is a fresh install, with nothing to retain; a present but UNPARSEABLE one stops
+  the write and says so — never silently read as fresh, which is the exact narrowing this
+  guard exists to prevent.
 - **Floor / new-user-test mode** ("init my workspace in floor mode", "…as a floor user",
   "…test mode"): force `sfdc_tier` = `manual` and `integrations` = `[ms365]` regardless of
   what exists, and use NO other connector for the rest of the run — this is how a power
@@ -86,17 +96,27 @@ path never re-asks and never runs pre-verification probes (first real use reveal
 - **Custom** ("…let me pick integrations"): present the enumerated list as one structured
   pick (C11). For users who keep personal connectors they don't want a work skill touching.
 
-The chosen set is echoed inside the single config confirmation below ("integrations:
-{list} — rerun setup with 'let me pick' to change"), so the default costs zero questions
-and the record is still explicit.
+The chosen set is echoed on its own line inside the config confirmation below — **both
+branches of it, the derived one and the asked one** — as
+"integrations: {list} ({adopted|retained|unchanged}) — rerun setup with 'let me pick' to
+change", with the parenthetical naming what actually changed. So the default costs zero
+questions, a widening is as visible as a narrowing, neither lands unannounced, and the way
+to change it travels with the line that reports it.
 
 1. **Identity — derive if a Graph/directory connector is in the active set, else ask.**
    The org-deployed "Graph - Production" MCP (get-current-user / get-user-manager /
    search-users) is a separate connector — NOT part of O365; not everyone will have it.
    With it: pull display name + mail and manager name + mail, present as **one
-   confirmation** (C11: "Confirm your identity config — name: …, initials: …, manager: ….
-   Correct?"). Without it: ask `user_name`, `initials`, `manager_name`/`manager_email`
-   directly in one structured pass, no mention of what's missing. Always allow correction
+   confirmation** (C11: "Confirm your identity config — name: …, initials: …, manager: …,
+   integrations: {list} ({adopted|retained|unchanged}) — rerun setup with 'let me pick' to
+   change. Correct?" — each retained integration's INFO line rendered beneath the
+   integrations line, nothing added when none were retained).
+   Without it: ask `user_name`, `initials`, `manager_name`/`manager_email`
+   directly in one structured pass, **never naming the absent derivation connector as the
+   reason for asking**, and closing that same pass with the identical `integrations:` line —
+   the O365 floor is the majority surface, and a retained or changed set must be as visible
+   there as on a Graph-derived one (that line reports the recorded config, which is a
+   different thing from explaining why the question was asked). Always allow correction
    (Salesforce owner-column spelling may differ from directory displayName — say so if the
    user edits).
 2. `fiscal_q1_start_month` — one question, once.
@@ -129,7 +149,10 @@ and the record is still explicit.
   voice spec §4 fourth emit point: one line telling the model to run the
   `voice pass per assets/shared/voice-contract.md` on any ad-hoc paste-ready chat output,
   surface = plain-text-paste when the text is pasted onward, in-chat otherwise) and NOTHING
-  personal. Setup
+  personal. **Every generation stamps `boilerplate_schema` with the bundle's current value
+  (#112)** — the marker doctor §C.5 compares against, and the only way a later run can tell
+  that a core.md written by an older bundle is missing a generated section rather than
+  merely old. Setup
   regenerates it **whole-file** — which is exactly why no user prose may live in it
   (sections carried on a recorded split decline excepted — doctor folds those into its
   carried-sections INFO, never a finding).
@@ -325,7 +348,10 @@ is "issues found," never green-with-asterisks** (C13):
    a stored "January" is a finding; live catch 2026-07-16); name the missing/malformed ones
    and which skill degrades without them. **`scheduled_task_ids`/`board_queue_tool` are
    type-conformance-only: checked when present, never flagged for being absent** (their
-   schema rows name absence as the rung simply not existing yet). The fix is always the
+   schema rows name absence as the rung simply not existing yet). **`boilerplate_schema`
+   is the same: checked when present, never flagged for being absent here — §C.5 owns its
+   currency**, and reporting it in both places would bill one fact twice with a remediation
+   this check cannot give (the key is engine-stamped, not asked). The fix is always the
    setup question flow, never a hand-edit (C2). **Ownership boundary: `core.md` is all-generated — validate it
    strictly (personal prose inside it = a finding: offer the A2 split — EXCEPT sections
    carried on record, `coremd-move:*` keys, which fold into the carried-sections INFO
@@ -373,6 +399,18 @@ is "issues found," never green-with-asterisks** (C13):
    recorded in core.md only marks when setup last ran — if the bundle is newer than
    core.md's record, say "config written by {M}; bundle is {N} — fine unless release notes
    say config fields changed", never "update available".
+   **Boilerplate currency — the mechanical half (#112):** compare core.md's
+   `boilerplate_schema` against the bundle's current value
+   (`assets/shared/identity.schema.md`; ABSENT ≡ `0`). Equal → silent. **Lower** → a
+   finding naming the delta from that file's changelog table — never a guess, never the
+   whole boilerplate list: "core.md's generated boilerplate is schema {M}, bundle ships
+   {N}: missing {the rows for values M+1 … N}. Fix: re-run `init my workspace` — core.md is
+   engine-owned and regenerated whole, and your `user.md` / `voice.md` / `workspace.md` are
+   untouched." **Higher** (core.md written by a NEWER bundle than the one running) → not a
+   core.md problem: "core.md was written by a newer bundle (schema {M} vs this bundle's
+   {N}) — this surface's WorkOS bundle is behind; update it, then re-run doctor." This is the thing the engine-version comparison above could never tell you: a
+   version gap says setup ran a while ago, which is usually fine; a schema gap says a
+   specific generated section is missing, which is not.
 6. **Team/ publication:** shortcut present? user's subfolder writable? manager-decision
    file recorded? Each absent one maps to the Day-1 guide step or the pending Adam item. **Fresh-install rule (#32): an unset publish gate on a root with no prior Team/ updates is INFO, not a finding — one line: "publish gate unsettled — it settles via the manager-decision file; the weekly sweep's A6.3 gate skips (with the reason said) until then."**
 7. **State layer:** `state/` exists; JSON parses; the writer's lock is a released
@@ -420,7 +458,16 @@ is "issues found," never green-with-asterisks** (C13):
    `hygiene-move`/`hygiene-drop` is a finding — "non-hygiene suppression entry —
    hand-edited?" (merge-purge ignores it; schema §pendingApprovals).
 9. **Scheduled tasks (live-test gap 2026-07-16 — doctor previously never looked):**
-   **match by PROMPT CONTRACT, never by task name** — a conforming sync task is one
+   **FIRST, can this surface see a scheduler at all?** (#112) No task-listing capability
+   exposed this session → a **loud SKIP** naming it — "scheduler not exposed on this
+   surface; scheduled tasks NOT checked — a task may exist in another surface's
+   scheduler" — and the whole check ends there: no finding, and **no create offer**,
+   because offering to create a task that may already exist elsewhere manufactures the
+   double-run this check exists to prevent. An EMPTY task list from a scheduler that IS
+   exposed remains a real "no conforming task" result and proceeds normally; the two are
+   not the same observation and are never reported the same way (C13
+   `presence-is-not-capability`).
+   Otherwise: **match by PROMPT CONTRACT, never by task name** — a conforming sync task is one
    whose prompt contains both `sync my day` and the literal `(scheduled, unattended)`
    marker (same contract, `weekly next steps`, for the next-steps task if opted in).
    A task named anything ("daily-kickoff", "morning run") does not count unless its
@@ -439,7 +486,12 @@ is "issues found," never green-with-asterisks** (C13):
    decline is RECORDED (core.md's `declined_offers:` line, §A6.2) — with no such
    record, doctor is diagnose-never-modify and sessions are memoryless, so offering
    again is correct, not a nag (#70). The record is per-offer-key — re-offer happens
-   ONLY when the user asks or the key's precondition changes. (b) A conforming sweep
+   ONLY when the user asks or the key's precondition changes. **The offer must SAY that
+   (#112):** declining here suppresses nothing — this offer has no write path, so the next
+   run asks again — and the way to stop being asked is to decline the same offer during
+   `init my workspace`, which records the key. Never word it so a decline here reads as
+   remembered; a user who declines three times and is asked a fourth should have been
+   told the first time why. (b) A conforming sweep
    task scheduled at the SAME minute as the sync task is a finding — "lock contention:
    one run will exit; offset the sweep (recipe: previous business day 5:00 PM)." (c) A
    conforming sweep task with NO `lastUnattendedRun.sweep` entry after its first

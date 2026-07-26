@@ -149,6 +149,15 @@ offers a **split** (moved verbatim into `user.md`); if durable notes of yours li
 `CLAUDE.md`, it offers the same **move** into `workspace.md` — and it does nothing
 without your approval.
 
+**Connectors you had, that aren't connected in this session, are KEPT.** If your config
+records Salesforce or Graph but this particular session doesn't expose them, re-running
+init **retains** them and says so — one line per connector, "recorded but not exposed in
+this session — retained." It will not quietly drop a connector just because it can't see
+it right now, and it never downgrades your Salesforce tier on absence alone. To actually
+remove one, say **"let me pick integrations"**. The confirmation always shows the
+integration outcome on its own line — adopted / retained / unchanged — so a change never
+lands unannounced.
+
 ## Alternate surface: Cowork (works, currently the alternate)
 
 The same engine runs in Cowork against the same folder — kept supported for anyone who
@@ -177,4 +186,13 @@ prefers it or whenever the desktop app isn't an option:
 - **`/workos-setup check my setup`** — a health report ending in `ok / findings /
   skipped` counts, with the shortest fix list. "Salesforce: manual tier" is normal for
   most of the team, not an error.
+- **"generated boilerplate is schema {M}, bundle ships {N}"** — not a problem with your
+  data. Your `core.md` was written by an older engine version and is missing a generated
+  section since added. Re-run **`init my workspace`**; it regenerates `core.md` (engine-owned)
+  and never touches `user.md`, `voice.md`, or `workspace.md`.
+- **"scheduler not exposed on this surface"** — a SKIP, not a failure. This session can't
+  see a task scheduler, so the check didn't run and deliberately made no offer to create
+  one, since a task may already exist in another surface's scheduler.
+- **A check that says SKIP is not a pass.** The summary says "issues found" rather than
+  green whenever something couldn't be checked — that's on purpose.
 - Send the doctor output to whoever sent you this link — it includes your engine version.

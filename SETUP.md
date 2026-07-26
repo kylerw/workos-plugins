@@ -122,7 +122,7 @@ behave differently, one of these three files is almost always the answer.
   builds from your own logs and says so.)
 - **Deep work on one account?** Open a session in that account's folder under
   `Accounts/` — it carries its own instructions. (On Cowork: one project per active
-  account — see the Day-1 guide's pattern.)
+  account — see the Cowork section below.)
 
 ## H. Things that look scary but aren't
 
@@ -180,6 +180,18 @@ prefers it or whenever the desktop app isn't an option:
 4. Cowork can hold the **7:00 AM weekday scheduled sync** — if you set one up, keep it
    as the ONLY scheduler (don't add a desktop one too; a same-day duplicate sync skips
    itself either way).
+
+**One project per active account.** Separate from your broad WorkOS project: New project
+→ Add folder → choose `{your folder}/Accounts/{account}` → Select Folder → name the
+project just the account name → Create. (The Add-folder control moves around a little
+between builds — it's always inside New project.) Work everything account-specific from
+that project; the broad WorkOS project is for cross-account work — sync, board, sweeps.
+Pin the WorkOS project, your main account projects, and key chats so they stay in the
+left panel.
+
+**Tapping the board artifact from OUTSIDE its chat may open a new "discuss the board"
+chat.** That's the platform, not a bug. Your build/sync conversation is still in Recents —
+go back there to continue.
 
 ## If something's off
 

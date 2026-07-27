@@ -7,8 +7,8 @@ before it's saved. Two things it will **never** do: write to Salesforce
 (you always paste), or send email by itself (you always send).
 
 You'll set this up in the **Claude desktop app** — one app, one plugin, one folder.
-(Using Cowork instead? That path still works — see the **Alternate surface: Cowork**
-section near the end.)
+(Using Cowork instead? That path is supported — see the **Alternate surface: Cowork**
+section near the end, and note the desktop path is the one verified against each release.)
 
 If anything on this page confuses you, that's a bug in the page — tell whoever sent you this link.
 
@@ -158,10 +158,12 @@ remove one, say **"let me pick integrations"**. The confirmation always shows th
 integration outcome on its own line — adopted / retained / unchanged — so a change never
 lands unannounced.
 
-## Alternate surface: Cowork (works, currently the alternate)
+## Alternate surface: Cowork (supported; the desktop app gets verification first)
 
-The same engine runs in Cowork against the same folder — kept supported for anyone who
-prefers it or whenever the desktop app isn't an option:
+The same engine is designed to run in Cowork against the same folder — kept supported for
+anyone who prefers it or whenever the desktop app isn't an option. The desktop path is the
+one verified against each release, so if something here looks off, say so rather than
+working around it:
 
 1. Create a Cowork project named **WorkOS** (Cowork may auto-rename it on creation —
    renaming it back is safe: **⋯ → Edit details → rename**); in its settings add
@@ -171,8 +173,9 @@ prefers it or whenever the desktop app isn't an option:
 2. Skills: **Settings → Plugins → Add marketplace** → `kylerw/workos-plugins` → Sync →
    install **workos** → turn "Sync automatically" ON (Browse plugins → Personal → click
    the marketplace entry itself (NOT Edit) → Plugins section → ⋯). If plugins aren't
-   available to you, download the `.skill` bundles from the marketplace's GitHub
-   **Releases** page and upload them to the project instead.
+   available to your account, **ask whoever sent you this link for the `.skill` bundles**
+   and upload them to the project instead — they're built on each release but aren't
+   self-serve yet.
 3. Run `init my workspace` there. **One Cowork-only step:** the LAST thing init hands
    you is a project-instructions text block — paste it into the project's settings →
    instructions field (copy your old instructions to a note first; pasting replaces
@@ -183,8 +186,10 @@ prefers it or whenever the desktop app isn't an option:
 
 **One project per active account.** Separate from your broad WorkOS project: New project
 → Add folder → choose `{your folder}/Accounts/{account}` → Select Folder → name the
-project just the account name → Create. (The Add-folder control moves around a little
-between builds — it's always inside New project.) Work everything account-specific from
+project just the account name → Create — **then paste that account's
+`Account_Project_Instructions.md` into the new project's instructions field, same as step
+3**, or the project starts blind on the account. (The Add-folder control moves around a
+little between builds — it's always inside New project.) Work everything account-specific from
 that project; the broad WorkOS project is for cross-account work — sync, board, sweeps.
 Pin the WorkOS project, your main account projects, and key chats so they stay in the
 left panel.

@@ -8,7 +8,7 @@ before it's saved. Two things it will **never** do: write to Salesforce
 
 You'll set this up in the **Claude desktop app** — one app, one plugin, one folder.
 (Using Cowork instead? That path is supported — see the **Alternate surface: Cowork**
-section near the end, and note the desktop path is the one verified against each release.)
+section near the end, and note the desktop path is the one we verify first.)
 
 If anything on this page confuses you, that's a bug in the page — tell whoever sent you this link.
 
@@ -121,8 +121,8 @@ behave differently, one of these three files is almost always the answer.
   into Salesforce and send the email yourself. (No Salesforce connection? The draft
   builds from your own logs and says so.)
 - **Deep work on one account?** Open a session in that account's folder under
-  `Accounts/` — it carries its own instructions. (On Cowork: one project per active
-  account — see the Cowork section below.)
+  `Accounts/` — it carries its own instructions. (On Cowork: stay in your one WorkOS
+  project — its instructions route Claude to the account's own file.)
 
 ## H. Things that look scary but aren't
 
@@ -162,8 +162,7 @@ lands unannounced.
 
 The same engine is designed to run in Cowork against the same folder — kept supported for
 anyone who prefers it or whenever the desktop app isn't an option. The desktop path is the
-one verified against each release, so if something here looks off, say so rather than
-working around it:
+one we verify first, so if something here looks off, say so rather than working around it:
 
 1. Create a Cowork project named **WorkOS** (Cowork may auto-rename it on creation —
    renaming it back is safe: **⋯ → Edit details → rename**); in its settings add
@@ -173,7 +172,8 @@ working around it:
 2. Skills: **Settings → Plugins → Add marketplace** → `kylerw/workos-plugins` → Sync →
    install **workos** → turn "Sync automatically" ON (Browse plugins → Personal → click
    the marketplace entry itself (NOT Edit) → Plugins section → ⋯). If plugins aren't
-   available to your account, **ask whoever sent you this link for the `.skill` bundles**
+   available to your account, **ask whoever set up WorkOS for your team for the `.skill`
+   bundles**
    and upload them to the project instead — they're built on each release but aren't
    self-serve yet.
 3. Run `init my workspace` there. **One Cowork-only step:** the LAST thing init hands
@@ -184,15 +184,10 @@ working around it:
    as the ONLY scheduler (don't add a desktop one too; a same-day duplicate sync skips
    itself either way).
 
-**One project per active account.** Separate from your broad WorkOS project: New project
-→ Add folder → choose `{your folder}/Accounts/{account}` → Select Folder → name the
-project just the account name → Create — **then paste that account's
-`Account_Project_Instructions.md` into the new project's instructions field, same as step
-3**, or the project starts blind on the account. (The Add-folder control moves around a
-little between builds — it's always inside New project.) Work everything account-specific from
-that project; the broad WorkOS project is for cross-account work — sync, board, sweeps.
-Pin the WorkOS project, your main account projects, and key chats so they stay in the
-left panel.
+**One Cowork project for your whole memory root** — not one per account. The project
+instructions you pasted in step 3 are what tell Claude to read an account's own
+`Account_Project_Instructions.md` when it works in that account's folder, so a single
+project covers every account. Pin it and your key chats so they stay in the left panel.
 
 **Tapping the board artifact from OUTSIDE its chat may open a new "discuss the board"
 chat.** That's the platform, not a bug. Your build/sync conversation is still in Recents —

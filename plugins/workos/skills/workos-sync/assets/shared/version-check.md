@@ -44,7 +44,8 @@ old contents verbatim in its one line.
 **Who checks, and how loudly:**
 - `doctor` (setup's health mode): report-only, always:
   `engine version: {installed} (latest: {latest})` — installed ahead → append
-  "— beacon behind; your next sync heals it".
+  "— beacon behind; your next sync heals it". **Doctor never writes this file.** Doctor's
+  one new write is the usage log — see `assets/shared/usage-log.md`.
 - `sync` (Step 0.6) and the weekly `next-steps` sweep: compare silently; act only on a
   mismatch — behind → the notice line, ahead → the beacon bump and its one line.
 - Degraded, never failed (C13's graceful-degradation rule): `doctor` is the loud surface —

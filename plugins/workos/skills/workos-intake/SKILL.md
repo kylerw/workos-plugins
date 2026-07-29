@@ -70,6 +70,9 @@ canonical target recipe), `suppressed.intake` (LEAVE snooze records), and
    and each phase · ownership check before every state write batch · verified
    tombstone release as the final action, never delete).
 
+8. **Usage log (open):** Immediately after the lock is yours, append the `open` record per
+   `assets/shared/usage-log.md` (`mode`: `sweep` or `maintain`; `runId` = this pass's lock runId). A failed append is never fatal — one `system` line in `attention[]`, and the pass continues.
+
 ## SWEEP — full classification
 
 1. **Scan:** stat every immediate-child regular file of each resolved source (names,
@@ -142,17 +145,21 @@ canonical target recipe), `suppressed.intake` (LEAVE snooze records), and
    restamp `generated`/`generatedBy: "intake"`** (two passes share this file; a whole
    rewrite that nulls the other watermark breaks sync's overdue line and maintain's
    guard); one summary — counts per pile, applied/declined/left, bytes reclaimed,
-   aggregate suppression line; release the lock. Offer nothing else (the brownfield
+   aggregate suppression line. Immediately before releasing the lock, append the `close` record per
+   `assets/shared/usage-log.md`, using that document's outcome mapping. Do not restate the
+   mapping here. Release the lock. Offer nothing else (the brownfield
    principle: no other skill's work is blocked on tidiness).
 
 ## MAINTAIN — the cheap pass
 
 Read-set: config · the lock · `state/intake.json` · `suppressed.intake` · source
 listings (stat only). Scope, exactly three item classes:
-1. Files newer than `lastMaintain` (else `lastSweep`; both null → say "no sweep has
-   run — run intake first" and exit without writes) — the newer-than comparison obeys
-   sweep step 1's explicit-UTC rule (#94: this exact check is where the local parse
-   misfired).
+1. Files newer than `lastMaintain` (else `lastSweep`; both null → immediately before
+   exiting, append the `close` record per `assets/shared/usage-log.md` with outcome
+   `completed` (the pass correctly determined there is nothing to maintain), then say
+   "no sweep has run — run intake first" and release the lock, exiting without further
+   writes) — the newer-than comparison obeys sweep step 1's explicit-UTC rule (#94:
+   this exact check is where the local parse misfired).
 2. `suppressed.intake` records past `reconsiderAt`, or whose fingerprint changed.
 3. Unpromoted screenshots older than their source's retention window — these are
    ordinary trash-first DELETEs: **promote-to-keep means the retention window itself
@@ -162,7 +169,9 @@ listings (stat only). Scope, exactly three item classes:
 Classify and gate EXACTLY as sweep steps 2–4 (same piles, same manifest machinery,
 same #62 gate shape), then stamp `lastMaintain` (UTC `Z` form, #94) — same
 read-modify-write rule as sweep's close: preserve `lastSweep` verbatim, restamp
-`generated`/`generatedBy` — and release. A maintain pass never re-litigates an
+`generated`/`generatedBy`. Immediately before releasing the lock, append the `close` record per
+`assets/shared/usage-log.md`, using that document's outcome mapping. Do not restate the
+mapping here. Release. A maintain pass never re-litigates an
 unexpired, unchanged LEAVE.
 
 ## Anti-patterns — never

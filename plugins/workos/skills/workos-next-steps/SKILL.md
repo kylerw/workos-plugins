@@ -114,6 +114,33 @@ renders ALL rows at full fidelity in the gate turn — a park is never a prior r
 Discard's state writes — the `sweep.json` rewrite (restamping `generated`/`generatedBy:
 "sweep"`) and the journal pointer — happen under the C4 lock, pass `sweep`, full
 protocol by reference to workos-sync Step 0.4, exactly like the unattended park's.
+Immediately after acquiring the lock in the Finalize/Discard flow, append the `open`
+record per `assets/shared/usage-log.md` (`mode`: `sweep`; `runId` = this lock's runId).
+A failed append is never fatal — one `system` line in `attention[]`, and the pass
+continues. Immediately before releasing the lock, append the `close` record per
+`assets/shared/usage-log.md`, using that document's outcome mapping. Do not restate the
+mapping here.
+
+**Usage log — a fresh attended sweep writes a lockless pair.** This skill takes the C4 lock
+at exactly two sites: A0's unattended park and the Finalize/Discard flow above, and those
+two write `runId` records. A fresh attended sweep (A1–A6 with no park to resume) writes no
+`state/` file — its outputs are `Next_Step_Log.md` under `Accounts/` and the gated `Team/`
+publish — so it holds no lock. It appends an `open`/`close` pair keyed by `passId` per
+`assets/shared/usage-log.md` (`mode`: `sweep`): `open` once the config is resolved, the
+mode is determined, AND the entry check above has established there is no park to resume —
+or the user answered it with "Leave parked, run fresh" — before A1. **Never before that
+offer:** Finalize and Discard take the lock and write their own `runId` pair, so an `open`
+fired ahead of the offer would leave the `passId` row orphaned on the routine
+park→Finalize rhythm, reading as an abandonment of a pass that in fact completed. `close`
+as the pass's last action after A6's persistence, using that document's outcome mapping.
+Do not restate the mapping here. A failed append is
+never fatal — this pass holds no lock and writes no `attention[]`; report it in the run
+output and continue.
+**Never mint a `runId` to fill the hole**: a runId that names no lock is a fabricated
+identifier in a shared file, and two of them would pair `open`/`close` records that never
+protected anything. `passId` exists precisely so this pass can be counted without making
+that claim — its shape is disjoint from a runId's, so it can never be read as one. The
+attended weekly run is PLAN §6's primary adoption metric, and it is now visible (#173).
 
 ### A0. Unattended: stage-and-park (#68 — spec 2026-07-21-unattended-sweep-design.md)
 
@@ -141,10 +168,20 @@ and persistence write — happens only at a later attended finalize (§A-entry r
    derivation; class per the schema README's attention-class table). The board is NOT
    rebuilt here — sync and tidy own board rebuilds; the due-day morning sync surfaces
    the park (spec §6b).
+
+3a. **Usage log (open):** Immediately after the lock is yours, append the `open` record per
+   `assets/shared/usage-log.md` (`mode`: `sweep`; `runId` = this pass's lock runId). A failed
+   append is never fatal — one `system` line in `attention[]`, and the pass continues.
+
+   The ad-hoc single-opportunity mode (§B) takes no lock and has no runId; it writes a
+   `passId`-keyed pair of its own (§B step 0).
+
 4. **Nothing leaves:** no paste block, no mail draft (an external mailbox write waits
    for the gate), no `Next_Step_Log.md` observation, no Team/ publish. Run output:
    the header line, rows parked, tier + coverage, unknowns count, replaced-park note
-   when applicable. Release the lock as the final action.
+   when applicable. Immediately before releasing the lock, append the `close` record per
+   `assets/shared/usage-log.md`, using that document's outcome mapping. Do not restate the
+   mapping here. Release the lock as the final action.
 
 ### A1. Enumerate the pipeline (tiered intake)
 
@@ -281,6 +318,11 @@ record of observations and approved lines** — never read back as current deal-
 
 ## §B. Single opportunity — ad hoc
 
+0. **Usage log (open):** once the config is resolved, append the `open` record per
+   `assets/shared/usage-log.md` (`mode`: `single`; `passId` — this pass holds no lock).
+   Append the matching `close` as the pass's last action, after the line is emitted, using
+   that document's outcome mapping. Do not restate the mapping here. A failed append is
+   never fatal: report it in the run output and continue.
 1. **Resolve the account** against `{memory_root}/Accounts/` (excluding `_`-prefixed
    folders, per the memory-structure template). Exact/substring → proceed; one plausible
    nickname match → confirm; ambiguous/none → structured options ending with "it's a new
@@ -326,6 +368,10 @@ record of observations and approved lines** — never read back as current deal-
   the line and change entry together at its single `draft-before-write` gate, and the
   caller appends the §A6-format log entry exactly once after acceptance. One writer, one
   approval per artifact.
+
+**§C writes no usage record.** `workos-sync` or `workos-capture` invoked this skill, and
+that pass already recorded itself. A record here would double-count the exact metric the
+log exists to make trustworthy.
 
 ---
 

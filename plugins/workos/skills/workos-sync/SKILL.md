@@ -51,7 +51,9 @@ board computes (no pass stores or refreshes them).
 2. **Mode:** trigger word wins. Sync vocabulary: sync my day / full sync / kickoff / start
    my day / wrap / close out (legacy words are triggers only — same single pass, C3).
    Tidy vocabulary: tidy / tidy the board. Board vocabulary: build my board / rebuild my
-   board → the BOARD section (skips Step 0 items 4–6 — it writes no state/).
+   board → the BOARD section (skips Step 0 items 4–6, including the lock and the `runId`
+   pair that rides it — it writes no state/; the BOARD section writes its own lockless
+   `passId` pair instead, at its step 0).
    Board-button vocabulary: a message beginning "Mark done:" (fired by the board's ✓
    button) → run TIDY, carrying that closure as a proposed item into its approval step —
    never apply it directly. Ambiguous →
@@ -115,8 +117,11 @@ board computes (no pass stores or refreshes them).
      user-interaction gap — re-read the lock; anything but your own LIVE lock (your
      `runId` AND not `released: true`) → yield and report, write nothing further.
    - **Release (tombstone, never delete) the lock as the pass's final action** — after
-     the close summary, no questions after release. On any error you survive: release
-     before exiting. **Release only what you still own:** re-read the lock FIRST — it
+     the close summary, no questions after release. On any error you survive: append the
+     `close` record per `assets/shared/usage-log.md` with outcome `error` FIRST, then
+     release, then exit — an error exit that skips the close is indistinguishable from a
+     session that abandoned at its gate, and it is the only site that ever writes that
+     outcome. **Release only what you still own:** re-read the lock FIRST — it
      holds your live `runId` → rewrite `.pass-lock.json` in place to that object plus
      `"released": true, "releasedAt": now`; anything else (another run's lock or
      tombstone — they stale-recovered over you) → write NOTHING and report "lock no
@@ -129,6 +134,9 @@ board computes (no pass stores or refreshes them).
      holds}; it will read as stale and self-recover after 30 minutes." (Live defect
      2026-07-16: an unattended run reported "released successfully" while the old
      delete had failed — doctor caught it four minutes later.)
+4a. **Usage log (open):** Immediately after the lock is yours, append the `open` record per
+   `assets/shared/usage-log.md` (`mode`: `sync` or `tidy`, `runId` = this pass's lock runId).
+   A failed append is never fatal — one `system` line in `attention[]`, and the pass continues.
 5. **State baseline (first state write — under the lock):** if `state/` lacks any of
    `tasks.json` / `meetings.json` / `drafts.json` / `suppressed.json`, create the missing
    ones as empty shapes per the schema (machine bookkeeping, ungated). Files present but
@@ -437,7 +445,10 @@ line).
 5. Close summary, readable in 90 seconds: done (evidence-backed) · still open (max 3) ·
    next business day (meetings + queue) · attention items. A parked sweep additionally gets
    one close-summary line offering `workos-next-steps` to finalize — a pointer, never an
-   automatic escalation (C3). **Then release the lock — the
+   automatic escalation (C3). Immediately before releasing the lock, append the `close` record per
+   `assets/shared/usage-log.md`, using that document's outcome mapping. Do not restate the
+   mapping here.
+   **Then release the lock — the
    final action. No questions after release.**
 
 **Unattended:** no questions anywhere. Apply only what C5's state-store clause allows
@@ -454,7 +465,11 @@ key of the map, written by unattended runs only, in the same batch as `lastFullS
 rebuild the board, put counts in
 `attention[]` ("{N} approvals waiting"; also "{N} findings suppressed by earlier declines"
 whenever N>0 — both `action`-class), the drain receipt (empty queue → omitted) and the
-summary in the run output, release.
+summary in the run output, then — immediately before releasing the lock — append the
+`close` record per `assets/shared/usage-log.md`, using that document's outcome mapping
+(do not restate it here), and release. **The scheduled daily sync is the highest-volume
+writer of this log: an unattended run that ends without its `close` reports the whole team
+as abandoning every morning.**
 
 ---
 
@@ -520,6 +535,9 @@ brief-building.
    `generatedBy: tidy`, `lastTidy` — **never `lastFullSync`, never the day-task.**
 5. If the world clearly moved a lot, say "worth a full sync" and stop — the user's call,
    never an automatic escalation (C3).
+   Immediately before releasing the lock, append the `close` record per
+   `assets/shared/usage-log.md`, using that document's outcome mapping. Do not restate the
+   mapping here.
 6. Release the lock.
 
 (No derived-signal recompute step: `overdue`/`nearDate` are the board's render-time
@@ -533,6 +551,19 @@ The ONE sanctioned path that generates the board shell (passes never regenerate 
 Step 0 items 1–3 apply; items 4–6 do not: this entry point writes no `state/`, so no
 lock. In an unattended run, board vocabulary is reported in the run output and skipped.
 
+0. **Usage log (open):** Step 0 item 1 has already resolved `{user_name}` — the record's
+   `user` field and its per-user log path — so append the `open` record per
+   `assets/shared/usage-log.md` (`mode`: `board`; `passId` — this entry point holds no
+   lock) before step 1's read. Append the matching `close` as the pass's last action,
+   after step 5's interactivity check — the POSITION, not the write: step 5 offers "Skip",
+   step 3's snapshot write can fail, and step 2's emission self-check can fail and end the
+   pass right there, and each of those still ran the pass to its end.
+   Use that document's outcome mapping. Do not restate the mapping here. An unattended run that
+   skips board vocabulary did no work and writes nothing, and a **hand-off from
+   `workos-setup` §A6.3's board offer is a DELEGATED invocation that writes nothing** —
+   that pass already recorded itself. A failed append is never fatal —
+   this entry point holds no lock and writes no `attention[]`; report it in the run output
+   and continue.
 1. **Read** `state/tasks.json` + `state/meetings.json`. A missing file renders as its
    empty schema shape — never scaffold `state/` here (that is a pass's job, under the
    lock).

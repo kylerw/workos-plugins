@@ -18,7 +18,8 @@ description: >
 
 Turn what just happened with a customer into durable account files — a touch, a
 commitment (either direction), or a full consolidated meeting note — shown to the user
-before a single byte is written. Facts, then a clean write. Contracts (by reference —
+before a single byte is written, save for the usage log's ungated `open` record (C5).
+Facts, then a clean write. Contracts (by reference —
 their text ships in `assets/shared/contracts.md`): C2 · C4 · C5 · C7 · C11 · C13 · C14.
 
 **Bundle location:** resolve every `assets/` path in this file relative to THIS skill's
@@ -32,6 +33,10 @@ and journal pointers. It NEVER writes `state/` (C4 — sync's next pass reads wh
 wrote as evidence), never Salesforce (C7), never another skill's files — with ONE named exception: the
 single gate-approved `Contacts.md` row/header append (or `Contacts.md` creation from
 the shared template when absent) per `assets/shared/contact-resolution.md` (#40).
+The usage log (`Team/_engine/usage/{user_name}.jsonl`, per
+`assets/shared/usage-log.md`) is not a second exception to this rule: it is ungated machine
+bookkeeping under C5, not account content and not another skill's file. It carries no
+free-text field, so nothing this skill learns about an account can reach it.
 
 ## Step 0 — every capture
 
@@ -57,6 +62,12 @@ the shared template when absent) per `assets/shared/contact-resolution.md` (#40)
      folder name — the folder and `Account_Notes.md` are created by THE GATE's approved
      write (named in the bundle), structure back-fill stays setup's job.
    - Capture only into accounts under this root — never another rep's book.
+4. **Usage log (open):** append the `open` record per `assets/shared/usage-log.md`
+   (`mode`: `log` or `meeting` per the resolved intent; `passId` — this pass holds no
+   lock). This is bookkeeping, not a content write: it precedes THE GATE deliberately, so
+   that a capture abandoned at the gate leaves an `open` with no `close`, which is the
+   only signal that abandonment has. A failed append is never fatal — this skill writes no
+   `state/` and therefore no `attention[]`; report it in the run output and continue.
 
 ---
 
@@ -290,7 +301,7 @@ reading the target first:**
    form from LOG step 2 when nothing else was written. **Account-mounted session (no
    `{memory_root}/journal/` in scope): never invent a folder outside the account's
    documented layout. A meeting or commitment capture loud-skips the pointer in the
-   close output — "journal pointer skipped (account-mounted); the next root sync
+   run output — "journal pointer skipped (account-mounted); the next root sync
    backfills it" (sync scans Account_Notes + `02_Meetings/`). A PURE TOUCH leaves no
    account file for sync to find — say instead: "this touch has NO durable record from
    an account project — re-log it from the WorkOS root chat to keep it," and never
@@ -305,12 +316,20 @@ reading the target first:**
 as saved, the paste-ready next-step line. A write that failed is reported as failed,
 never as success; a partial completion names exactly which items landed.
 
+**Usage log (close):** as the pass's last action, append the `close` record per
+`assets/shared/usage-log.md` with the same `passId` its `open` carried, using that
+document's outcome mapping. Do not restate the mapping here. A partial write reports as
+`error`; a completed bundle with a loud-SKIPped source reports as `degraded`.
+
 ---
 
 ## Anti-patterns — never
 
 - Writing anything before the gate's explicit approval of the exact bundle — capture is
-  manual-only in v1, and a draft is never a save.
+  manual-only in v1, and a draft is never a save. The one thing that is not a write in this
+  sense is the usage log's `open` record (`assets/shared/usage-log.md`): ungated machine
+  bookkeeping under C5, schema-bounded, and carrying nothing from the bundle under
+  consideration. It records that a pass started; it cannot record what the pass was about.
 - Writing `state/` (C4 — sync reads capture's files as evidence), Salesforce (C7), or
   another skill's files; scaffolding account structure (setup's job — offer
   "init {account}").

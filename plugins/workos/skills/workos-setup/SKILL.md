@@ -35,12 +35,22 @@ plugin's skill folder. Never resolve `assets/` in the memory root or project fol
 
 1. **`init my workspace`** — first run for a new user (§A).
 2. **`init {account}`** — scaffold or back-fill one account (§B).
-3. **`doctor`** ("check my setup") — diagnose, never modify (§C).
+3. **`doctor`** ("check my setup") — diagnose, never modify; the usage log is doctor's one
+   new write (§C).
 4. **`seed my voice file`** — runs §A2's voice.md seed step alone: no memory root, identity
    config, or account work. Seeds `voice.md` from the template when absent, adds
    `@voice.md` to the root CLAUDE.md import line beside `@user.md` when missing; both
    steps idempotent (skip when already present). The same additive rule covers
    `@workspace.md` — added ONLY when that file exists; this mode never creates it.
+   **Usage log:** once the config resolves `{memory_root}` and `user_name`, append the
+   `open` record per `assets/shared/usage-log.md` (`mode`: `voice-seed`; `passId` — this
+   pass holds no lock), then the matching `close` as the pass's last action, after the
+   report of what was seeded vs already present — the POSITION, not the seed: an
+   already-present `voice.md` and an already-present import line make this a legitimate
+   no-op run that still ran. Use that document's outcome mapping. Do not restate the
+   mapping here. A failed append is never fatal: report it in the run output and continue.
+   **§A2's own run of this seed step is a DELEGATED invocation and writes nothing** — §A
+   already recorded itself.
 5. **`build my voice file from my mail`** — voice bootstrap (§D): derive voice.md from the
    user's own sent mail + Teams chats. May REPLACE the file only when it passes the
    two-part pristine test in `assets/shared/voice-contract.md` §5; every other state —
@@ -119,6 +129,17 @@ to change it travels with the line that reports it.
    different thing from explaining why the question was asked). Always allow correction
    (Salesforce owner-column spelling may differ from directory displayName — say so if the
    user edits).
+1a. **Usage log (open):** once Identity above resolves `user_name` — the first point on
+   either branch (derived-and-confirmed, or asked-and-given) where the record's `user`
+   field and its per-user log path both exist, by which point the integration mode is
+   already known from the invocation — append the `open` record per
+   `assets/shared/usage-log.md` (`mode`: `init`, or `floor` when floor mode was explicitly
+   invoked; `passId` — this pass holds no lock); a run abandoned before Identity resolves
+   writes nothing, since a per-user log cannot be written before the user is known. Append
+   the matching `close` as the run's last action — the POSITION, not the config write: a
+   run stopped by §A2's unparseable-`core.md` guard and honestly reported still ran to its
+   end and still closes. Use that document's outcome mapping. Do not restate the mapping
+   here. A failed append is never fatal: report it in the run output and continue.
 2. `fiscal_q1_start_month` — one question, once.
 3. `timezone` — one question, once (C11): with `ms365` in the active set, read the
    mailbox timezone (probe, C13) and offer its IANA equivalent as the default option —
@@ -189,6 +210,8 @@ to change it travels with the line that reports it.
   recorded section verbatim, exactly as §A6.1's guard does for the root file. The root
   `CLAUDE.md` is NOT examined here — §A6.1's standing guard owns that file's split.
   One flow per file.
+
+**After a successful config write, append the `install` record per `assets/shared/usage-log.md`** — but ONLY if this user's log carries no `install` record already. The rule is stated against the file, not the mode: a later `account-init` or `floor` run adds nothing. `mode` is whichever mode is running. This is in ADDITION to this pass's `open`/`close` pair, never instead of it — `install` is a fact about this user keyed on its own absence, the pair is the record of one pass running and finishing.
 
 ### A3. Scaffold the root structure
 
@@ -281,14 +304,20 @@ last_verified`), approved before writing. Skipping is fine; capture fills these 
    rollback), then paste the new text into the Cowork project's instructions field.
 2. **Scheduled task, by exact recipe — never improvised, never a pair:** offer (C11) to
    "create a scheduled task — do NOT run it now — prompt exactly
-   `sync my day (scheduled, unattended)`, weekdays 7:00 AM, enabled." ONE task; legacy
+   `sync my day (scheduled, unattended)`, weekdays 7:00 AM, enabled, permission mode
+   Auto." **The mode is part of the recipe (#138), not a preference:** the platform
+   default (Manual) stalls an unattended run indefinitely at its first unapproved tool
+   call — no timeout, no auto-deny — so a Manual-mode task structurally cannot honor the
+   unattended marker it carries. Set the mode with the pickers on the Instructions input
+   of the routine create/edit form. ONE task; legacy
    kickoff/wrap slots are deleted or left dead, never re-enabled (live near-miss: a
    doctor offered to re-enable BOTH holdovers = two full syncs daily). Optional second
    offer — the weekly sweep, anchored to the update's DUE day (#68): ask (C11) "which
    day is your weekly next-steps update due?" (default = the recorded manager-decision
    cadence day when present, else Thursday), then offer to create the task by exact
    recipe — "do NOT run it now — prompt exactly `weekly next steps (scheduled,
-   unattended)`, scheduled the PREVIOUS BUSINESS DAY at 5:00 PM, enabled" (due
+   unattended)`, scheduled the PREVIOUS BUSINESS DAY at 5:00 PM, enabled, permission
+   mode Auto (same mandate as the sync task)" (due
    Thursday → runs Wednesday 5:00 PM; due Monday → Friday 5:00 PM). A decline is
    written into core.md's setup record — a `declined_offers:` line listing offer keys,
    preserved across regeneration per the schema row (`assets/shared/identity.schema.md`);
@@ -298,12 +327,22 @@ last_verified`), approved before writing. Skipping is fine; capture fills these 
    that day's run. Whichever task(s) the platform creates, capture any
    id or reference it returns or displays into `scheduled_task_ids` (`sync`/`sweep`) at
    the config write below — an id the platform never reveals stays absent, never guessed.
-3. Report what was created vs already present, write the config, then OFFER the board (C11 — live gap 2026-07-17: the first non-founder install ended with no board offer): "1. Build my board now / 2. Skip — say 'build my board' any time." On 1, hand off to workos-sync's BOARD entry point. Then close.
+3. Report what was created vs already present, write the config, disclose the usage log, then OFFER the board (C11 — live gap 2026-07-17: the first non-founder install ended with no board offer). **Disclosure:** "Runs are logged to `Team/_engine/usage/{user_name}.jsonl` — skill, version, outcome. No account data. Everyone on the team can see it." Then: "1. Build my board now / 2. Skip — say 'build my board' any time." On 1, hand off to workos-sync's BOARD entry point. Then close.
 
 ---
 
 ## §B. Account init / back-fill — additive only, always
 
+0. **Usage log (open) — a DIRECTLY INVOKED `init {account}` only.** Once the config is
+   resolved, append the `open` record per `assets/shared/usage-log.md` (`mode`:
+   `account-init`; `passId` — this pass holds no lock). Append the matching `close` as the
+   pass's last action, after this section's last step — the POSITION, not step 3's
+   approval: a declined create-list creates nothing and the pass still ran end to end. Use
+   that document's outcome mapping. Do not restate the mapping here. **§A4's per-account
+   runs of this section are DELEGATED invocations and write NOTHING** — §A's own pass
+   already recorded itself, so one `init my workspace` naming four accounts stays one
+   recorded pass, and `account-init` keeps counting invocations rather than folders. A
+   failed append is never fatal: report it in the run output and continue.
 1. Resolve the name against `Accounts/` (exact → substring → nickname with confirmation;
    `_`-prefixed folders excluded). Existing folder → **back-fill mode**: announce "adding
    only what's missing; touching nothing that exists."
@@ -323,7 +362,7 @@ last_verified`), approved before writing. Skipping is fine; capture fills these 
 
 ---
 
-## §C. doctor — diagnose, never modify
+## §C. doctor — diagnose, never modify; the usage log is doctor's one new write
 
 Run every check; print one line each; **a check that cannot run prints SKIP and the summary
 is "issues found," never green-with-asterisks** (C13):
@@ -381,16 +420,27 @@ is "issues found," never green-with-asterisks** (C13):
    Absent → INFO, never a finding — `voice.md not seeded — say "seed my voice file"
    (optional equipment)`. Present but NOT imported → a finding, one-line fix: add
    `@voice.md` to the root CLAUDE.md import line beside `@user.md`.**
-3. **Integrations:** probe each configured one with a harmless read (C13). Split the
+3. **Integrations:** probe each configured one with a harmless read (C13). **Probe
+   evidence is scoped to THIS doctor run (#156): a verdict may cite only a call made
+   during this run.** Activity earlier in the conversation, in a prior pass, or in
+   another skill is NOT evidence and never yields `ok` — re-probe unconditionally even
+   when this session already exercised the integration; that cost is the point of the
+   check. No probe possible → SKIP with its reason stated, never `ok`. Split the
    result (#57 — session scope is not misconfiguration): **configured, not exposed on
    THIS surface (a session with no MCPs at all — expected on some surfaces)** → INFO,
-   never a finding; **configured and failing where the surface should expose it** →
-   FINDING, "configured but not responding."
+   never a finding; **exposed and reachable but refused by policy** (an authorization or
+   entitlement refusal — the connector answers, and its answer is "not permitted here") →
+   FINDING, quoting the refusal **verbatim including any support reference**, which is
+   the only actionable content the user has; **configured and failing where the surface
+   should expose it** → FINDING, "configured but not responding."
 4. **Salesforce tier sanity:** `mcp` tier → the probe read works on a surface that
-   exposes MCPs. Apply check 3's split here too: no MCPs exposed on this surface → INFO;
+   exposes MCPs. Apply check 3's split here too, all three outcomes: no MCPs exposed on
+   this surface → INFO; refused by policy → FINDING quoting the refusal;
    configured-and-failing where it should exist → FINDING. The tier-change
-   recommendation is reserved for the FINDING case only — never suggested off a
-   session-scope INFO. `manual` tier → say what that means (pasted reports are the
+   recommendation is reserved for the configured-and-failing case only — never suggested
+   off a session-scope INFO **and never off a policy refusal, which is an access problem
+   rather than a configuration error** (C2 forbids downgrade on absence alone).
+   `manual` tier → say what that means (pasted reports are the
    intake — expected, not an error).
 5. **Engine version:** per `assets/shared/version-check.md` — INSTALLED = this bundle's
    VERSION (the authoritative fact); LATEST = `Team/_engine/latest-version.txt` (unreachable
@@ -412,7 +462,7 @@ is "issues found," never green-with-asterisks** (C13):
    version gap says setup ran a while ago, which is usually fine; a schema gap says a
    specific generated section is missing, which is not.
 6. **Team/ publication:** shortcut present? user's subfolder writable? manager-decision
-   file recorded? Each absent one maps to the Day-1 guide step or the pending Adam item. **Fresh-install rule (#32): an unset publish gate on a root with no prior Team/ updates is INFO, not a finding — one line: "publish gate unsettled — it settles via the manager-decision file; the weekly sweep's A6.3 gate skips (with the reason said) until then."**
+   file recorded? Each absent one maps to the Day-1 guide step or the pending manager-decision item. **Fresh-install rule (#32): an unset publish gate on a root with no prior Team/ updates is INFO, not a finding — one line: "publish gate unsettled — it settles via the manager-decision file; the weekly sweep's A6.3 gate skips (with the reason said) until then."**
 7. **State layer:** `state/` exists; JSON parses; the writer's lock is a released
    tombstone (`released: true` — FREE, healthy), absent (also fine), or one live lock
    (stale live lock → name the recovery step from the recorded spike design, quoting the
@@ -474,13 +524,25 @@ is "issues found," never green-with-asterisks** (C13):
    PROMPT conforms (live false-green 2026-07-16: doctor blessed predecessor
    kickoff/wrap holdovers by name). No conforming task → a finding + the C11-gated
    offer to create it ("create a scheduled task — do not run it now — weekdays
-   ~7:00 AM, prompt exactly: `sync my day (scheduled, unattended)`") — creation is a
+   ~7:00 AM, prompt exactly: `sync my day (scheduled, unattended)`, permission mode
+   Auto — Manual stalls unattended runs") — creation is a
    modification, so never silent. **Additionally: any enabled task whose prompt carries
    legacy pass vocabulary (kickoff / wrap / start my day / close out) WITHOUT the
    unattended marker is its own finding** — those words route into the sync skill as a
    FULL ATTENDED pass with nobody watching (stalls on questions; a wrap task
    double-syncs the day). Recommend the user pause or delete them in the platform UI;
-   doctor never touches them. **Additionally (#68): (a) NO conforming sweep task → one
+   doctor never touches them. **Additionally (#138) — permission mode, judged PER
+   TASK:** for each conforming task, when the scheduler exposes that task's permission
+   mode, **any visible mode other than Auto is a finding, naming the mode** — Manual
+   (the platform default) stalls an unattended run indefinitely at its first unapproved
+   tool call (no timeout, no auto-deny; a stalled run holds its slot with nobody
+   watching), and any other approval-capable mode fails the same way, so the task
+   structurally cannot honor the `(scheduled, unattended)` marker it carries: recommend
+   setting the routine to Auto in its edit form; doctor never modifies it. A conforming
+   task whose mode is not exposed → one line naming THAT task, "permission mode not
+   visible for {task} on this surface — NOT checked" (C13), never silently skipped and
+   never widened into a claim about tasks whose mode WAS visible.
+   **Additionally (#68): (a) NO conforming sweep task → one
    INFO line + the C11-gated offer to create it by A6.2's exact due-day recipe (ask the
    due day; previous business day 5:00 PM); never-re-offer holds ONLY when a prior
    decline is RECORDED (core.md's `declined_offers:` line, §A6.2) — with no such
@@ -508,6 +570,13 @@ is "issues found," never green-with-asterisks** (C13):
     Additionally: `state/sweep.json` holding a park older than 7 days → one INFO line
     naming its age and the resume offer.
 
+**At the close of the run, append the `doctor` record** per `assets/shared/usage-log.md`:
+`counts` from this run's tally, `checks` as check id → verdict, `integrations` as
+connector → verdict (including `refused` for a policy refusal, per check 3; keys come
+from that document's closed vocabularies — an unlisted connector logs as `other`).
+**Verdicts only — never finding text.** Findings routinely name accounts; the log has no
+field that would hold one.
+
 Output ends with: `doctor: {N} ok · {M} findings · {K} skipped` + the shortest fix list,
 ordered by what blocks the most.
 
@@ -523,6 +592,13 @@ issue or PR (C1).
    reads). Either absent → offer the floor path (C7) instead of stopping: "paste 3–5
    sent emails per audience (manager / customer / internal) and I'll derive from
    those" — from pasted text the rest of this flow is identical.
+1a. **Usage log (open):** append the `open` record per `assets/shared/usage-log.md`
+   (`mode`: `voice-bootstrap`; `passId` — this pass holds no lock). Append the matching
+   `close` as the pass's last action, after step 8's audible close — the POSITION, not the
+   write: step 7 runs only on the pristine-approved path, and a copy-block is an equally
+   successful terminal outcome, so anchoring the close on the write would record every
+   copy-block run as an abandonment. Use that document's outcome mapping. Do not restate
+   the mapping here.
 2. **Sample:** ~30–50 of the user's own sends from the last 90 days across four axes —
    manager (addressed to `manager_email`) · customer-external (recipient domain differs
    from the user's own send domain) · internal (same domain, not the manager) · Teams
@@ -575,13 +651,21 @@ issue or PR (C1).
 User-invoked, doctor-nudged (§C.2), never scheduled. No state, no lock; voice.md is
 byte-untouched by this mode, always.
 
-1. **Probe + sample:** §D1's probe and floor path verbatim; then ~15–25 of the user's
-   own sends from the last ~30 days — §D2's axes, lighter, and §D3's received-text
-   boundary applies unchanged.
-2. **Compare practice against the CURRENT voice.md rules.** The MODEL reads the user's
+1. **Probe:** §D1's probe and floor path verbatim.
+1a. **Usage log (open):** append the `open` record per `assets/shared/usage-log.md`
+   (`mode`: `voice-drift`; `passId` — this pass holds no lock). Append the matching `close`
+   as the pass's last action — the POSITION, not the summary: step 3's compare can end the
+   pass early when no `voice.md` exists ("no voice.md — seed one first" instead of step 4's
+   drift summary), and that pointer is an equally legitimate terminal outcome, so anchoring
+   the close on the summary would record every no-voice.md run as an abandonment. Use that
+   document's outcome mapping. Do not restate the mapping here. This mode leaves voice.md
+   byte-untouched; the log records that the pass ran, never what it found.
+2. **Sample:** ~15–25 of the user's own sends from the last ~30 days — §D2's axes,
+   lighter, and §D3's received-text boundary applies unchanged.
+3. **Compare practice against the CURRENT voice.md rules.** The MODEL reads the user's
    rules to compare — the engine never parses rule content (#74's design stands; this
    is a model reading a user file, not machinery consuming it).
-3. **Output — never a write:** `voice drift: {m} rules holding · {d} drifting`, then one
+4. **Output — never a write:** `voice drift: {m} rules holding · {d} drifting`, then one
    line per drifting rule — the rule · what recent practice shows (counted, §D3's
    boundary: no received text, no names) · the suggested edit — then ONE copy-ready
    update block: the user's full voice.md with the suggested edits applied, for the
@@ -596,7 +680,7 @@ byte-untouched by this mode, always.
 
 - Bulk-moving, renaming, or "organizing" existing user files — under any prompt.
 - Overwriting an existing file during init/back-fill (C5 + additive-only).
-- Claiming a configured integration works without evidence — first use or doctor verifies (C13); setup itself never runs pre-verification probes.
+- Claiming a configured integration works without evidence — first use or doctor verifies (C13); setup itself never runs pre-verification probes. **Evidence means a call made in THIS run (#156); "it answered earlier in the session" is not evidence and yields SKIP, never `ok`.**
 - Hand-editing config values instead of regenerating through the question flow (C2).
 - Seeding the whole account book at once — top 3–5, rest on-touch.
 - Blocking any other skill's work on scaffolding or tidiness.

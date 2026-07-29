@@ -25,65 +25,91 @@ at_risk_renewals:
   - "{Account} · {status one-liner}"
 ---
 
-Coverage: full
+3 open opps reviewed · 2 changed · 1 kept
 
-## Accounts
+**Acme Health | Ops Console** ([Acme Health — Ops Console Expansion](https://example.lightning.force.com/lightning/r/006XX00000A1B2C3D4/view))
+**Change Type** - Next Step
+**Old:** 07/15 AB follow up on pricing deck
+**New:** 07/22 AB get pricing decision 07/29 from Jordan Doe (VP Clinical) at the exec review, decision owner quiet since the 07/10 review
 
-1. ACME HEALTH
-— Ops Console expansion (12345, $120K)
-Old: 07/15 AB follow up on pricing deck
-New: (07/22) AB – get pricing decision from Jordan Doe (VP Clinical), target 07/29
-Reason: decision owner quiet since the 07/10 review; forcing the date
-Flags: Stalled/no-response · Competitive · Close ≤7d
+---
 
-— Screen-rec add-on (12388, $45K)
-Old: 07/11 AB confirm seat count with IT
-New: (07/22) AB – send revised quote to Sam Lee (IT), target 07/25
-Reason: seat count confirmed 07/21; quote is the blocker now
-Flags: Close ≤7d
+**Globex Care | Intake Pilot** (Globex Care — Intake Pilot)
+**Change Type** - Next Step + Close Date (2026-09-30 → 2026-10-31)
+**Old:** (none — first next step on this opportunity)
+**New:** 07/22 AB schedule discovery 08/01 with Pat Kim (Director Ops) to scope the intake pilot, discovery slipped so Q4 is the realistic close
 
-2. GLOBEX CARE
-— Intake pilot (23456, $60K)
-Old: (none — first next step on this opportunity)
-New: (07/22) AB – schedule discovery with Pat Kim (Director Ops), target 08/01
-Reason: new next-quarter opp, first touch
-Flags: New next-quarter
-
-## Close-date decisions
-- Globex Care — Intake pilot (23456): 09/30 → 10/31, discovery slipped so Q4 is the realistic close
-
-## Kept (fresh, unchanged)
-- Acme Health — Renewal base (34567): kept 07/18 line (at-risk)
+1 opp rendered without links — Ids cache on the next sweep
 
 ## Open items
-- {unresolved batched-question rows, one line each — or omit the section}
+- Acme Health — Renewal base (34567): kept, renewal flagged at-risk
 ```
 
 ## Body
 
-Body order is fixed: the `Coverage:` line first (one line, `Coverage: full|partial — {what
-was missing when partial}`, before `## Accounts`), then `## Accounts` → `## Close-date
-decisions` (one line per decision, `- {Account} — {Opp} ({OppNumber}): {old} → {new},
-{reason}`) → `## Kept` → `## Open items`; a section with no content is omitted, never
-emitted empty. Blocks sort imminent-close → stalled → by ACV; accounts are ordered by their
-top block's rank, stable. A kept opportunity (fresh, step unchanged) appears ONLY as its
-one-line entry under `## Kept` — with an optional trailing `(at-risk)` token when its
-renewal is flagged — never as an Old/New/Reason/Flags block. The `New:` line is the
-presentation transform `({MM/DD}) {initials} – {…}` of the same accepted line the SFDC
-paste block carries — `locked-next-step-format.md` is the sole authority for the line
-itself; this template re-renders it, never re-derives it. The manager email is this
-template's body verbatim — subject + salutation above, byte-identical below.
+Body order is fixed: the coverage line first — one line, before any block:
+`{N} open opps reviewed · {M} changed · {K} kept[ — partial: {what was missing}]`
+(counts cover every enumerated opp; the ` — partial: …` clause is appended whenever the
+sweep's partial rule applies — a floor sweep never emits a body that silently claims full
+coverage). Then one block per CHANGED opp, blocks separated by `---` lines; then the loud
+unlinked-opps line when the rule below says it renders; then `## Open items` (unresolved
+batched-question rows, one line each, PLUS every kept opp whose renewal is flagged
+at-risk, named — omission covers unchanged opps, never standing risk). A section with no
+content is omitted, never emitted empty. Unchanged (kept) opps are OMITTED from the body
+entirely — the coverage line is where they are counted. Close-date changes are not a
+separate section: `Close Date` is a Change Type.
 
-## Flags
+Per-opp block (the RVP's 2026-07-27 format, adopted verbatim):
 
-Controlled vocabulary (single source; emitting skills cite this list, never restate it):
-`Close past` · `Close ≤7d` · `Stalled/no-response` (evidence of outreach without reply — the
-log's Observed history / stall-note path) · `Stale step` (A3.2 unchanged-step) · `Notes
-missing: {Why NICE|Why Now|Approval}` · `New next-quarter` (A3.4) · `Material: {field}
-{old}→{new}` (A3.5) · `Competitive` (the account's recorded competitive context — never new
-research) · `Ownership gap` (A1's ownership rule) · `First step` (prior-log absence). A field
-is OMITTED when empty — never "None"; free text never enters Flags.
+```
+**{Account} | {Short Opp Label}** ([{SFDC opportunity name}](https://{sfdc_instance_host}/lightning/r/{OpportunityId}/view))
+**Change Type** - {Next Step | Close Date ({old} → {new}) | Stage ({old} → {new}), multi-delta joined " + "}
+**Old:** {prior locked-format line, verbatim | "(none — first next step on this opportunity)"}
+**New:** {current locked-format line, verbatim}
+```
 
-Rules: derived from the same run's data (never hand-maintained); account detail is allowed
-here (Team/ is tenant-controlled, C1) but keep one-liners — the detail lives in the AE's
-memory; no customer identifiers beyond what leadership already sees in Salesforce.
+- `{Short Opp Label}` = the opp folder's `{Short Label}` name component; an opp with no
+  folder yet uses the SFDC opportunity name.
+- **Link rule:** the hyperlink renders only from a cached OpportunityId (the log's most
+  recent non-`unknown` Observed `Id`) plus the configured `{sfdc_instance_host}`; either
+  missing → the header renders plain — `**{Account} | {Short Opp Label}** ({SFDC
+  opportunity name})` — never a fabricated URL. Cached identity renders at every tier:
+  after an explicit mcp→manual downgrade, and in a dark-probe session, cached links keep
+  rendering — identity is not capability.
+- **Change Type derivation — anchored on what THIS pass changed, never
+  Observed-vs-prior-Observed:** `Next Step` = an accepted line differing from the prior
+  line · `Close Date ({old} → {new})` = a close-date decision accepted this run OR an
+  observed close date differing from the prior entry (an externally-moved date with no
+  decision this run still renders) · `Stage ({old} → {new})` = observation delta vs the
+  prior entry. Multi-delta renders all, joined ` + `. Never hardcoded. Non-step types
+  carry their delta values on the Change Type line — Old/New render locked step lines
+  only. **"Changed" for the body and coverage line means exactly these anchors fired** — a forecast-only delta fires none: the opp counts as kept, renders no block, and reaches the rollup via frontmatter (`material_changes`) only.
+- A changed opp whose next step did NOT change collapses the Old/New pair to one line:
+  `**Step (unchanged):** {current locked-format line}`.
+- Blocks sort imminent-close → stalled → by ACV; accounts are ordered by their top
+  block's rank, stable; an account's blocks stay adjacent.
+- **Loud unlinked-opps line** — renders at `sfdc_tier` = `mcp` ONLY, and only when the
+  named fix works: host missing with NO recorded `sfdc-instance-host` decline →
+  `{U} opps rendered without links — sfdc_instance_host not recorded; re-run "init my
+  workspace" to record it` · host present, Ids uncached → `{U} opps rendered without links
+  — Ids cache on the next sweep`. `{U}` counts the changed-opp blocks whose headers rendered plain — distinct from the coverage line's `{K}` kept, and it renders for partially-cached sets too. The count pluralizes naturally (`1 opp`). Every
+  other state is SILENT: `manual` tier (pure floor or downgraded — plain is that tier's
+  normal output) and a recorded `sfdc-instance-host` decline (re-running init never
+  re-asks a recorded decline, so the line's fix would be a dead end; "let me re-decide"
+  is the reopen, and doctor's INFO line names it).
+- The locked next-step line is byte-untouched everywhere it appears —
+  `locked-next-step-format.md` stays the sole authority; this template renders accepted
+  lines verbatim, never re-derives or re-formats them. `Reason:` stays persisted in
+  `Next_Step_Log.md` and does not render here.
+- Account detail is allowed here (Team/ is tenant-controlled, C1) but keep one-liners —
+  the detail lives in the AE's memory; no customer identifiers beyond what leadership
+  already sees in Salesforce. Everything renders from the same run's data — never
+  hand-maintained.
+
+**Byte-identity, re-scoped — the email-rendering contract:** the canonical body ≡ the `Team/` file below the
+frontmatter. The manager email is a mechanical RENDERING of that canonical body covering
+ALL markdown, not links alone: via `outlook_create_draft`, markdown converts to the draft
+format the tool accepts (HTML when supported); on the copy-ready fallback, links render
+`{label} ({url})`, bold labels render as plain text (no literal asterisks), and `---`
+renders as a blank line. No markdown syntax ever pastes as literal characters into
+Outlook.

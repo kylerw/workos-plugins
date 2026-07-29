@@ -91,9 +91,10 @@ the plugin's skill folder. Never resolve `assets/` in the memory root or project
 ## §A. Weekly sweep — the leadership ritual
 
 One pass. Generate everything first, approve once on the **actual artifacts**, then emit
-three outputs and persist. Recommended as a weekly Cowork scheduled task on the team's
-confirmed cadence day (leadership currently says Thursdays; the recorded manager-decision
-file wins if it says otherwise).
+three outputs and persist. Recommended as a scheduled task on the team's confirmed
+cadence — the sweep runs the evening before delivery (Wednesday night for the Thursday
+standard, matching setup's scheduled-task recipe) for Thursday-morning delivery + the paste-ready Salesforce update (decided 2026-07-27; the recorded manager-decision file wins if it says
+otherwise). "Thursday sweep" stays a live trigger alias for the same ritual.
 
 **Parked-sweep resume (attended entry check, #68):** before A1, when
 `state/sweep.json` holds a park, one structured offer (C11): "Parked sweep from
@@ -186,7 +187,7 @@ and persistence write — happens only at a later attended finalize (§A-entry r
 ### A1. Enumerate the pipeline (tiered intake)
 
 - **`mcp` tier:** live at run time, per `salesforce-read-only-and-optional`:
-  `SELECT Id, Name, StageName, CloseDate, NextStep, ForecastCategoryName,
+  `SELECT Id, Name, StageName, CloseDate, NextStep, ForecastCategoryName, Amount,
   LastModifiedDate, Owner.Name FROM Opportunity WHERE Owner.Name = '{user_name}' AND
   IsClosed = false ORDER BY CloseDate ASC`.
 - **`manual` tier (first-class, not a fallback) — the intake manifest:**
@@ -228,11 +229,16 @@ and persistence write — happens only at a later attended finalize (§A-entry r
    **present / missing / unknown** (they live in the SFDC Notes section; not queryable).
    Unknowns are resolved with **one batched question** covering all unknown rows, never
    one ask per opp.
-4. **New next-quarter opps:** a next-quarter row with no prior log observation → manager
-   email callout.
+4. **New next-quarter opps:** a next-quarter row with no prior log observation → the
+   frontmatter `new_next_quarter` key; when a first step is accepted this run it also
+   renders as a changed-opp block (the first-step `Old:` variant) per the template's §Body.
 5. **Material changes:** stage, close date, or forecast category differs from the log's
-   last Observed snapshot → manager email under "material changes," always with
-   **old → new** values.
+   last Observed snapshot → the frontmatter `material_changes` key, always with
+   **old → new** values; stage and close-date deltas also render on the changed-opp
+   block's `Change Type` line per the template's derivation (an externally-moved close
+   date renders even with no decision this run). A forecast-only delta reaches the
+   rollup via frontmatter — the RVP's body format carries no forecast line, and fields
+   he did not ask for are never added.
 
 ### A4. Generate everything (no approval yet)
 
@@ -265,18 +271,35 @@ own question — the plan requires that one to be asked every time.)
    pasted, the log's CRM status may be upgraded to `user_confirmed_pasted`.
 2. **Manager email** — probe for a mail-draft capability (ms365 `outlook_create_draft` or
    equivalent); if present, create the draft to `{manager_email}`; if not, emit copy-ready
-   subject + body and continue. Structure: subject + salutation, then THE SHARED BODY —
-   built once per the template's §Body (assets/shared/team-update-template.md): coverage
-   line · per-opp Old/New/Reason/Flags blocks for every CHANGED opp (grouped by account,
-   sorted per the template's ordering rule; Old from the log's last accepted/Observed line,
-   New = the presentation transform of the accepted line, Reason = the persist Reason,
-   Flags per the template's §Flags vocabulary — mechanical from the named sources (A3
-   checks; A1's ownership rule; Competitive from the account's recorded competitive context,
-   never new research; First step from prior-log absence), omitted when empty) ·
-   close-date decisions · the Kept roster · open-items footer. The email and the Team/
-   update are byte-identical below this header (the template's shared-body rule).
+   subject + body and continue. Structure: subject + salutation, then THE SHARED BODY — built once per the template's
+   §Body (assets/shared/team-update-template.md): the template's coverage line (with the
+   partial clause whenever A1's partial rule applies — the template owns the line's shape)
+   · one block per CHANGED opp in the RVP's per-opp format, grouped by account and sorted
+   per the template's ordering rule — the header link from the cached Opportunity Id
+   (resolved as the log's most recent non-`unknown` Observed `Id` — the ONE log segment
+   legal to read back, per `no-shadow-store`'s identity clause) plus `{sfdc_instance_host}`,
+   rendering plain per the template's link rule when either is missing, never a fabricated
+   URL; a dark-probe session or an mcp→manual downgrade still renders cached links —
+   identity is not capability · Change Type per the template's derivation anchors (this
+   pass's accepted lines and close-date decisions, plus observation deltas vs the prior
+   entry — never Observed-vs-prior-Observed) · Old = the log's last accepted line verbatim,
+   New = this pass's accepted line verbatim (locked lines byte-untouched; an unchanged step
+   on a changed opp collapses to the template's `**Step (unchanged):**` line) · the loud
+   unlinked-opps line when the template's rule says it renders · the open-items footer,
+   including every at-risk kept renewal by name. Unchanged opps are omitted — the coverage
+   line counts them; `Reason:` stays persisted in the log and leaves the rendered body. The
+   canonical body ≡ the Team/ file; the email is a mechanical RENDERING of it per the
+   template's email-rendering contract (draft path converts all markdown, HTML when
+   supported; copy-ready fallback renders links `{label} ({url})`, bold as plain text,
+   `---` as a blank line — no markdown pastes as literal characters). At a parked-sweep
+   finalize, this same composition runs AT FINALIZE TIME by the running bundle — the
+   parked `emailPreview` is machine staging, superseded at finalize, never presented as
+   the gated artifact (`render-before-gate`: a park is never a prior render).
    Before composing further, run the voice pass per assets/shared/voice-contract.md (in-chat
-   as the shared body's destination; block scaffolding is exempt structure) ONCE on the
+   as the shared body's destination; block scaffolding is exempt structure — extended by
+   name to the per-opp block's bold labels (`**{Account} | …**`, `**Change Type**`,
+   `**Old:**`, `**New:**`, `**Step (unchanged):**`) and link markup: tell 4's bold-count
+   never strips the RVP's own mandated markup) ONCE on the
    shared body, and render its audible line with the output; the subject + salutation take
    their own voice pass (plain-text-paste). The locked
    next-step line itself is exempt — byte-identical before/after the voice pass
@@ -284,7 +307,9 @@ own question — the plan requires that one to be asked every time.)
 3. **Team/ publish gate (one question, last):** FIRST compose the complete update — the
    exact file body — the template's frontmatter filled from the sweep data (frontmatter is
    the rollup's parse contract, PLAN §4.4 — keys unchanged) above THE SAME shared body A6.2
-   rendered (byte-identical below the header; never re-composed). The body is already voiced
+   composed — the canonical body, byte-identical in this file below the frontmatter (the
+   email was its mechanical rendering, per the template's email-rendering contract; never
+   re-composed). The body is already voiced
    (A6.2's single voice pass per assets/shared/voice-contract.md) — attach it verbatim.
    Frontmatter is machine data for the rollup and is NEVER voice-passed. Re-render the body
    pass's audible line beside the gate question; voice-check lines are chat output, never
@@ -302,7 +327,7 @@ week's A3 checks possible), appended to
 
 ```
 ## {YYYY-MM-DD} sweep
-Observed: NextStep "{verbatim|empty}" · CloseDate {date} · Stage {value} · Forecast {value} · Source {soql|pasted report}
+Observed: NextStep "{verbatim|empty}" · CloseDate {date} · Stage {value} · Forecast {value} · Source {soql|pasted report} · Id {18-char|unknown}
 Outcome: changed | kept | unresolved | excluded-owner | no-track
 Old: {prior line | "(none — first next step on this opportunity)"}     (changed only)
 New: {accepted line}                                                    (changed only)
@@ -312,7 +337,20 @@ CRM: approved_for_paste
 
 This log is the `next-step-history` clause of `no-shadow-store`: an **append-only dated
 record of observations and approved lines** — never read back as current deal-state
-(current state comes from the tier's authoritative intake, every run).
+(current state comes from the tier's authoritative intake, every run). — with ONE
+exception, stated: the Observed `Id` segment is IDENTITY, governed by
+`no-shadow-store`'s identity clause, and is the only segment ever read back (as the
+most recent non-`unknown` value, for link rendering). **Writers:** an mcp-tier §A or
+§B pass writes the Id its own SOQL returned; a manual-tier pass writes `unknown`;
+nothing ever writes a value obtained anywhere else — a fabricated Id is the defect
+class the never-fabricate discipline exists for. The segment is APPENDED AFTER `Source` (single
+layout; a legacy entry's missing segment ≡ `unknown`). C6's triple maps to the entry
+itself: source = the entry's `Source`, last_verified = the entry's date, confidence =
+`verified` (the only writer of a non-`unknown` value is a live SOQL read).
+**Invalidation = re-observation:** every mcp-tier pass re-observes and appends; at
+manual or downgraded tiers no invalidation runs — accepted, because an Opportunity Id
+is immutable for the life of the opp: the stale case is a deleted opp, which renders a
+dead link, never wrong data.
 
 ---
 
@@ -351,8 +389,9 @@ record of observations and approved lines** — never read back as current deal-
    with titles. If CloseDate cannot be confirmed at all, the output is marked
    `draft — close-date unverified, not approved for paste`.
 5. **Generate (§D) and present the line + change entry together; on acceptance, append a
-   §A6-format entry** (Outcome: changed; Observed from this run's intake). Any
-   adjustment → re-present the revised line + change entry in the same turn as the new
+   §A6-format entry** (Outcome: changed; Observed from this run's intake) — `Id` per the
+   §A6 writer rules: the scoped SOQL's own value at `mcp` tier, `unknown` at `manual`.
+   Any adjustment → re-present the revised line + change entry in the same turn as the new
    gate (`render-before-gate`) before appending.
 
 ---
@@ -368,6 +407,10 @@ record of observations and approved lines** — never read back as current deal-
   the line and change entry together at its single `draft-before-write` gate, and the
   caller appends the §A6-format log entry exactly once after acceptance. One writer, one
   approval per artifact.
+- The change entry's Observed line writes `Id unknown`, always — sync/capture hold no
+  SOQL result, and per §A6's writer rules a value from anywhere else is fabricated.
+  The caller appends it as-is; an mcp-tier SWEEP re-observes the real Id on its next
+  pass.
 
 **§C writes no usage record.** `workos-sync` or `workos-capture` invoked this skill, and
 that pass already recorded itself. A record here would double-count the exact metric the
@@ -425,7 +468,7 @@ prior step's three-state provenance recorded.
 
 ---
 
-## §E. Salesforce Account Id (the one cacheable value)
+## §E. Salesforce Account Id
 
 `mcp` tier only. Check `00_Account Overview/Account_Context.md` frontmatter for
 `salesforce_id` — identity, not deal-state, cacheable with provenance per `no-shadow-store`'s
@@ -433,7 +476,8 @@ identity clause. Absent → SOSL on distinctive quoted tokens (strip punctuation
 hyphens are SOSL-reserved: `FIND {"Acme Health"}`), confirm on zero/multiple hits, offer to
 persist with `source/confidence/last_verified`. **Invalidation:** if an opp query by cached
 Id returns zero open opps, re-run the SOSL search before concluding the account has none —
-Salesforce account merges retire Ids.
+Salesforce account merges retire Ids. Opportunity Ids cache too — per entry in each opp's
+`Next_Step_Log.md` Observed line (§A6's writer rules), never in frontmatter.
 
 ## Anti-patterns — never
 

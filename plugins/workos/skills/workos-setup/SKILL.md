@@ -161,6 +161,15 @@ to change it travels with the line that reports it.
    with `kind`; each entry's `label` derives from the folder name (unique-ified,
    confirmed in the same pass); the escape option "my screenshots aren't named like the
    default" collects a `pattern` template (the schema's literal-token grammar).
+6. `sfdc_instance_host` — **`mcp` tier only** (the invocation mode already resolved the
+   tier; `manual` and floor runs never see this question), and only when the key is
+   absent with no `sfdc-instance-host` decline recorded. One question (C11): "Record
+   your Salesforce instance host so weekly-summary opp links are clickable — it's the
+   hostname in your browser on any opportunity page (e.g.
+   `example.lightning.force.com`). 1. Record it — I'll type/paste it / 2. Skip — don't
+   ask again." The skip escape RECORDS `declined_offers:` key `sfdc-instance-host`
+   (the §A6.2 decline mechanism — never re-asked; "let me re-decide" reopens; no weekly
+   re-nag). The value is typed by the user, never guessed or probed.
 
 **Write the five-file config layer after the confirmations** (draft-before-write; schema:
 `assets/shared/identity.schema.md`). Ownership is by FILE, never by section:
@@ -390,7 +399,12 @@ is "issues found," never green-with-asterisks** (C13):
    schema rows name absence as the rung simply not existing yet). **`boilerplate_schema`
    is the same: checked when present, never flagged for being absent here — §C.5 owns its
    currency**, and reporting it in both places would bill one fact twice with a remediation
-   this check cannot give (the key is engine-stamped, not asked). The fix is always the
+   this check cannot give (the key is engine-stamped, not asked). **`sfdc_instance_host`
+   is per-key TIER-conditional (the `scheduled_task_ids` pattern, tier-gated):** absent →
+   a finding ONLY when `sfdc_tier` = `mcp` AND no `sfdc-instance-host` decline is
+   recorded — name the degradation (weekly-summary opp links render plain) and the fix
+   (the setup question flow); at `manual` tier, or with the decline recorded, never
+   flagged. The fix is always the
    setup question flow, never a hand-edit (C2). **Ownership boundary: `core.md` is all-generated — validate it
    strictly (personal prose inside it = a finding: offer the A2 split — EXCEPT sections
    carried on record, `coremd-move:*` keys, which fold into the carried-sections INFO
@@ -402,8 +416,9 @@ is "issues found," never green-with-asterisks** (C13):
    `workspace.md` gets `user.md`'s never-parse treatment (present/absent only, NO
    carve-out): absent → INFO, never a finding — `workspace.md not created — run "init
    my workspace" to add it`. Sections carried on record — `claudemd-move:*` /
-   `coremd-move:*` decline keys → ONE INFO line naming the count, with the
-   `let me re-decide` reopen phrase — never a finding. `voice.md` (optional equipment, never required — `user.md`'s
+   `coremd-move:*` decline keys → ONE INFO line naming the count — and a recorded
+   `sfdc-instance-host` decline when present — with the
+   `let me re-decide` reopen phrase — never a finding. The line renders whenever either exists — zero carried sections with a recorded decline still names the decline. `voice.md` (optional equipment, never required — `user.md`'s
    never-parse treatment with exactly ONE exception, the #85 carve-out: doctor may read
    the file's FIRST TWO LINES only, looking for the `pristine-template marker` line or a
    dated `derived {YYYY-MM-DD} from {n} sends` header — never rule content): present AND

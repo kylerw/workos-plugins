@@ -389,10 +389,14 @@ line).
    the whole array, so a legacy bare string self-heals) — (loud
    SKIPs, caps, version notice, approvals still queued, parked sweep — DERIVED from
    `state/sweep.json`: present ⇔ a park exists, exact line `parked sweep ({tier}, {N} rows,
-   from {date}) — run 'weekly next steps' to finalize`, intake overdue — DERIVED, only
+   from {date}) — run 'weekly next steps' to finalize`, parked intake — DERIVED from
+   `state/intake.json`: present ⇔ `parked` is non-null, exact line `parked intake manifest
+   ({N} rows, from {date}) — say 'run intake' to finalize`, intake overdue — DERIVED, only
    when `intake_sources` is configured AND non-empty, from `state/intake.json`: present
    when both watermarks (or the file itself — absent/unparseable reads as never-run) are
-   older than the largest configured `intake_retention_days` window; exact line `intake
+   older than the largest configured NON-STAGED `intake_retention_days` window — staged
+   sources are resurface-governed and excluded from this derivation, and with no
+   non-staged source configured the line never renders; exact line `intake
    overdue — last sweep {date or "never"}; say '{run intake when never, else intake
    check}'` (sync never runs intake)).
 3. **Journal pointers:** one line per durable outcome —
@@ -477,7 +481,8 @@ as abandoning every morning.**
 
 **Read-set, exactly:** config · the lock · `tasks.json` · `meetings.json` ·
 `suppressed.json` · `state/sweep.json` (existence + parked header only, for the derived
-attention line) · `state/intake.json` (same, for the intake-overdue line) ·
+attention line) · `state/intake.json` (same, for the intake-overdue and
+parked-intake lines) ·
 `state/board-queue/*.json` (the step-2 drain read; malformed ones MOVE to its `malformed/`
 subfolder — the one write target this read-set names) · the board's
 current data blocks · the exact files/folders named by
@@ -523,8 +528,10 @@ brief-building.
    newly flagged meetings get `briefPending: true` — tidy never builds briefs. Re-derive
    the parked-sweep attention line from `state/sweep.json` (present ⇔ a park exists; exact
    line per S7.2) — its appearance or clearing participates in step 4's changed-check.
-   Same for the intake-overdue line (from `state/intake.json`, same rules as S7.2). Each
-   re-derived entry is the typed `{class, text, source}` record per S7.2's typing rule.
+   Same for the intake-overdue line AND the parked-intake line (both from
+   `state/intake.json`, same rules as S7.2 — parked-intake present ⇔ `parked` non-null,
+   exact line per S7.2). Each re-derived entry is the typed `{class, text, source}`
+   record per S7.2's typing rule.
 4. Board rebuild only if a data block actually changed — **and "changed" includes
    `attention[]` and every tasks/meetings field the board renders; only bookkeeping
    stamps (`lastTidy`/`lastBoardDrain`) alone don't trigger** (live-test defect 2026-07-16:

@@ -53,8 +53,9 @@ Append-only journal POINTER lines are exempt bookkeeping, as is the engine versi
 (`Team/_engine/latest-version.txt` — monotonic bump only, per `assets/shared/version-check.md`;
 added 2026-07-17, #29), and the per-user usage log (`Team/_engine/usage/{user_name}.jsonl` —
 append-only, engine-operational, schema-bounded with no free-text field, and never read back for
-reporting or cross-user aggregation, per `assets/shared/usage-log.md`; added 2026-07-28, #167). Parked sweep staging (`state/sweep.json`, #68) is ungated machine
-staging under this clause — the attended finalize's single consolidated gate remains the
+reporting or cross-user aggregation, per `assets/shared/usage-log.md`; added 2026-07-28, #167). Parked sweep staging (`state/sweep.json`, #68) and parked intake
+staging (`state/intake.json` `parked`, #179) are ungated machine staging under this clause
+— the attended finalize's single consolidated gate remains the
 sole approval for everything staged (cross-ref generalized 2026-07-22, #70 — the register
 never points at skill-internal section names). A durable board-click record (C4's board-queue exception) IS the approval for the reversible task mutation it names — the drain renders a receipt, not a second gate; destructive actions stay gated (C14).
 

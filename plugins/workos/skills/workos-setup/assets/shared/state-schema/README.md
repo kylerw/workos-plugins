@@ -43,8 +43,8 @@ alike — across the fixtures and the board's embedded block, NOT a live root's 
 them.
 
 `lastUnattendedRun` (optional; #67/#68/#52): a MAP keyed by unattended pass kind —
-`sync` (workos-sync) and `sweep` (workos-next-steps); intake is attended-only and never
-appears here. Each writer MERGES its own key and preserves every other key verbatim; it
+`sync` (workos-sync), `sweep` (workos-next-steps), and `intake` (workos-intake's
+stage-and-park — classification runs unattended; every filing stays attended). Each writer MERGES its own key and preserves every other key verbatim; it
 is both the same-day dedupe evidence and the cross-surface version record. `localDate`
 is computed at WRITE time per identity.schema.md's full `timezone` resolution order
 and OMITTED when unresolved; readers compare `localDate` only, never recompute from
@@ -96,8 +96,9 @@ derivations from `due`/`start` (C6); the board computes them, no pass refreshes 
   exact separator ` :: ` (space-colon-colon-space). Task targets = the task id. The
   filesystem component of a hygiene target is the part BEFORE ` :: ` — split on the exact
   separator before listing/reading anything. Intake targets = lowercase(`{source
-  label}/{basename}`) — the label from `intake_sources` (sources live OUTSIDE the memory
-  root; the root-relative form doesn't apply). The intake `fingerprint` extension field
+  label}/{basename}`) — the label from `intake_sources` — the `{label}/{basename}` form is
+  the rule for every kind; downloads/screenshots sources live outside the memory root, and
+  the `staged` source (`intake/…`) lives inside it, same form either way. The intake `fingerprint` extension field
   is `{size}:{mtime ISO, UTC Z form}` (+ `:{hash}` when hashed) — the UTC capture rule
   lives in the intake skill's sweep step 1 (#94).
 - **Dedupe on raise:** same normalized `kind`+`target` as a pending item → update that
@@ -241,20 +242,37 @@ Un-suppressing reuses the existing unsuppression flow (an `unsuppression`
 pendingApprovals entry). `intake` entries are LEAVE snooze records (#61):
 `{target (canonical-recipe normalized), fingerprint, reason, decidedAt, reconsiderAt}` —
 matched by target+fingerprint; a changed fingerprint invalidates the record (the file is
-new again); reconsiderAt past → the maintain pass re-surfaces it. Absent `intake` field
+new again); reconsiderAt past → the maintain pass re-surfaces it.
+`reconsiderAt: null` = AGELESS (staged `intake/` targets only — the mandated label
+makes the scope decidable): never re-surfaced by expiry; a changed fingerprint still
+re-enters classification. Absent `intake` field
 = valid, reads as empty (no migration).
 
-## intake.json (#61 — intake watermarks)
-`{ "generated": "ISO", "generatedBy": "intake", "lastSweep": "ISO|null", "lastMaintain": "ISO|null" }`
+## intake.json (#61 — watermarks · #179 — the parked staged manifest)
+```json
+{ "generated": "ISO", "generatedBy": "intake", "lastSweep": "ISO|null", "lastMaintain": "ISO|null",
+  "parked": null }
+```
 Every intake-written instant — both watermarks here, and `suppressed.intake`'s
-`decidedAt`/`reconsiderAt` — is the **UTC `Z` form** (#94: a naive-local stamp on a
-UTC-positive surface silently under-scopes the next maintain; capture/compare rule in
+record instants — is stored in the explicit-UTC `Z` form (#94; the parse rule lives in
 the intake skill's sweep step 1).
-Written only by the attended `intake` pass under the C4 lock — read-modify-write:
-each mode stamps ITS watermark and preserves the sibling verbatim (the
-`lastUnattendedRun` pattern), restamping `generated`/`generatedBy: "intake"`. Sync
+`parked` is `null` (no park; ABSENT in a pre-#179 file reads as null — no migration, the
+`suppressed.approvals` precedent) or the staged artifact set written by the UNATTENDED
+stage-and-park pass under the C4 lock (pass `intake`): `{ generatedAt, rows[],
+unknowns[] (each `{target, fingerprint, reason}`) }`; each row `{ target, fingerprint,
+verdict: move|copy|leave, destination (always present as a string — non-empty for
+move/copy, empty for leave), evidence, hintResolution }`. The park's existence ⇔ the
+parked-intake attention line (sync S7.2 and tidy DERIVE it — exact line there; a written
+line with no derivation dies at the next full pass). A park is written ONLY when the
+staged source probed successfully AND at least one row or unknown was built — a
+probe-failed or clean-empty run never replaces a populated park. Finalize and Discard
+rewrite `parked` to null; **EVERY other intake.json write — both watermark closes —
+preserves `parked` verbatim alongside the sibling watermark** (read-modify-write; a
+close after "Leave parked" must not destroy the park the user kept). Written only under
+the C4 lock — read-modify-write, restamp `generated`/`generatedBy: "intake"`. Sync
 derives its optional "intake overdue" attention line from watermark age vs the
-configured retention thresholds — sync never runs intake, never writes this file.
+configured NON-STAGED retention thresholds (staged sources are resurface-governed and
+excluded) — sync never runs intake, never writes this file.
 
 ## .pass-lock.json (persistent file, transient meaning — see spike 4)
 Live: `{ "pass": "sync|tidy|sweep|intake", "startedAt": "ISO", "surface": "cowork|claude-code",

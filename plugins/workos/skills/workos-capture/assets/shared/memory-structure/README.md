@@ -25,6 +25,11 @@ nothing here is created by hand.
 │   ├── CLAUDE.md                  @import stub (account-CLAUDE.md, {Account Name} filled)
 │   ├── Account_Project_Instructions.md   filing rules + invariants (template here)
 │   ├── Account_Notes.md · Sphere_of_Influence.md · 00–04 folders   (see the template)
+├── Intake/                        the deliberate-drop inbox — REQUIRED root shape:
+│                                  setup scaffolds + registers it (kind: staged); desk
+│                                  captures and hand-drops land here; swept by
+│                                  workos-intake under the deliberate prior (never
+│                                  delete-proposed, resurfaced until filed)
 ├── state/                         machine-written JSON (task store, meetings, drafts,
 │                                  suppressed) — one writer per run (C4); board reads it
 ├── journal/{YYYY-MM}.md           append-only pointers to where truth landed

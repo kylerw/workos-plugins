@@ -153,14 +153,22 @@ to change it travels with the line that reports it.
 4. `team_publish_folder` — if the shared `Team/` shortcut exists in the root, confirm the
    user's subfolder (`Team/updates/{user_name}`); if not, note it as a Day-1 guide step and
    leave unset (the publish gate stays off until it exists).
-5. `intake_sources` — optional, one question (C11), default is skip: "Configure
-   file-intake sources (screenshots / downloads folders)? 1. Skip for now (default —
-   asked again next init; correlation and intake stay off) / 2. Add my screenshots
-   folder / 3. Add screenshots + downloads." On 2/3 collect each path (or mounted
-   folder name on a managed surface) as typed — never guessed — and record entries
-   with `kind`; each entry's `label` derives from the folder name (unique-ified,
-   confirmed in the same pass); the escape option "my screenshots aren't named like the
-   default" collects a `pattern` template (the schema's literal-token grammar).
+5. `intake_sources` — **the engine writes the ONE mandated entry itself, no question:**
+   `{label: intake, kind: staged, path: {memory_root}/Intake}` — every mode including
+   floor, re-added whenever missing, PRESERVING user entries. An existing user entry
+   resolving to `{memory_root}/Intake` is CONVERTED to the mandated entry (kind →
+   `staged`, label → `intake`; a retention override keyed to the old label re-keys with
+   it; the conversion is named in the config confirmation) — one folder never carries
+   two entries. The label `intake` is RESERVED: a user entry that would derive it is
+   unique-ified, confirmed in the same pass. Then one OPTIONAL question (C11), default
+   skip: "Configure ADDITIONAL file-intake sources (screenshots / downloads folders)?
+   1. Skip for now (default — asked again next init; screenshot correlation stays off)
+   / 2. Add my screenshots folder / 3. Add screenshots + downloads." On 2/3 collect
+   each path (or mounted folder name on a managed surface) as typed — never guessed —
+   and record entries with `kind`; each entry's `label` derives from the folder name
+   (unique-ified, confirmed in the same pass); the escape option "my screenshots
+   aren't named like the default" collects a `pattern` template (the schema's
+   literal-token grammar).
 6. `sfdc_instance_host` — **`mcp` tier only** (the invocation mode already resolved the
    tier; `manual` and floor runs never see this question), and only when the key is
    absent with no `sfdc-instance-host` decline recorded. One question (C11): "Record
@@ -224,8 +232,9 @@ to change it travels with the line that reports it.
 
 ### A3. Scaffold the root structure
 
-From `assets/shared/` templates and the memory-structure layout: `Accounts/`, `state/`,
-`journal/`, `lanes/` — **create only what's missing** (additive, idempotent). `state/`
+From `assets/shared/` templates and the memory-structure layout: `Accounts/`,
+`Intake/` (the deliberate-drop inbox — required root shape), `state/`, `journal/`,
+`lanes/` — **create only what's missing** (additive, idempotent). `state/`
 gets the four baseline files as empty shapes per
 `assets/shared/state-schema/README.md` (`tasks.json`, `meetings.json`, `drafts.json`,
 `suppressed.json`) so the daily driver never bootstraps blind (sanctioned by C4's
@@ -272,7 +281,7 @@ last_verified`), approved before writing. Skipping is fine; capture fills these 
      missing, never duplicated; `@voice.md`/`@workspace.md` only when those files
      exist); (ii) the **derived root map** — derived, never transcribed, from config
      plus this registry list (THE one place to extend when a skill starts writing a new
-     root artifact): `Accounts/` · `state/` · `journal/` · `lanes/` ·
+     root artifact): `Accounts/` · `Intake/` · `state/` · `journal/` · `lanes/` ·
      `{library_path}/` (resolved value — describes the configured layout whether or not
      §A3 scaffolded it yet) · `Board.html` (sync S7.4 output) · the `Team/` shortcut
      when configured; (iii) the account-folder handoff; (iv) the **frozen-legacy
@@ -391,6 +400,14 @@ is "issues found," never green-with-asterisks** (C13):
      existing rows — additive). Any messier malformation (wrong location, duplicates,
      mangled delimiter) → finding that NAMES the expected two lines, NO repair offer
      (never overwrite user content).
+   - **Intake (required root shape):** `{memory_root}/Intake/` exists AND
+     `intake_sources` carries THE mandated entry — label `intake`, `kind: staged`, path
+     resolving to `{memory_root}/Intake` (any other staged entry does not satisfy this
+     check). Either missing → FINDING naming
+     the exact gap ("`Intake/` missing" / "`Intake/` present but unregistered — no
+     `staged` entry in `intake_sources`") with the fix: run `init my workspace` (a full
+     re-run — additive and idempotent; this is the migration path for roots configured
+     before the folder existed). Both present → one ok line.
 2. **Config completeness:** every `identity.schema.md` key present or explicitly defaulted
    **and type-conformant to the schema** (e.g. `fiscal_q1_start_month` is an integer 1–12 —
    a stored "January" is a finding; live catch 2026-07-16); name the missing/malformed ones
@@ -575,7 +592,7 @@ is "issues found," never green-with-asterisks** (C13):
    scheduled day → "the task may be executing a pre-sweep bundle snapshot — offer
    (C11-gated) to re-create it (#52)."**
 10. **Last unattended runs (#52/#67/#68) — report-only, never a finding by itself:**
-    for EACH key of `state/tasks.json → lastUnattendedRun` ({sync, sweep}): one line,
+    for EACH key of `state/tasks.json → lastUnattendedRun` ({sync, sweep, intake}): one line,
     values verbatim: `last unattended {key}: {at} ({localDate}, or "no local date") on
     {surface} — bundle {version}`. Empty/absent map → `no unattended runs recorded
     yet` (informational). When an entry's {version} differs from THIS bundle's
@@ -583,7 +600,10 @@ is "issues found," never green-with-asterisks** (C13):
     report both verbatim, no comparison), append: ` — differs from this bundle
     ({installed}); the scheduled task may be executing a stale snapshot (#52)`.
     Additionally: `state/sweep.json` holding a park older than 7 days → one INFO line
-    naming its age and the resume offer.
+    naming its age and the resume offer. An `intake.json → parked` older than 7 days
+    gets the same INFO treatment — one line naming its age and the resume offer:
+    `parked intake manifest from {date} — {N} days old; say 'run intake' to finalize` —
+    an offer, never a run.
 
 **At the close of the run, append the `doctor` record** per `assets/shared/usage-log.md`:
 `counts` from this run's tally, `checks` as check id → verdict, `integrations` as

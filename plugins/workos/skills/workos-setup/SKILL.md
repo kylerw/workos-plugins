@@ -153,13 +153,26 @@ to change it travels with the line that reports it.
 4. `team_publish_folder` — if the shared `Team/` shortcut exists in the root, confirm the
    user's subfolder (`Team/updates/{user_name}`); if not, note it as a Day-1 guide step and
    leave unset (the publish gate stays off until it exists).
-5. `intake_sources` — **the engine writes the ONE mandated entry itself, no question:**
-   `{label: intake, kind: staged, path: {memory_root}/Intake}` — every mode including
-   floor, re-added whenever missing, PRESERVING user entries. An existing user entry
-   resolving to `{memory_root}/Intake` is CONVERTED to the mandated entry (kind →
-   `staged`, label → `intake`; a retention override keyed to the old label re-keys with
-   it; the conversion is named in the config confirmation) — one folder never carries
-   two entries. The label `intake` is RESERVED: a user entry that would derive it is
+5. `intake_sources` — **the mandated-entry ENSURE, an ordered algorithm that runs on
+   EVERY config write — fresh install AND every regeneration, every mode including
+   floor. Preservation is step (a) of this algorithm, never a substitute for it**
+   (live defect 2026-07-30: a regen over user-populated sources preserved them and
+   skipped the add — doctor then prescribed the same init in a loop):
+   (a) carry forward every existing user entry verbatim (the schema's preservation
+   rule);
+   (b) an entry resolving to `{memory_root}/Intake` that is not already the mandated
+   shape → CONVERT it to the mandated entry
+   (kind → `staged`, label → `intake`; a retention override keyed to the old label
+   re-keys with it; the conversion is named in the config confirmation) — one folder
+   never carries two entries;
+   (c) after (a)+(b), if NO `kind: staged` entry labeled `intake` exists → APPEND
+   `{label: intake, kind: staged, path: {memory_root}/Intake}`. No question, no
+   condition on mode or freshness. The written config carrying no staged entry means
+   this step was not executed — a defect, exactly what doctor's Intake check names.
+   The config confirmation always echoes one line:
+   "intake_sources: {n} user entries preserved + the mandated staged entry
+   {added | already present | converted}".
+   The label `intake` is RESERVED: a user entry that would derive it is
    unique-ified, confirmed in the same pass. Then one OPTIONAL question (C11), default
    skip: "Configure ADDITIONAL file-intake sources (screenshots / downloads folders)?
    1. Skip for now (default — asked again next init; screenshot correlation stays off)

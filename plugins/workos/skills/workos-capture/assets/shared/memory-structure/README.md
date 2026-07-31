@@ -16,6 +16,11 @@ nothing here is created by hand.
 │                                  (optional equipment)
 ├── workspace.md                   USER-OWNED: durable workspace notes — the engine
 │                                  appends only via §A6.1's gated move, never regenerates
+├── manager-decision.md            DIRECTLY-AUTHORED (the fourth class): human-edited,
+│                                  engine-validated FRONTMATTER only (prose never
+│                                  parsed); created ONLY via setup's explicit offer,
+│                                  never regenerated or appended — records the
+│                                  team_publish mode + cadence the weekly sweep follows
 ├── CLAUDE.md                      engine-generated, regenerated WHOLE; @imports core.md +
 │                                  user.md + voice.md + workspace.md; root map +
 │                                  frozen-legacy DERIVED (registry: workos-setup §A6.1;

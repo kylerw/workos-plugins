@@ -178,6 +178,27 @@ to change it travels with the line that reports it.
    ask again." The skip escape RECORDS `declined_offers:` key `sfdc-instance-host`
    (the §A6.2 decline mechanism — never re-asked; "let me re-decide" reopens; no weekly
    re-nag). The value is typed by the user, never guessed or probed.
+7. **The manager-decision file** — `{memory_root}/manager-decision.md` present →
+   validate the frontmatter (enums: `team_publish ∈ {off, gated, auto-with-notice}`,
+   `team_publish_trigger ∈ {ns-confirmed}` absent-≡-`ns-confirmed`,
+   `update_cadence_day ∈ {Monday…Friday}`; at `team_publish = auto-with-notice`,
+   `decided_by` and `decided_on` are ADDITIONALLY required (non-empty; `decided_on`
+   a date) — missing or malformed → named in the same loud line ("auto publish
+   requires recorded provenance"); `team_publish_folder` is validated at this same
+   record-time pass against the schema row's path rule (relative, root-contained —
+   never absolute, never `..` — under `Team/`, terminal segment `{user_name}`) — an
+   invalid shape is named in the same loud line and the key is NOT recorded (doctor's
+   drift check then covers only validated values); unknown or missing required
+   values are named in one loud line — the sweep will SKIP publishing on them, never
+   ask, never write), RECORD `team_publish_folder` into the config on a validated
+   shape (the schema row's identity-clause triple), and echo one line in the config
+   confirmation — the echo line still renders with the mode regardless:
+   "publish: {mode} (decided {decided_on} by {decided_by})" — the echo label
+   `publish:` is the confirmation's voice; doctor's is the key name, deliberately.
+   **File present → this record is the key's ONLY writer: item 4's Team-shortcut
+   confirm defers to it** (two writers would silently re-record a value the user just
+   confirmed). Absent → nothing here; §A6's offer owns creation. No question on the
+   happy path.
 
 **Write the five-file config layer after the confirmations** (draft-before-write; schema:
 `assets/shared/identity.schema.md`). Ownership is by FILE, never by section:
@@ -283,8 +304,9 @@ last_verified`), approved before writing. Skipping is fine; capture fills these 
      plus this registry list (THE one place to extend when a skill starts writing a new
      root artifact): `Accounts/` · `Intake/` · `state/` · `journal/` · `lanes/` ·
      `{library_path}/` (resolved value — describes the configured layout whether or not
-     §A3 scaffolded it yet) · `Board.html` (sync S7.4 output) · the `Team/` shortcut
-     when configured; (iii) the account-folder handoff; (iv) the **frozen-legacy
+     §A3 scaffolded it yet) · `Board.html` (sync S7.4 output) ·
+     `manager-decision.md` (when present — the directly-authored publish/cadence
+     record) · the `Team/` shortcut when configured; (iii) the account-folder handoff; (iv) the **frozen-legacy
      section, derived from `assets/shared/retired-legacy.md`** — rendered as that
      asset's canonical byte-fixed block, never authored inline, re-derived on every
      regeneration so it cannot be lost (byte-fixed is what makes the guard's
@@ -345,6 +367,26 @@ last_verified`), approved before writing. Skipping is fine; capture fills these 
    that day's run. Whichever task(s) the platform creates, capture any
    id or reference it returns or displays into `scheduled_task_ids` (`sync`/`sweep`) at
    the config write below — an id the platform never reveals stays absent, never guessed.
+2b. **Manager-decision file, when absent** — one offer (C11): "Create
+   `manager-decision.md` from the template? It records the Team/ publish mode and
+   cadence. 1. Create it with `team_publish: gated` under my name — I'll edit from
+   there / 2. Skip (asked again next init) /
+   3. Create it with `team_publish: off` — records the decision and stops this
+   offer." Created from `assets/shared/memory-structure/manager-decision.md` with
+   CONFIG-RESOLVED values — never the template's fictional ones (a fictional
+   `decided_by` presented as real provenance, or another user's subfolder, is the
+   defect class): `manager_name`/`manager_email` from config · `team_publish_folder`
+   = `Team/updates/{user_name}` · `decided_by` = `{user_name}` · `decided_on` =
+   today · `team_publish` = `gated` on option 1 (the safe default; auto is a
+   deliberate later hand-edit) or `off` on option 3 · `team_publish_trigger` =
+   `ns-confirmed` ·
+   `update_cadence_day` = the §A6.2-recorded cadence day when present, else
+   `Thursday` · `ns_rubric_status` = `inherited` — NEVER the template's `confirmed`
+   (a confirmation nobody made is the same fabricated-provenance class); the
+   comment block copies verbatim. The engine never rewrites the file after
+   creation. The created file's `team_publish_folder` is recorded into the config
+   at step 3's config write (the identity-clause triple), same pass — no drift window
+   between creation and the recorded copy.
 3. Report what was created vs already present, write the config, disclose the usage log, then OFFER the board (C11 — live gap 2026-07-17: the first non-founder install ended with no board offer). **Disclosure:** "Runs are logged to `Team/_engine/usage/{user_name}.jsonl` — skill, version, outcome. No account data. Everyone on the team can see it." Then: "1. Build my board now / 2. Skip — say 'build my board' any time." On 1, hand off to workos-sync's BOARD entry point. Then close.
 
 ---
@@ -494,7 +536,12 @@ is "issues found," never green-with-asterisks** (C13):
    version gap says setup ran a while ago, which is usually fine; a schema gap says a
    specific generated section is missing, which is not.
 6. **Team/ publication:** shortcut present? user's subfolder writable? manager-decision
-   file recorded? Each absent one maps to the Day-1 guide step or the pending manager-decision item. **Fresh-install rule (#32): an unset publish gate on a root with no prior Team/ updates is INFO, not a finding — one line: "publish gate unsettled — it settles via the manager-decision file; the weekly sweep's A6.3 gate skips (with the reason said) until then."**
+   file recorded? File present → one line
+   `team_publish: {mode} (decided {decided_on} by {decided_by})` +
+   `ns_rubric_status: {value}` reported verbatim, never enforced; a report-only INFO
+   when the file's `manager_name`/`manager_email` differ from the config (named, never
+   a finding); plus a DRIFT flag when the config's `team_publish_folder` differs from
+   the file's (fix: re-run `init my workspace` — setup re-records the copy). Each absent one maps to the Day-1 guide step or the pending manager-decision item. **Fresh-install rule (#32): an unset publish gate on a root with no prior Team/ updates is INFO, not a finding — one line: "publish gate unsettled — it settles via the manager-decision file; the weekly sweep's A6.3 gate skips (with the reason said) until then."**
 7. **State layer:** `state/` exists; JSON parses; the writer's lock is a released
    tombstone (`released: true` — FREE, healthy), absent (also fine), or one live lock
    (stale live lock → name the recovery step from the recorded spike design, quoting the

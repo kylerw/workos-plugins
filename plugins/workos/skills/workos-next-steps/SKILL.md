@@ -41,6 +41,22 @@ the values — never hand-edited, per `identity-config`):
   don't assume) or `manual` (no Salesforce integration — the team default).
 - `{integrations}` — gates the optional research blocks (hinotes etc.).
 - `{fiscal_q1_start_month}` — for quarter bucketing.
+- **The manager-decision file** (`{memory_root}/manager-decision.md`) — read ONCE
+  here, frontmatter only: `team_publish` mode, `team_publish_trigger`,
+  `team_publish_folder`, `update_cadence_day`. A4 branches on the resolved mode;
+  A6.3 consumes this resolution, never a second read. Unknown enum, a missing
+  REQUIRED key (`team_publish` or `team_publish_folder` — the only two; a missing or
+  unknown `update_cadence_day` only unsettles the cadence default, one loud line,
+  never a publish skip), or unparseable frontmatter → the mode resolves to
+  SKIP-WITH-REASON, naming the refused value or missing key — never a question,
+  never an unasked write. `team_publish_folder` must additionally be a relative,
+  root-contained path (never absolute, never `..`) under `Team/` whose TERMINAL
+  segment is `{user_name}` (the `library_path` precedent, made mechanical) — a
+  folder failing this rule is treated as a missing required key: SKIP-WITH-REASON
+  naming it. At `team_publish` = `auto-with-notice`, `decided_by` and `decided_on`
+  are ADDITIONALLY required (non-empty; `decided_on` a date) — missing or malformed
+  → the mode resolves to SKIP-WITH-REASON naming them ("auto publish requires
+  recorded provenance"); at `gated`/`off` they stay report-only.
 
 **"Today" always comes from the surface-provided current date — never inferred or recalled.**
 
@@ -224,8 +240,9 @@ and persistence write — happens only at a later attended finalize (§A-entry r
    Re-dating an unchanged step is activity theater — surface honest options instead
    (escalation step, stall note, close-date move).
 3. **Current-quarter Notes fields:** for current-quarter rows — and next-quarter rows in
-   Commit or Best Case (the "where appropriate" rule, unless the manager-decision file
-   refines it) — track Why NICE / Why Now / Approval Signature Process as
+   Commit or Best Case (the "where appropriate" rule — a future manager-decision schema
+   key may refine it; its frontmatter carries no such key today) — track Why NICE / Why
+   Now / Approval Signature Process as
    **present / missing / unknown** (they live in the SFDC Notes section; not queryable).
    Unknowns are resolved with **one batched question** covering all unknown rows, never
    one ask per opp.
@@ -250,6 +267,16 @@ Sphere's Financial Approver / Decision Maker chain; drafted from evidence, never
 thin evidence goes into the batched question of A3.3), the shared-body preview (per the template's §Body — the email/Team
 rendering), and the persistence diff (what will be appended to which logs).
 
+**When the resolved `team_publish` mode is `auto-with-notice`:** run the single voice
+pass (per assets/shared/voice-contract.md, A6.2's rules verbatim — locked lines
+byte-exempt, scaffolding exempt) HERE, before the preview builds, and compose the
+COMPLETE Team/ file — the template's frontmatter filled from the sweep data ABOVE the
+voiced shared body — as the preview A5 renders. Render the voice pass's audible line
+beside A5's gate (chat output, never part of the written file or the byte-identical
+payload). A5's approval is then the approval of
+the exact bytes A6.3 will write. At any mode other than `auto-with-notice`, A4 is
+unchanged and the voice pass stays in A6.2 (the shipped sequencing).
+
 ### A5. ONE consolidated approval — on the real artifacts
 
 Present the sweep table: every row, its bucket/class/flags, the **actual proposed line**
@@ -259,9 +286,11 @@ named rows · drop named rows · stop. **One approval pass for the whole sweep**
 the `draft-before-write` gate for everything below. **Any adjustment invalidates the
 pass: re-render each adjusted row in full (`{OppNumber} — {Opp Name}`, the revised
 line/Notes block) with the gate question in the same turn before persisting
-(`render-before-gate`) — "one approval pass" means one gate per content-version of the
-sweep, never an approval against a stale render.** (The Team/ publish gate in A6 stays its
-own question — the plan requires that one to be asked every time.)
+(`render-before-gate`) — and when the mode is `auto-with-notice`, an adjustment or drop
+ALSO re-renders the updated complete-file preview with the re-gate (the published bytes
+are always the approved bytes) — "one approval pass" means one gate per content-version of the
+sweep, never an approval against a stale render.** (The Team/ publish step in A6 follows
+the recorded `team_publish` mode — its own question only when `gated`.)
 
 ### A6. Emit three outputs, then persist
 
@@ -274,8 +303,8 @@ own question — the plan requires that one to be asked every time.)
    subject + body and continue. Structure: subject + salutation, then THE SHARED BODY — built once per the template's
    §Body (assets/shared/team-update-template.md): the template's coverage line (with the
    partial clause whenever A1's partial rule applies — the template owns the line's shape)
-   · one block per CHANGED opp in the RVP's per-opp format, grouped by account and sorted
-   per the template's ordering rule — the header link from the cached Opportunity Id
+   · one block per CHANGED opp in the RVP's per-opp format, in the template's account
+   sections, per its ordering rule — the header link from the cached Opportunity Id
    (resolved as the log's most recent non-`unknown` Observed `Id` — the ONE log segment
    legal to read back, per `no-shadow-store`'s identity clause) plus `{sfdc_instance_host}`,
    rendering plain per the template's link rule when either is missing, never a fabricated
@@ -290,36 +319,54 @@ own question — the plan requires that one to be asked every time.)
    line counts them; `Reason:` stays persisted in the log and leaves the rendered body. The
    canonical body ≡ the Team/ file; the email is a mechanical RENDERING of it per the
    template's email-rendering contract (draft path converts all markdown, HTML when
-   supported; copy-ready fallback renders links `{label} ({url})`, bold as plain text,
-   `---` as a blank line — no markdown pastes as literal characters). At a parked-sweep
+   supported; copy-ready fallback renders links `{label} ({url})`, bold labels render as
+   plain text, `##` headings as bare lines, and bullets as `-` with two-space indents —
+   no markdown pastes as literal characters). At a parked-sweep
    finalize, this same composition runs AT FINALIZE TIME by the running bundle — the
    parked `emailPreview` is machine staging, superseded at finalize, never presented as
    the gated artifact (`render-before-gate`: a park is never a prior render).
-   Before composing further, run the voice pass per assets/shared/voice-contract.md (in-chat
+   At any mode other than `auto-with-notice`, before composing further, run the voice
+   pass per assets/shared/voice-contract.md (in-chat
    as the shared body's destination; block scaffolding is exempt structure — extended by
-   name to the per-opp block's bold labels (`**{Account} | …**`, `**Change Type**`,
-   `**Old:**`, `**New:**`, `**Step (unchanged):**`) and link markup: tell 4's bold-count
+   name to the per-opp block's bold labels (`**{OppNumber} | …**`, `**Change Type**`,
+   `**Old:**`, `**New:**`, `**Step (unchanged):**`), the `## {Account}` section
+   headings, and the bullet markers, and link markup: tell 4's bold-count
    never strips the RVP's own mandated markup) ONCE on the
    shared body, and render its audible line with the output; the subject + salutation take
    their own voice pass (plain-text-paste). The locked
    next-step line itself is exempt — byte-identical before/after the voice pass
    (locked-next-step-format.md stays sole authority). Draft only; the user sends.
-3. **Team/ publish gate (one question, last):** FIRST compose the complete update — the
-   exact file body — the template's frontmatter filled from the sweep data (frontmatter is
-   the rollup's parse contract, PLAN §4.4 — keys unchanged) above THE SAME shared body A6.2
-   composed — the canonical body, byte-identical in this file below the frontmatter (the
-   email was its mechanical rendering, per the template's email-rendering contract; never
-   re-composed). The body is already voiced
-   (A6.2's single voice pass per assets/shared/voice-contract.md) — attach it verbatim.
-   Frontmatter is machine data for the rollup and is NEVER voice-passed. Re-render the body
-   pass's audible line beside the gate question; voice-check lines are chat output, never
-   part of the written file or the byte-identical payload. Then render it and
-   ask in the same turn (`render-before-gate`): "Publish this week's update to `Team/`?"
-   On yes, write that rendered body to
-   `{memory_root}/Team/updates/{user_name}/{YYYY-WW}_update.md` (write-your-own-subfolder
-   only; overwrite the same week's file, never another week's). **If the manager-decision
-   file is absent or unresolved, skip this gate and say why** — the email is the fallback
-   channel until the decisions are recorded.
+3. **Team/ publish (the recorded mode, last):** frontmatter is machine data for the
+   rollup (the parse contract, PLAN §4.4 — keys unchanged) and is NEVER voice-passed,
+   at any mode. Per Step 0's resolved mode:
+   - **`auto-with-notice`** (trigger `ns-confirmed`, absent ≡ the same): the complete
+     file was A4's preview and A5 approved it. PROBE the destination first (C13) —
+     the probe validates the path rule before reachability: the FILE's
+     `team_publish_folder` resolved under `{memory_root}` — unreachable or
+     absent → skip with the reason said, never create the path, never a success
+     notice. Probe green → write the approved render to
+     `{memory_root}/{team_publish_folder}/{YYYY-WW}_update.md` (write-your-own-
+     subfolder only; overwrite the same week's file, never another week's) with NO
+     question, then emit ONE line:
+     `Published week {YYYY-WW} to Team/ (auto — per manager-decision.md; say 'switch publish to gated' to change)`.
+     The switch phrase's v1 handler renders the
+     hand-edit instruction (the file, the key, the legal values) — never an engine
+     write.
+   - **`gated`**: today's behavior — compose the complete file: the template's
+     frontmatter filled from the sweep data above THE SAME shared body A6.2 rendered
+     (the canonical body, byte-identical below the frontmatter — the email was its
+     mechanical rendering; never re-composed; voiced in A6.2 per the shipped
+     sequencing). Re-render the body pass's audible line beside the gate question
+     (voice-check lines are chat output, never part of the written file or the
+     byte-identical payload). Then render the file and ask in the same turn
+     (`render-before-gate`): "Publish this week's update to `Team/`?" On yes, write
+     it to the same path with the same rules.
+   - **`off`, file absent, or any Step-0 skip state**: skip this step and say why —
+     the email is the fallback channel until the decisions are recorded in
+     `{memory_root}/manager-decision.md`.
+   A park's finalize runs this step from the FINALIZE-TIME A4/A5 render (a park is
+   never a prior render) — under `auto-with-notice` that render was the complete
+   file, and publish fires from it.
 
 **Persist — one observation per enumerated opp, every sweep** (this is what makes next
 week's A3 checks possible), appended to

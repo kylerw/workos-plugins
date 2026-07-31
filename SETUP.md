@@ -116,10 +116,16 @@ behave differently, one of these three files is almost always the answer.
   refreshes on every sync after that).
 - **Any time**: **"tidy"** = quick refresh · **"log a call"** / **"capture the meeting
   with …"** = save a touchpoint or meeting into the account's files.
+- **Drop a file any time**: put a screenshot, PDF, or forwarded note into your
+  **`Intake/`** folder. The next sync files it into the right account — or parks it and
+  asks, when it can't tell where it belongs. Nothing you drop there is ever deleted
+  without you.
 - **Weekly**: on your update's due day (or the evening before), say **`weekly next
   steps`**, choose **Finalize**, review the one approval screen, then paste the lines
   into Salesforce and send the email yourself. (No Salesforce connection? The draft
-  builds from your own logs and says so.)
+  builds from your own logs and says so.) If you've set team publishing to
+  **auto-with-notice**, that same approval also publishes the update to your Team folder
+  and tells you it did; left unset, nothing is published without you.
 - **Deep work on one account?** Open a session in that account's folder under
   `Accounts/` — it carries its own instructions. (On Cowork: stay in your one WorkOS
   project — its instructions route Claude to the account's own file.)

@@ -103,12 +103,18 @@ differently, one of these two files is almost always the answer.
 - **Any time**: **"tidy"** = quick refresh · **"sync my day"** = full pass ·
   **"log a call"** / **"capture the meeting with …"** = save a touchpoint or meeting
   into the account's files (arriving in the next update).
+- **Drop a file any time**: put a screenshot, PDF, or forwarded note into your
+  **`Intake/`** folder. The next sync files it into the right account — or parks it and
+  asks, when it can't tell where it belongs. Nothing you drop there is ever deleted
+  without you.
 - **Weekly**: the sweep runs by itself the evening before your update is due and parks
   a draft (nothing is sent). Next morning the board flags it — say **`weekly next
   steps`**, choose **Finalize**, review the one approval screen, then paste the lines
   into Salesforce and send the email yourself. (No Salesforce connection? The parked
-  draft builds from your own logs and says so.) Per-account projects: see the Day-1
-  guide's pattern — one project per active account.
+  draft builds from your own logs and says so.) If you've set team publishing to
+  **auto-with-notice**, that same approval also publishes the update to your Team folder
+  and tells you it did; left unset, nothing is published without you. Per-account
+  projects: see the Day-1 guide's pattern — one project per active account.
 
 **If Cowork is paused (usage limits, an outage):** open Claude Code in the same folder
 and run `sync my day` when you sit down — attended beats the scheduled run (questions

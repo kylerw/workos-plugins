@@ -52,8 +52,15 @@ Ask in order:
 
 1. **Tied to a specific opportunity/pursuit?** → `01_Opportunities/{OppNumber}_{Label}/` in
    the matching subfolder (Decks / Pricing / Contracts-SOWs-Amendments / CCS / Notes).
-2. **Account-wide** (org chart, MSA, account plan, general strategy — not one deal)? →
-   `00_Account Overview/`.
+   **Deal paper files here whether or not it's signed** — executed SOWs, order forms,
+   purchase orders, quotes, amendments, and change orders all belong in that opportunity's
+   `Contracts-SOWs-Amendments/`. Execution is not a promotion: a fully-executed document
+   stays in its opportunity folder and does not move up to `00_Account Overview/` for being
+   important.
+2. **Account-wide** (org chart, account plan, general strategy — not one deal)? →
+   `00_Account Overview/`. The agreements that belong here are the master/relationship
+   ones not scoped to a single deal: **MSA, BAA, NDA, DPA**, and any other master agreement
+   that individual deals hang off of.
 3. **A meeting artifact not owned by one opportunity** (QBR, discovery notes)? →
    `02_Meetings/{YYYY-MM-DD}_{Meeting Name}/`. If the meeting produced an opp-specific
    deliverable, the canonical file lives in the opportunity folder — link it from the
@@ -95,6 +102,10 @@ opportunity registry when Salesforce isn't connected (contract C7).
 - **Open:** under `01_Opportunities/`.
 - **Closed (won or lost):** move the entire opportunity folder as-is into
   `04_Closed-Lost Archive/`; don't restructure it.
+- **Executed contracts travel with the folder.** Signed SOWs, order forms, POs, quotes,
+  amendments, and change orders stay in that opp's `Contracts-SOWs-Amendments/` as it moves
+  into the archive. They are never relocated to `00_Account Overview/` for long-term
+  keeping — Overview holds master agreements (MSA / BAA / NDA / DPA), not deal paper.
 
 ## Operating invariants (contracts, by number)
 

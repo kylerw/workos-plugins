@@ -274,6 +274,55 @@ derives its optional "intake overdue" attention line from watermark age vs the
 configured NON-STAGED retention thresholds (staged sources are resurface-governed and
 excluded) — sync never runs intake, never writes this file.
 
+## run-report.json (#206 — unattended run reports + drain instrumentation)
+
+`{ generated, generatedBy: "sync|tidy|sweep|intake", reports: {…}, drainStats: {…} }` —
+two independent halves with two independent writer rules (C15; mechanics in
+`assets/shared/unattended-execution.md`):
+
+- **`reports`** — latest UNATTENDED run per pass, keys ⊆ {`sync`, `sweep`, `intake`};
+  written ONLY by the lock-holding unattended run as part of its final state batch
+  before tombstone release. Attended runs never write it. Each entry:
+  `{ at, localDate?, version, surface, outcome: "completed|blocked",
+  counts: {auto, queue}, queueByClass, unknowns?, leaves?, tier?, coverage?,
+  blockReason (non-empty iff blocked; null or omitted otherwise), summary }`
+  (`localDate` — omit when unresolved, the stamp's rule; present ⇒ a real calendar date,
+  not merely YYYY-MM-DD-shaped). `tier` and `coverage`, when present, carry sweep.json's
+  own vocabularies verbatim — `mcp|logs` and `full|partial`. `counts.queue`/`queueByClass`
+  count items newly raised OR dedupe-refreshed this run (parks: decision units staged this
+  run), and **`counts.queue` equals the sum of `queueByClass`** — the RUN_REPORT line
+  renders both, and §Promotion reads the classes as evidence. `unknowns`/`leaves` are
+  counted separately and enter neither. BLOCK is an outcome, not a count.
+- **`drainStats`** — cumulative per-`queueClass` counters (FLAT — keyed by class alone;
+  sync and tidy drain the same queue and their evidence merges), written ONLY by the
+  lock-holding attended gate that DECIDES queued items:
+  `{ approved, declined, drains }` where `drains` counts drains in which ≥1 item of the
+  class was approved or declined — left-pending and retired touch nothing.
+- **`queueClass` is a COUNTING vocabulary — no new stored fields** (a stored derivable
+  tag would violate C6): a `pendingApprovals` item's class IS its `kind` (extension
+  kinds count as `extension`); an intake park row's class is its `verdict` mapped
+  `move → intake-move`, `copy → intake-copy` (LEAVE rows count into `leaves`, never a
+  class); a sweep park row emits one unit per decision it carries — `proposedLine` →
+  `next-step-line`, `closeDateProposal` → `close-date-proposal`, `notesBlock` →
+  `notes-block`, park `emailPreview` → `email-preview`; `unknowns[]` totals into
+  `unknowns`. Closed list: the validator's `QUEUE_CLASSES` — and **closed PER PASS**
+  inside `reports` (the validator's `PASS_CLASSES`): sync reports the `pendingApprovals`
+  kinds it raises, sweep reports its four decision units, intake reports its two park
+  verdicts. `extension` is legal in every pass — the relief valve. `intake-delete`
+  appears in NO reports set: deletes are decided at the intake finalize, so that class
+  accrues only in `drainStats`. `drainStats` stays flat over the whole `QUEUE_CLASSES`
+  list — one counter per class, whichever gate decided it.
+- Writers MERGE (re-read under the lock, preserve every other key verbatim) and write
+  temp-then-replace. **Every write stamps provenance for the write it just made** —
+  `generated` = that write's instant (required; ISO), `generatedBy` = the writing pass,
+  including a `tidy` gate that touched `drainStats` alone. The two halves keep their own
+  writer rules; the stamp describes the file's last toucher, never the last unattended
+  run (read `reports.{pass}.at` for that). Unparseable file → recreate from empty in the same batch + one
+  attention line ("run-report.json was unreadable and was recreated — drain counters
+  reset") + a journal pointer; NEVER a BLOCK. Absent file → first eligible lock-holder
+  creates it; setup never scaffolds it (presence carries meaning — C4 bootstrap
+  exception's boundary).
+
 ## .pass-lock.json (persistent file, transient meaning — see spike 4)
 Live: `{ "pass": "sync|tidy|sweep|intake", "startedAt": "ISO", "surface": "cowork|claude-code",
 "runId": "..." }`. Released: the same object plus `"released": true, "releasedAt": "ISO"`.

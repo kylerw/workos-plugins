@@ -73,7 +73,9 @@ value a lock write carries).
 **Attended vs unattended (#68):** the run is **unattended ⇔ the invoking prompt
 contains the marker "(scheduled, unattended)"** — setup's scheduled task carries it;
 no marker → attended. Unattended runs execute §A ONLY, in stage-and-park form (§A0):
-never §B or §C, never a question, never an external emission. **Same-day dedupe,
+never §B or §C, never a question, never an external emission — classification per C15
+unattended-classification, mechanics in `assets/shared/unattended-execution.md` (§A0's
+probe tiers, park shape, and dedupe rules stay authoritative here). **Same-day dedupe,
 before anything else:** read `state/tasks.json → lastUnattendedRun.sweep` (one read,
 no lock). That entry's `localDate` equals this run's local date (computed per
 identity.schema.md's full `timezone` resolution order) → exit with the run header
@@ -121,7 +123,11 @@ refresh — `mcp` tier re-runs the A1 query and marks each row changed/unchanged
 changed row re-rendered in full (`render-before-gate`); `logs` tier presents as-parked
 with its coverage label; parked `unknowns[]` become A3.3's one batched question; then
 A5's consolidated gate on the full set → A6 outputs + persistence exactly as attended
-(observations stamp HERE, from finalize-time data). **Tweak:** adjust the named rows,
+(observations stamp HERE, from finalize-time data). When the gated set came from a
+park (the §A-entry resume), update `state/run-report.json → drainStats` per
+`assets/shared/unattended-execution.md` §Drain instrumentation — classes per schema
+§run-report.json's sweep mapping; only rows DECIDED at this gate count (a row left
+parked touches nothing). **Tweak:** adjust the named rows,
 then Finalize's flow. **Discard:** rewrite `parked` to null + one journal pointer
 `- {date} parked sweep discarded (generated {generatedAt})`. **Leave parked:** run a
 fresh attended sweep; the park stays untouched. Finalize and Discard clear the park,
@@ -182,9 +188,13 @@ and persistence write — happens only at a later attended finalize (§A-entry r
    version (assets/shared/VERSION verbatim, or "unstamped")}` preserving every other
    key, and refresh the parked-sweep `attention[]` line in `tasks.json` as the typed
    `{class: "action", text, source: "sweep"}` record (exact line per workos-sync S7.2's
-   derivation; class per the schema README's attention-class table). The board is NOT
-   rebuilt here — sync and tidy own board rebuilds; the due-day morning sync surfaces
-   the park (spec §6b).
+   derivation; class per the schema README's attention-class table). Same batch: MERGE
+   `reports.sweep` into `state/run-report.json` — counts per schema §run-report.json's
+   sweep decision-unit mapping (`proposedLine` → `next-step-line`, `closeDateProposal` →
+   `close-date-proposal`, `notesBlock` → `notes-block`, park `emailPreview` →
+   `email-preview`; `unknowns` = the rows' `unknowns[]` total), `tier` + `coverage` from
+   this park. The board is NOT rebuilt here — sync and tidy own board rebuilds; the
+   due-day morning sync surfaces the park (spec §6b).
 
 3a. **Usage log (open):** Immediately after the lock is yours, append the `open` record per
    `assets/shared/usage-log.md` (`mode`: `sweep`; `runId` = this pass's lock runId). A failed
@@ -196,7 +206,8 @@ and persistence write — happens only at a later attended finalize (§A-entry r
 4. **Nothing leaves:** no paste block, no mail draft (an external mailbox write waits
    for the gate), no `Next_Step_Log.md` observation, no Team/ publish. Run output:
    the header line, rows parked, tier + coverage, unknowns count, replaced-park note
-   when applicable. Immediately before releasing the lock, append the `close` record per
+   when applicable, and the §RUN_REPORT line per `assets/shared/unattended-execution.md`.
+   Immediately before releasing the lock, append the `close` record per
    `assets/shared/usage-log.md`, using that document's outcome mapping. Do not restate the
    mapping here. Release the lock as the final action.
 

@@ -32,7 +32,8 @@ plugin's skill folder. Never resolve `assets/` in the memory root or project fol
 
 **State schema:** `assets/shared/state-schema/README.md` is normative for every field this
 skill reads or writes — signal vocabulary, `dayTask.queue`, `attention[]`, prep/recap as
-top-level booleans, and the rule that `overdue`/`nearDate` are render-time derivations the
+top-level booleans, `run-report.json` (`reports.sync` + `drainStats` — schema
+§run-report.json), and the rule that `overdue`/`nearDate` are render-time derivations the
 board computes (no pass stores or refreshes them).
 
 ## Step 0 — every run, both passes
@@ -62,10 +63,11 @@ board computes (no pass stores or refreshes them).
 3. **Attended vs unattended:** the run is **unattended ⇔ the invoking prompt contains the
    marker "(scheduled, unattended)"** — `workos-setup` puts that marker in the scheduled
    task it creates; the Day-1 guide mandates it. No marker → attended. Unattended runs
-   never ask questions, never apply pendingApprovals, never delete or move files; they do
-   only what C5's state-store clause allows ungated (incl. the engine version beacon —
-   `assets/shared/version-check.md`), queue everything else, and report
-   into `attention[]` + the run output.
+   classify per C15 unattended-classification — mechanics, the RUN_REPORT line, write
+   order, and the BLOCK enumeration in `assets/shared/unattended-execution.md` (AUTO
+   includes the engine version beacon — `assets/shared/version-check.md`; everything
+   user-meaningful queues). The dedupe stamp, lock protocol, and every S-phase rule below
+   stay exactly as written — the asset carries only the shared mechanics.
    **Unattended same-day dedupe (#67) — checked HERE, before the lock:** an unattended
    SYNC run first reads `state/tasks.json → lastUnattendedRun.sync` (one read; no writes, no
    lock). When that entry exists AND its `localDate` equals this run's local
@@ -332,7 +334,15 @@ commit — so S1's done/carry counts and the S7.4 rebuild see post-drain task st
 `lastBoardDrain` = the max `ts` of the queue files this drain CONSUMED — applied +
 raised-to-`pendingApprovals` + quarantined-as-malformed, **not just applied** (so a `remove`
 whose visibility passes to the approvals queue still lets the shell prune its mirror once) —
-is stamped into `tasks.json` meta in the same batch as `lastFullSync`. Then render the receipt into the close summary: `Board clicks applied —
+is stamped into `tasks.json` meta in the same batch as `lastFullSync`.
+
+**Unattended runs only — the run report (C15):** in this same final batch, MERGE
+`reports.sync` into `state/run-report.json` (shape + counting rules: schema
+§run-report.json; write order + corrupt-file rule: `assets/shared/unattended-execution.md`
+§Write order), and end the run output with the §RUN_REPORT line. A BLOCK under the lock
+(§BLOCK enumeration case 3) writes the `blocked` entry instead, then releases.
+
+Then render the receipt into the close summary: `Board clicks applied —
 {X} done · {Y} reopened · {Z} updated` plus one line per applied action
 `{action}: {title} ({taskId})`. **Empty queue → no receipt section** (never a "0 applied"
 line).
@@ -398,7 +408,10 @@ line).
    sources are resurface-governed and excluded from this derivation, and with no
    non-staged source configured the line never renders; exact line `intake
    overdue — last sweep {date or "never"}; say '{run intake when never, else intake
-   check}'` (sync never runs intake)).
+   check}'` (sync never runs intake)). Same batch: update `state/run-report.json →
+   drainStats` per `assets/shared/unattended-execution.md` §Drain instrumentation (a
+   pendingApprovals item's class is its `kind`; extension kinds count as `extension`).
+   Tidy's approval step applies this same sentence.
 3. **Journal pointers:** one line per durable outcome —
    `- {date} {outcome} → {where truth landed}`. Approval RAISES add `- {date} approval {id} raised: {one-line summary}`; approval exits add `- {date} approval {id} {applied|declined|retired}: {one-line
    summary}` (schema grammar + ordering — each raise pointer verified BEFORE its item enters
@@ -520,7 +533,9 @@ brief-building.
    a state write — ownership check first). Per-item outcomes: apply / decline / leave pending — plus retired when the finding no
    longer validates (schema exits). Declines and retires land in the same write batch as
    applies; every exit appends its journal pointer (an APPEND-ONLY journal write — the
-   one Tidy journal exception; S7.3's backfill scan stays sync-only). A "Mark done:"
+   one Tidy journal exception; S7.3's backfill scan stays sync-only). Same batch: update
+   `state/run-report.json → drainStats` per SYNC S7 Attended item 2
+   (`assets/shared/unattended-execution.md` §Drain instrumentation). A "Mark done:"
    board-button message that triggered this run joins the same pass as a proposed closure
    (evidence: the user's tap; match by `taskId` when present, else by title — ambiguous
    title → one C11 question). Unattended → count into `attention[]` (`action`-class), touch nothing.

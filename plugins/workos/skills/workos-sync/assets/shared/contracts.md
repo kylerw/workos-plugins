@@ -53,7 +53,10 @@ Append-only journal POINTER lines are exempt bookkeeping, as is the engine versi
 (`Team/_engine/latest-version.txt` — monotonic bump only, per `assets/shared/version-check.md`;
 added 2026-07-17, #29), and the per-user usage log (`Team/_engine/usage/{user_name}.jsonl` —
 append-only, engine-operational, schema-bounded with no free-text field, and never read back for
-reporting or cross-user aggregation, per `assets/shared/usage-log.md`; added 2026-07-28, #167). Parked sweep staging (`state/sweep.json`, #68) and parked intake
+reporting or cross-user aggregation, per `assets/shared/usage-log.md`; added 2026-07-28, #167).
+`state/run-report.json` is likewise exempt machine bookkeeping (latest-per-pass
+unattended reports + cumulative drainStats counters, schema-bounded, `summary` and
+`blockReason` the only free-text fields; added 2026-08-01, #206). Parked sweep staging (`state/sweep.json`, #68) and parked intake
 staging (`state/intake.json` `parked`, #179) are ungated machine staging under this clause
 — the attended finalize's single consolidated gate remains the
 sole approval for everything staged (cross-ref generalized 2026-07-22, #70 — the register
@@ -116,4 +119,18 @@ per item, never wholesale, even when displayed inside a consolidated pass. **Boa
 answered audibly in the gate turn itself ("gating {N} items, all rendered above"): is
 everything this approval writes rendered in THIS turn, at its required fidelity? Any
 "no" → render now, then ask.
+**C15 · unattended-classification** — An unattended run (`(scheduled, unattended)`
+marker) never asks a question and never waits on a gated action: every decision
+classifies AUTO (C5's ungated set, nothing wider) / QUEUE (persisted to the pass's
+staging before release, drained at the owning attended gate) / BLOCK (integrity risk
+only, per the shared asset's exhaustive enumeration —
+`assets/shared/unattended-execution.md`). Every lock-holding unattended run's final
+state batch writes its `state/run-report.json` entry; every unattended run emits
+exactly one RUN_REPORT line, with one named exception — the same-day dedupe skip
+(#67/#68) exits with its own two-line output before the run begins and emits none.
+QUEUE decisions are COUNTED under a `queueClass` from a closed
+per-pass vocabulary — derived at report time from fields the record already carries,
+never written onto it (C6); class promotion to AUTO is a reviewed amendment naming the
+class, backed by recorded drain outcomes. (added 2026-08-01, #206)
+
 <!-- END CONTRACTS -->

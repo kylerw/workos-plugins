@@ -43,8 +43,11 @@ canonical target recipe), `suppressed.intake` (LEAVE snooze records), and
    {surface} = `cowork` | `claude-code`.
 2. **Unattended = stage-and-park only:** the invoking prompt carries
    `(scheduled, unattended)` → run §PARK — staged sources only, classify and park,
-   zero filings, zero questions, zero emissions; the gate and every move/delete stay
-   attended-absolute. No marker → attended.
+   classification per C15 unattended-classification (mechanics:
+   `assets/shared/unattended-execution.md`; §PARK's pile rules and no-dedupe
+   divergence stay authoritative here), zero filings, zero questions, zero EXTERNAL
+   emissions (the §RUN_REPORT line is run output, not an emission); the gate and every
+   move/delete stay attended-absolute. No marker → attended.
 3. **Config (C2):** resolve `{memory_root}`, `{intake_sources}`, `{library_path}`,
    `{intake_retention_days}` (missing → downloads 60 · screenshots 30 · staged 7 — the
    staged value governs ONLY the LEAVE resurface window, never delete-eligibility; one
@@ -186,7 +189,12 @@ canonical target recipe), `suppressed.intake` (LEAVE snooze records), and
    line names the recoverable source. A DECLINE on an intake item additionally writes
    its LEAVE record to `suppressed.intake` in the same batch as the declined exit
    (target + fingerprint from the item, `reconsiderAt` per the source's window) —
-   declines never re-litigate either.
+   declines never re-litigate either. Same lock-held batch as the decisions: update
+   `state/run-report.json → drainStats` per `assets/shared/unattended-execution.md`
+   §Drain instrumentation — park rows by verdict (`move` → `intake-move`, `copy` →
+   `intake-copy`; LEAVE rows and left-parked rows touch no counter) and decided
+   intake-kind manifest items by their `kind` (`intake-move` · `intake-copy` ·
+   `intake-delete` — the only gate where `intake-delete` accrues).
 5. **Close:** write `state/intake.json → lastSweep` (this run's captured now, UTC `Z`
    form — a naive-local stamp on a UTC-positive surface silently under-scopes the next
    maintain, #94) in the final state batch — **read-modify-write: preserve the
@@ -245,8 +253,14 @@ parked-intake attention line as the typed record `{class: "action", source: "int
 (text: `parked intake manifest ({N} rows, from {date}) — say 'run intake' to finalize`)
 and a MERGE of `lastUnattendedRun.intake` = `{at, localDate (omit when unresolved),
 surface, version}` preserving every other key — **the stamp writes on EVERY lock-holding run,
-park or no park** (it is the #52 evidence doctor reads) → usage `close` per the
-outcome mapping → verified tombstone release. No filings, no emissions, no board
+park or no park** (it is the #52 evidence doctor reads) → Same batch, same every-run
+rule: MERGE `reports.intake` into `state/run-report.json` — `queueByClass` per schema
+§run-report.json's intake mapping (`verdict` `move` → `intake-move`, `copy` →
+`intake-copy`), `leaves` = LEAVE-verdict rows, `unknowns` = the parked `unknowns[]`
+count; a probe-failed run writes outcome `completed` with a `summary` naming the
+degraded close (BLOCK stays reserved for the asset's enumeration). The run output ends
+with the §RUN_REPORT line per `assets/shared/unattended-execution.md`. Usage `close`
+per the outcome mapping → verified tombstone release. No filings, no external emissions, no board
 rebuild (sync/tidy own board rebuilds). No same-day dedupe — deliberate divergence
 from next-steps §A0: the desk auto-enqueues on capture, so a later run parking a
 FRESHER set is the desired behavior; replacement is the dedupe.

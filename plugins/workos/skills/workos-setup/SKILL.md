@@ -664,6 +664,38 @@ is "issues found," never green-with-asterisks** (C13):
     gets the same INFO treatment — one line naming its age and the resume offer:
     `parked intake manifest from {date} — {N} days old; say 'run intake' to finalize` —
     an offer, never a run.
+11. **Run reports (#206) — report-only except freshness:** `state/run-report.json`
+    absent → one line, `no run reports yet` (informational — the first eligible
+    lock-holder creates it; setup never scaffolds it). Present → validate against
+    schema §run-report.json; a validation failure is a finding naming the first error.
+    Then one line per pass in {sync, sweep, intake}: the entry's
+    `{outcome} {at} ({localDate}) — auto {n} · queued {n}` verbatim, or an honest
+    `no {pass} report recorded` line. **Freshness (the wedged-schedule catch) — judged
+    on COMPLETIONS, never on presence:** `reports` holds the latest run per pass, so a
+    pass that blocks every night refreshes its date without ever completing. For a pass
+    with a recorded `scheduled_task_ids` entry, three findings, in this order:
+    (a) no entry for the pass → FINDING "scheduled {pass} has no completed run on
+    record — if the task was created since the last run this clears itself; otherwise
+    check the platform's run history"; (b) the entry's `outcome` is `blocked` →
+    FINDING "scheduled {pass} last BLOCKED on {localDate}: {blockReason} — it has not
+    completed since" (fires at any age; a fresh date on a blocked entry is the failure
+    this check exists to catch); (c) `outcome` is `completed` but `localDate` is older
+    than the pass's threshold — sync > 4 days, sweep > 8 days — → FINDING "scheduled
+    {pass} hasn't completed since {localDate} — the task may be stalling, yielding, or
+    dead; check the platform's run history." When an entry carries no `localDate`,
+    judge freshness on the date part of `at` instead. Presence is not health.
+    **Promotion candidates (INFO, never an offer):** each `drainStats` class with
+    `drains ≥ 10` and `declined = 0` → one INFO line:
+    "class '{queueClass}': {drains} decided drains, 0 declines — AUTO-promotion
+    candidate (per C15 — routing in
+    `assets/shared/unattended-execution.md` §Promotion)".
+12. **Scheduled capture guard (#206):** apply check 9's scheduler-visibility rule
+    first — not enumerable → the same loud SKIP wording, and this check ends. Otherwise
+    any enabled task whose prompt invokes capture ("log a call", "capture the meeting",
+    or the skill by name) together with the `(scheduled, unattended)` marker is a
+    FINDING: "scheduled capture will refuse every run (C15 — capture is not an
+    unattended pass); pause or delete the task in the platform UI." Doctor never
+    touches it.
 
 **At the close of the run, append the `doctor` record** per `assets/shared/usage-log.md`:
 `counts` from this run's tally, `checks` as check id → verdict, `integrations` as

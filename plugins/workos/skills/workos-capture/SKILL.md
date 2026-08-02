@@ -38,6 +38,18 @@ The usage log (`Team/_engine/usage/{user_name}.jsonl`, per
 bookkeeping under C5, not account content and not another skill's file. It carries no
 free-text field, so nothing this skill learns about an account can reach it.
 
+## Unattended marker — refuse (C15)
+
+capture is not an unattended pass. An invoking prompt carrying `(scheduled,
+unattended)` → BLOCK per `assets/shared/unattended-execution.md` §BLOCK enumeration
+case 1: emit exactly
+`RUN_REPORT capture blocked — capture is not an unattended pass ({version} on {surface})`
+({version} = `assets/shared/VERSION` verbatim, or "unstamped"), read nothing else,
+write nothing (no lock, no state, no usage record), stop. Both intents refuse
+identically; there is no park path.
+
+---
+
 ## Step 0 — every capture
 
 1. **Config (C2):** resolve `{memory_root}`, `{user_name}`, `{initials}`,

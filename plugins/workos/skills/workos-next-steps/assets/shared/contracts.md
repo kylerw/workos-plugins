@@ -87,10 +87,11 @@ blocks and preserves all surrounding markup/JS verbatim — never regenerates th
 artifact write that fails must not be reported as success.
 
 **C10 · versioning-routing** — One live version of a deliverable per working folder,
-`{YYYY-MM-DD}_{Description}.ext`, no `v#` suffixes. Superseded **minor** (presentation
-changed) → delete, human-gated; **major** (substance/source changed, an approved checkpoint,
-or anything sent/presented externally) → that folder's `Archive/`. Cleanup proposals are
-always a specific keep/drop list.
+`{YYYY-MM-DD}_{Description}.ext` (`{PREFIX}_`-led when the account has a configured file
+prefix — the `account_file_prefixes` convention), no `v#` suffixes. Superseded **minor**
+(presentation changed) → delete, human-gated; **major** (substance/source changed, an
+approved checkpoint, or anything sent/presented externally) → that folder's `Archive/`.
+Cleanup proposals are always a specific keep/drop list.
 
 **C11 · structured-options** — Every question to the user defaults to structured numbered
 options — including info-gathering asks reframed as choices — recommended default first,

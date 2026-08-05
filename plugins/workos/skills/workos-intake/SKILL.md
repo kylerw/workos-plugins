@@ -131,7 +131,13 @@ canonical target recipe), `suppressed.intake` (LEAVE snooze records), and
      exactly this case); a confirmed alias is OFFERED as a config `account_aliases`
      entry so it is never asked twice (gate-confirmed, the #40 pattern). Destination
      defers to that account's own `Account_Project_Instructions.md` — intake never
-     invents taxonomy. Never a `_`-prefixed folder.
+     invents taxonomy. Never a `_`-prefixed folder. A NEW engine-named destination
+     folder a filing creates (a meeting folder) takes the account's file prefix per
+     that document's §Customer file prefix — attended: `workos-capture` Step 0.3's
+     prefix resolution by reference (config hit → use it; unconfigured → the one
+     structured ask, decline key `file-prefix:{Account Folder Name}`); §PARK and every
+     unattended pass: the configured prefix or the plain form, never an ask, never an
+     invented prefix. Filed files KEEP their own basenames — intake never renames.
    - **generic collateral** — destination `{library_path}` per its fixed taxonomy;
      the anti-mirror rule governs: opened-and-modified files earn a working copy
      (MOVE/COPY into the matching subfolder + an `INDEX.md` row); merely-read

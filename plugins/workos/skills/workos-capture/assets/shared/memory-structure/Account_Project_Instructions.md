@@ -32,13 +32,13 @@ they live in this account's own data files (`00_Account Overview/Account_Context
 │   ├── CCS/ (Archive/)              (MAP .xlsx, Champion Letter, Sphere snapshot) — ccs-* skills (v2)
 │   ├── Next_Step_Log.md           (append-only next-step history) — next-steps
 │   └── Notes/
-├── 02_Meetings/{YYYY-MM-DD}_{Meeting Name}/
+├── 02_Meetings/{PREFIX}_{YYYY-MM-DD}_{Meeting Name}/
 │   ├── Notes.md                  (consolidated meeting note) — capture
-│   ├── {YYYY-MM-DD}_{Deliverable}.ext        (final artifacts only: presented deck, sent summary)
+│   ├── {PREFIX}_{YYYY-MM-DD}_{Deliverable}.ext   (final artifacts only: presented deck, sent summary)
 │   ├── Prep/                     (drafts, prep briefs, working files — created on demand)
 │   └── Archive/                  (superseded finals — created on demand)
 ├── 03_Competitive Intel/
-│   └── {YYYY-MM-DD}_Competitive_Digest.md    (if built — v2)
+│   └── {PREFIX}_{YYYY-MM-DD}_Competitive_Digest.md   (if built — v2)
 └── 04_Closed-Lost Archive/
     └── {OppNumber}_{Short Label}/  (entire opp folder moved here on close)
 ```
@@ -62,7 +62,7 @@ Ask in order:
    ones not scoped to a single deal: **MSA, BAA, NDA, DPA**, and any other master agreement
    that individual deals hang off of.
 3. **A meeting artifact not owned by one opportunity** (QBR, discovery notes)? →
-   `02_Meetings/{YYYY-MM-DD}_{Meeting Name}/`. If the meeting produced an opp-specific
+   `02_Meetings/{PREFIX}_{YYYY-MM-DD}_{Meeting Name}/`. If the meeting produced an opp-specific
    deliverable, the canonical file lives in the opportunity folder — link it from the
    meeting's `Notes.md` rather than keeping a second copy.
 4. **Competitor intel specific to this account?** → `03_Competitive Intel/`.
@@ -85,12 +85,42 @@ word readable summary. Example: `00123456_Acme-ACD-Displacement`. No number yet 
 `PENDING_{Short Label}`, renamed once the opp exists. These folder names double as the local
 opportunity registry when Salesforce isn't connected (contract C7).
 
+## Customer file prefix
+
+Engine-named files and meeting folders in this account carry the account's file
+prefix first — `{PREFIX}_{YYYY-MM-DD}_…` — so a file stays identifiable outside this
+folder (search results, recents, email attachments). The prefix comes from the
+identity config's `account_file_prefixes` map (one canonical value per account,
+2–12 chars, letters/digits/hyphen — never `_`, it is the separator):
+
+- Configured → every engine-named file and meeting folder uses it.
+- Not configured, attended → the skill doing the naming asks ONCE (the one structured
+  ask — capture Step 0.3's question; constraints and derivation per the schema row); a
+  decline records `declined_offers:` key
+  `file-prefix:{Account Folder Name}` and this account stays on the plain form,
+  never re-asked ("let me re-decide" via setup reopens it).
+- Not configured, unattended → the plain `{YYYY-MM-DD}_…` form; a prefix is never
+  invented without the confirmed config entry.
+
+**Never prefixed:** the root fixed-name files (`Account_Notes.md`,
+`Sphere_of_Influence.md`, `Contacts.md`, `Account_Context.md`, `Next_Step_Log.md`),
+`Notes.md` inside a meeting folder, opportunity folders (`{OppNumber}_{Short Label}`
+— the number is the registry key), `CLAUDE.md`, and the `Prep/`/`Archive/`
+structural names.
+
+**Forward-only:** existing names are never bulk-renamed; plain-form and
+prefixed-form names coexist as valid history, and existing `[[…]]` links keep
+resolving (link text = folder name, either form). The ONE sanctioned retroactive
+path is setup's `align filenames {account}` mode — a per-account, fully-approved
+rename manifest. A later prefix change is likewise forward-only: files keep the
+prefix they were born with.
+
 ## Versioning (contract C10)
 
 - **Draft in the session workspace, not here.** Copy a version into this folder only when
   it's worth keeping — the working folder never sees draft churn.
 - Only the current/latest version of a file lives in its working folder.
-- Filenames: `{YYYY-MM-DD}_{Short Description}.ext`. No `v#` suffixes.
+- Filenames: `{PREFIX}_{YYYY-MM-DD}_{Short Description}.ext` (§Customer file prefix; an account with no configured prefix uses the plain `{YYYY-MM-DD}_…` form). No `v#` suffixes.
 - **Superseded → route by major/minor:** minor (presentation changed) → delete, human-gated;
   major (substance/source changed, an approved checkpoint, or anything sent/presented
   externally) → that subfolder's `Archive/`.

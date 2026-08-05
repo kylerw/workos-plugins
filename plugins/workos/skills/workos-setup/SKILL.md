@@ -61,6 +61,12 @@ plugin's skill folder. Never resolve `assets/` in the memory root or project fol
    copy-ready block.
 6. **`voice drift check`** — compare the user's recent sends against the current voice.md
    (§E): audible summary + ONE copy-ready update block; never a write.
+7. **`align filenames {account}`** — bring ONE existing account's engine-nameable
+   file/folder names in line with the customer file prefix convention
+   (`Account_Project_Instructions.md` §Customer file prefix), every change
+   user-approved (§F). **Read `assets/modes/align.md` and follow it — that file is
+   authoritative for this mode. Do not proceed from this summary.** Attended-only: an
+   invoking prompt carrying the unattended marker → refuse, name the reason, stop.
 
 **"Today" comes from the surface-provided date.** Every question is asked through the
 platform's structured-question tool so the options are SUBMITTABLE — a prose-rendered
@@ -199,7 +205,7 @@ byte-untouched by this mode, always.
 
 ## Anti-patterns — never
 
-- Bulk-moving, renaming, or "organizing" existing user files — under any prompt.
+- Bulk-moving, renaming, or "organizing" existing user files — under any prompt. The ONE exception: `align filenames`' approved manifest (§F, `assets/modes/align.md`) — every rename a user-approved manifest line; outside that manifest the ban is absolute.
 - Overwriting an existing file during init/back-fill (C5 + additive-only).
 - Claiming a configured integration works without evidence — first use or doctor verifies (C13); setup itself never runs pre-verification probes. **Evidence means a call made in THIS run (#156); "it answered earlier in the session" is not evidence and yields SKIP, never `ok`.**
 - Hand-editing config values instead of regenerating through the question flow (C2).

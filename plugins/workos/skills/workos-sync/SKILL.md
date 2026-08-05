@@ -425,8 +425,9 @@ line).
    `Account_Notes.md` mtime is newer than the last sync (a file listing, not a content
    harvest), scan the FULL Open Commitments section (bounded and small — S3's own
    no-date-filter rationale; a date filter here re-opens the reviewed backdated-capture
-   hole) and `02_Meetings/` folders dated since `lastFullSync`'s date minus one day. A
-   pointer is missing when no line in that capture-month's journal references the
+   hole) and `02_Meetings/` folders dated since `lastFullSync`'s date minus one day (the
+   folder date follows the optional `{prefix}_` lead). A pointer is missing when no line
+   in that capture-month's journal references the
    note's `[[link]]` (meeting captures) or the bullet's `[YYYY-MM-DD]` stamp + account
    (log captures — the meeting-note link is optional enrichment). Append missing
    pointers (idempotent — only when absent; capture-dated; normal pointer grammar); a

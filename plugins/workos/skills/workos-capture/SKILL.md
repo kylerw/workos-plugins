@@ -74,6 +74,19 @@ identically; there is no park path.
      folder name — the folder and `Account_Notes.md` are created by THE GATE's approved
      write (named in the bundle), structure back-fill stays setup's job.
    - Capture only into accounts under this root — never another rep's book.
+
+   After the account resolves, resolve its FILE PREFIX (`account_file_prefixes`, per
+   `Account_Project_Instructions.md` §Customer file prefix): a configured entry → every
+   engine-named file and meeting folder this run renders `{prefix}_{YYYY-MM-DD}_…`; no
+   entry and no `file-prefix:{Account Folder Name}` decline recorded → ONE structured
+   question (C11) — "1. {derived candidate} / 2. I'll type my own / 3. No prefix for
+   this account" — a confirmed value is written as a gate-confirmed
+   `account_file_prefixes` offer (the #40 pattern; the schema row owns derivation and
+   the 2–12 `[A-Za-z0-9-]` bound), a decline records the `file-prefix:` key (the #70
+   pattern) and this account keeps the plain form. Everywhere below, `{prefix}_`
+   renders ONLY for a configured account — an unprefixed account uses the plain
+   `{YYYY-MM-DD}_…` form throughout, and both forms are valid history (forward-only:
+   never rename what exists).
 4. **Usage log (open):** append the `open` record per `assets/shared/usage-log.md`
    (`mode`: `log` or `meeting` per the resolved intent; `passId` — this pass holds no
    lock). This is bookkeeping, not a content write: it precedes THE GATE deliberately, so
@@ -100,7 +113,7 @@ identically; there is no park path.
    sentence — `- {date} touch [[{Account}]]: {what happened}` — and the gate says so
    plainly ("journal note only"). Never improvise a section or file for a touch.
    **Carve-out:** attaching ≥1 screenshot in SCREENSHOT CORRELATION upgrades the touch to
-   a lightweight meeting record (a durable `02_Meetings/{YYYY-MM-DD}_{short label}/`
+   a lightweight meeting record (a durable `02_Meetings/{prefix}_{YYYY-MM-DD}_{short label}/`
    folder) — it is no longer a pure touch, and the gate says so plainly. Per
    `assets/shared/contact-resolution.md`, a PURE TOUCH (journal-only, no account file
    written) runs resolution for rendering but never offers the registry append and skips
@@ -200,9 +213,10 @@ attended-only, so correlation may always ask.
    window used ("no captures 14:55–15:35 — check the log time if that looks wrong"),
    move on.
 4. **Rename:** propose a semantic name per selected file
-   (`{YYYY-MM-DD}_{short label}_{topic}.{source ext}`); the user approves or edits each in
-   the same flow. Proposed names sanitize `\ / : * ? " < > |` and any path separator to
-   `-` before entering the gate. Sanitization + bundle-uniqueness validate the FINAL
+   (`{prefix}_{YYYY-MM-DD}_{short label}_{topic}.{source ext}`, Step 0.3's prefix
+   resolution); the user approves or edits each in the same flow. Proposed names
+   sanitize `\ / : * ? " < > |` and any path separator to `-` before entering the gate.
+   Sanitization + bundle-uniqueness validate the FINAL
    APPROVED basename (user edits included): empty, dot-only, reserved device names, control
    characters, leading/trailing dots or spaces, or >120 chars → re-prompt. The semantic
    name replaces the STEM only — the source file's extension is preserved verbatim (a
@@ -211,9 +225,9 @@ attended-only, so correlation may always ask.
    on-disk collision question in step 5).
 5. **Bundle items (C14):** each selected file becomes a manifest item — COPY, never
    move (the source is a system capture target):
-   `{source path} → Accounts/{Account}/02_Meetings/{YYYY-MM-DD}_{short label}/
+   `{source path} → Accounts/{Account}/02_Meetings/{prefix}_{YYYY-MM-DD}_{short label}/
    screenshots/{approved name}` — the destination folder is the meeting-note folder
-   VERBATIM (the same `{YYYY-MM-DD}_{short label}` tokens the write uses, never
+   VERBATIM (the same `{prefix}_{YYYY-MM-DD}_{short label}` tokens the write uses, never
    re-derived; for a meeting it IS the note's folder). Canonicalize source and destination
    — identical or nested paths reject the item (a screenshots source must never be inside
    `Accounts/`). Rendered exactly in THE GATE and written in the write order below, copy
@@ -225,7 +239,7 @@ attended-only, so correlation may always ask.
    from {source}` (C14 — destructive, per-item).
    **For a LOG:** selecting ≥1 screenshot upgrades the log to a lightweight meeting
    record — the pick flow confirms a `{short label}` derived from the log's one-sentence
-   what-happened, and the write creates `02_Meetings/{YYYY-MM-DD}_{short label}/
+   what-happened, and the write creates `02_Meetings/{prefix}_{YYYY-MM-DD}_{short label}/
    screenshots/` (folder + images only; no Notes.md required). A pure touch that attaches
    screenshots is thereby no longer a pure touch; the gate says so plainly ("attaching
    screenshots creates a durable meeting-record folder"). Zero selections → the touch
@@ -251,7 +265,7 @@ does not contain the bundle it approves.
 
 1. **Meeting note** (meeting intent only) — the consolidated narrative, linking
    `[[{Account}]]` and the note's own folder name verbatim as
-   `[[{YYYY-MM-DD}_{short label}]]`. Before emitting, run the
+   `[[{prefix}_{YYYY-MM-DD}_{short label}]]`. Before emitting, run the
    voice pass per assets/shared/voice-contract.md (in-chat as this output's destination)
    and render its audible line with the output.
 2. **Commitment bullet(s)** — exactly the shared template's grammar
@@ -259,7 +273,7 @@ does not contain the bundle it approves.
    `- [ ] [YYYY-MM-DD] (me/them) {what} — due: {MM/DD or "unspecified"} — {opp/context}`.
    **The `[YYYY-MM-DD]` stamp is the CAPTURE date (surface-provided today), never the
    event date** — sync's dedupe seam reads it; an earlier event date belongs in `{what}`.
-   Meeting-sourced bullets end `{opp/context}` with the note's `[[{YYYY-MM-DD}_{label}]]`
+   Meeting-sourced bullets end `{opp/context}` with the note's `[[{prefix}_{YYYY-MM-DD}_{label}]]`
    link.
 3. **Next-step line** (when warranted) — the locked format is owned by
    `workos-next-steps`: hand the already-confirmed fields over in-session (its delegate
@@ -288,12 +302,13 @@ explicit approval of the exact bundle being written.
 wasn't written; never retry a write whose content might already be on disk without
 reading the target first:**
 
-1. **Meeting note** → `{memory_root}/Accounts/{account}/02_Meetings/{YYYY-MM-DD}_{short
-   label}/Notes.md` (per-source files instead when sources-separate). **Collision rule:
-   pick a label that differs from every existing `{YYYY-MM-DD}_*` folder for this
-   account/date; if the target folder or note file already exists anyway, never overwrite
-   silently — one question (C11): "1. Replace the existing note / 2. Save under a new
-   label / 3. Append as a dated addendum / 4. Stop." Options 1–3 change the manifest —
+1. **Meeting note** → `{memory_root}/Accounts/{account}/02_Meetings/{prefix}_{YYYY-MM-DD}_{short
+   label}/Notes.md` (per-source files instead when sources-separate; `Notes.md` itself is
+   never prefixed — fixed-name, §Customer file prefix). **Collision rule: pick a label
+   that differs from every existing meeting folder for this account/date; if the target
+   folder or note file already exists anyway, never overwrite silently — one question
+   (C11): "1. Replace the existing note / 2. Save under a new label / 3. Append as a
+   dated addendum / 4. Stop." Options 1–3 change the manifest —
    re-present the affected bundle item with its new path/operation and re-gate (C14)
    before writing.**
 2. **Commitments** → into the `## Open Commitments` section of

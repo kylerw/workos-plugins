@@ -44,7 +44,7 @@ begins — its two-line output stands alone; no RUN_REPORT line, no report entry
 - completed: `RUN_REPORT {pass} completed — auto {n} · queued {n} [{queueClass: n, …}] ({version} on {surface})`
 - blocked: `RUN_REPORT {pass} blocked — {blockReason} ({version} on {surface})`
 
-Pre-lock exits (§BLOCK cases 1–2) emit the blocked line to run output only — no state
+Pre-lock exits (§BLOCK cases 1–3) emit the blocked line to run output only — no state
 is written without the lock. Lock-holding runs ALSO merge their `reports.{pass}` entry
 into `state/run-report.json` (shape: schema §run-report.json) as part of the final
 state batch.
@@ -86,7 +86,12 @@ per class decided this gate, `approved += a`, `declined += d`, and `drains += 1`
    read nothing beyond the bundle `VERSION`, write nothing, exit.
 2. **Lock contention** — a live sibling lock < 30 min old: yield per the owning skill's
    lock rules; blocked line to run output only.
-3. **Core state unparseable under the lock** — a file the pass must MERGE-rewrite
+3. **handoff under the marker** — pre-lock: emit
+   `RUN_REPORT handoff blocked — handoff is not an unattended pass ({version} on {surface})`,
+   read nothing else, write nothing (no lock, no state, no usage record), stop. Both
+   verbs refuse identically; there is no park path. (Spec 2026-08-04, #245 — the
+   enumeration's required spec touch.)
+4. **Core state unparseable under the lock** — a file the pass must MERGE-rewrite
    (e.g. `state/tasks.json`) is corrupt: halt, merge the `blocked` entry with its
    `blockReason` into `run-report.json` (a separate file — it stays writable), release.
    Non-members: an unparseable lock file follows the owning skill's recover-and-
@@ -96,7 +101,7 @@ per class decided this gate, `approved += a`, `declined += d`, and `drains += 1`
    Those two writes, and nothing else, are what "write nothing beyond the report"
    permits here; the corrupt core file is never rewritten.
 
-Accepted residual, named: the two pre-lock BLOCKs leave no durable trace on the root —
+Accepted residual, named: the three pre-lock BLOCKs leave no durable trace on the root —
 their line lands only in the scheduled chat. Doctor's freshness check covers the
 wedged-schedule class; the scheduled-capture guard covers case 1 where the scheduler is
 enumerable.

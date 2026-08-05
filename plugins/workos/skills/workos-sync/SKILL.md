@@ -340,7 +340,7 @@ is stamped into `tasks.json` meta in the same batch as `lastFullSync`.
 `reports.sync` into `state/run-report.json` (shape + counting rules: schema
 §run-report.json; write order + corrupt-file rule: `assets/shared/unattended-execution.md`
 §Write order), and end the run output with the §RUN_REPORT line. A BLOCK under the lock
-(§BLOCK enumeration case 3) writes the `blocked` entry instead, then releases.
+(§BLOCK enumeration case 4) writes the `blocked` entry instead, then releases.
 
 Then render the receipt into the close summary: `Board clicks applied —
 {X} done · {Y} reopened · {Z} updated` plus one line per applied action

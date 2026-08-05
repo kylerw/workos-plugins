@@ -6,7 +6,7 @@ structurally impossible: no lock, no re-read, no conflict copy.
 
 **Resolve the path once per pass and reuse it.** Never write the literal filename in more
 than one place — rotation is a tracked future change (#169) and must not become a
-five-skill edit.
+six-skill edit.
 
 **Every record carries:** `at` (ISO-8601 UTC) · `localDate` (per identity.schema.md's
 timezone resolution order; OMITTED when unresolved, never guessed) · `user` · `skill` ·

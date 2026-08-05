@@ -323,8 +323,26 @@ two independent halves with two independent writer rules (C15; mechanics in
   creates it; setup never scaffolds it (presence carries meaning — C4 bootstrap
   exception's boundary).
 
+## state/handoff.md + state/handoffs/ (#245 — the session→session handoff)
+
+The ONE markdown state file. `state/handoff.md` holds ONLY the current handoff (target
+read ≤ ~2k tokens); on each new hand-off the prior current moves to
+`state/handoffs/{its own frontmatter written-date}.md` (same-day collisions suffix `-2`,
+`-3`, …). The folder is created on first archive — not required root shape in v1 (#247).
+
+Frontmatter (closed shape — exactly these keys): `schema: handoff.v1` · `written:`
+(user-local, starts `YYYY-MM-DD`, rendered per the #49 zone rule) · `by:` · `session:`
+(one-line label). Body sections, fixed order: `## First action` (≥1 content line — ONE
+binary step) · `## Where things stand` · `## Open loops` (top-level bullets capped at 5
+— overflow is triaged at the approval gate, never written) · `## Decisions made` ·
+`## Clocks` · `## Locations` (pointers to authoritative sources, never copies — C6).
+
+Writer: `workos-handoff` ONLY, attended-only, under the pass lock (C4), gated (C5/C14).
+Resume reads `state/handoff.md` and writes nothing. Validator: `validateHandoffMd`
+(`ci/state-rules.js`), fixtures under `ci/fixtures/state/handoff/`.
+
 ## .pass-lock.json (persistent file, transient meaning — see spike 4)
-Live: `{ "pass": "sync|tidy|sweep|intake", "startedAt": "ISO", "surface": "cowork|claude-code",
+Live: `{ "pass": "sync|tidy|sweep|intake|handoff", "startedAt": "ISO", "surface": "cowork|claude-code",
 "runId": "..." }`. Released: the same object plus `"released": true, "releasedAt": "ISO"`.
 Tombstone ⇔ `released` is exactly `true`; anything else is a live lock. A tombstone reads
 as FREE at acquire and is the file's healthy resting state; nothing in the engine deletes

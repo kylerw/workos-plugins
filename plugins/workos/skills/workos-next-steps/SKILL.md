@@ -140,15 +140,26 @@ protocol by reference to workos-sync Step 0.4, exactly like the unattended park'
 Immediately after acquiring the lock in the Finalize/Discard flow, append the `open`
 record per `assets/shared/usage-log.md` (`mode`: `sweep`; `runId` = this lock's runId).
 A failed append is never fatal — one `system` line in `attention[]`, and the pass
-continues. Immediately before releasing the lock, append the `close` record per
-`assets/shared/usage-log.md`, using that document's outcome mapping. Do not restate the
-mapping here.
+continues. Finalize's same lock-held batch ALSO rewrites `state/log-index.json` (schema
+§log-index.json) after A6's log appends — Finalize runs A3.0's acquisition as part of its
+staleness refresh (its A6.2 links and Old-line composition consume the acquired values),
+so the rows are in hand: a row whose log this finalize appended takes the appended
+entry's values (`entryDate` = the entry's date; `lastKnownId` advances only on a real
+observed Id, never on `unknown`; `logBytes` from ONE post-append size listing); every
+other row refreshes from that acquisition; `generated` restamped, `generatedBy: "sweep"`.
+Discard writes no index rows — it appends nothing. Immediately before releasing the lock,
+append the `close` record per `assets/shared/usage-log.md`, using that document's outcome
+mapping. Do not restate the mapping here.
 
 **Usage log — a fresh attended sweep writes a lockless pair.** This skill takes the C4 lock
 at exactly two sites: A0's unattended park and the Finalize/Discard flow above, and those
 two write `runId` records. A fresh attended sweep (A1–A6 with no park to resume) writes no
 `state/` file — its outputs are `Next_Step_Log.md` under `Accounts/` and the gated `Team/`
-publish — so it holds no lock. It appends an `open`/`close` pair keyed by `passId` per
+publish — so it holds no lock. For the same reason it NEVER writes
+`state/log-index.json` (a writer is a lock-holder — schema §log-index.json, #173): its A6
+appends are the next pass's changed set, caught by A3.0's size check. The same rule
+covers §B's append and a delegate caller's (§C). The fresh sweep appends an
+`open`/`close` pair keyed by `passId` per
 `assets/shared/usage-log.md` (`mode`: `sweep`): `open` once the config is resolved, the
 mode is determined, AND the entry check above has established there is no park to resume —
 or the user answered it with "Leave parked, run fresh" — before A1. **Never before that
@@ -172,9 +183,10 @@ and persistence write — happens only at a later attended finalize (§A-entry r
 
 1. **Probe (C13):** `mcp` tier → the harmless probe read. Green → run A1–A4 from live
    SOQL exactly as attended. Probe fails, or `manual` tier → **generate from history**:
-   per opp folder under `Accounts/*/01_Opportunities/*/`, the `Next_Step_Log.md` last
-   Observed snapshot + last accepted line, plus `Account_Notes.md` /
-   `Account_Context.md`. Coverage = `partial`; coverageNote = "partial sweep from logs
+   per-opp log values per A3.0's acquisition (index + delta — this fan-out is pre-lock;
+   A3.0's degrade rule applies unchanged), plus the account prose (`Account_Notes.md` /
+   `Account_Context.md`) per A4's span-gather rule (unattended: the subagent asks nothing,
+   which step 2 below already mandates). Coverage = `partial`; coverageNote = "partial sweep from logs
    as of {dates} — no live pipeline read". Cached data is never presented as live, and
    without an exhaustive base list the output never claims whole-pipeline coverage.
 2. **No questions anywhere.** A3.3's batched unknowns are recorded per-row in
@@ -193,8 +205,12 @@ and persistence write — happens only at a later attended finalize (§A-entry r
    sweep decision-unit mapping (`proposedLine` → `next-step-line`, `closeDateProposal` →
    `close-date-proposal`, `notesBlock` → `notes-block`, park `emailPreview` →
    `email-preview`; `unknowns` = the rows' `unknowns[]` total), `tier` + `coverage` from
-   this park. The board is NOT rebuilt here — sync and tidy own board rebuilds; the
-   due-day morning sync surfaces the park (spec §6b).
+   this park. Same batch: write `state/log-index.json` (schema §log-index.json) — fresh
+   values for the changed set, every other row from A3.0's acquisition, the whole tree on
+   first-build or after an A3.0 degrade; `generated` restamped, `generatedBy: "sweep"`;
+   `logBytes` comes from A3.0's own size listing — the park appends no logs, so those
+   sizes are current at write. The board is NOT rebuilt here — sync and tidy own board
+   rebuilds; the due-day morning sync surfaces the park (spec §6b).
 
 3a. **Usage log (open):** Immediately after the lock is yours, append the `open` record per
    `assets/shared/usage-log.md` (`mode`: `sweep`; `runId` = this pass's lock runId). A failed
@@ -206,7 +222,8 @@ and persistence write — happens only at a later attended finalize (§A-entry r
 4. **Nothing leaves:** no paste block, no mail draft (an external mailbox write waits
    for the gate), no `Next_Step_Log.md` observation, no Team/ publish. Run output:
    the header line, rows parked, tier + coverage, unknowns count, replaced-park note
-   when applicable, and the §RUN_REPORT line per `assets/shared/unattended-execution.md`.
+   when applicable, any A3.0 degrade or dropped-row line, and the §RUN_REPORT line per
+   `assets/shared/unattended-execution.md`.
    Immediately before releasing the lock, append the `close` record per
    `assets/shared/usage-log.md`, using that document's outcome mapping. Do not restate the
    mapping here. Release the lock as the final action.
@@ -243,11 +260,37 @@ and persistence write — happens only at a later attended finalize (§A-entry r
 
 ### A3. Hygiene checks per row (the leadership checklist, mechanized)
 
+0. **Log acquisition (A3.0, #233 — ONCE, before the per-row checks; every tier, attended
+   and unattended alike):** the per-opp log values the checks below compare against come from
+   `state/log-index.json` (schema §log-index.json) plus a delta re-read — never a per-opp
+   fan-out while the index is healthy. Ordered:
+   1. Read `state/log-index.json` — ONE file read, no lock (a pre-lock read; #137's fix
+      class: a direct file read, never model-composed shell).
+   2. ONE aggregate size listing over
+      `{memory_root}/Accounts/*/01_Opportunities/*/Next_Step_Log.md` — a single tool call
+      returning per-file byte sizes, never one call per file.
+   3. Diff sizes against each row's `logBytes` → the changed set. Re-read ONLY those logs
+      inline; fresh values govern those rows, index values every other row.
+   4. A log on disk with no index row (new opp) → read it inline; it joins the changed
+      set. An index row whose log is missing on disk → drop the row and say so in the run
+      output.
+   5. **Degrade, loud (C13):** index absent or unparseable, or the size listing
+      unavailable on this surface → full inline fan-out of every enumerated opp's log,
+      NAMED in the run output — `log index unavailable — full fan-out ({N} logs read)` —
+      never silent, never a hard failure. The first run after ship IS this path; the next
+      lock-holding sweep write rebuilds the index (§A0.3, or Finalize's batch).
+   6. Acquired values serve ONLY where the log tail is legal to read today
+      (`no-shadow-store`'s next-step-history clause; restriction restated at schema
+      §log-index.json): the comparison baselines below, A6.2's changed-block composition
+      (the `Old:` line verbatim and the Change Type derivation's
+      observation-deltas-vs-prior-entry anchor), and A6.2's link Id. Current deal-state
+      comes from the tier's authoritative intake, every run.
 1. **Past or imminent close date:** CloseDate < today → must be resolved this run (push,
    close, or explicit confirmation); within 7 days → flag for a real decision. Never emit a
    line that ignores a past close date.
-2. **Stale / unchanged step:** compare the row's current Next Step against this opp's log
-   (last Observed + last accepted line). Unchanged since the last sweep → mandatory-touch.
+2. **Stale / unchanged step:** compare the row's current Next Step against this opp's
+   acquired values (A3.0: last Observed + last accepted line). Unchanged since the last
+   sweep → mandatory-touch.
    Re-dating an unchanged step is activity theater — surface honest options instead
    (escalation step, stall note, close-date move).
 3. **Current-quarter Notes fields:** for current-quarter rows — and next-quarter rows in
@@ -260,8 +303,8 @@ and persistence write — happens only at a later attended finalize (§A-entry r
 4. **New next-quarter opps:** a next-quarter row with no prior log observation → the
    frontmatter `new_next_quarter` key; when a first step is accepted this run it also
    renders as a changed-opp block (the first-step `Old:` variant) per the template's §Body.
-5. **Material changes:** stage, close date, or forecast category differs from the log's
-   last Observed snapshot → the frontmatter `material_changes` key, always with
+5. **Material changes:** stage, close date, or forecast category differs from the
+   acquired last Observed snapshot (A3.0) → the frontmatter `material_changes` key, always with
    **old → new** values; stage and close-date deltas also render on the changed-opp
    block's `Change Type` line per the template's derivation (an externally-moved close
    date renders even with no decision this run). A forecast-only delta reaches the
@@ -274,8 +317,14 @@ For every row needing action, build the actual artifacts using the kernel (§D):
 next-step lines (length-verified per §D), close-date change proposals (old → new), paste-ready
 Notes blocks for flagged rows (three headings — Why NICE / Why Now / Approval Signature
 Process — sourced from `Account_Context.md`, `Account_Notes.md` Strategy Notes, and the
-Sphere's Financial Approver / Decision Maker chain; drafted from evidence, never invented —
-thin evidence goes into the batched question of A3.3), the shared-body preview (per the template's §Body — the email/Team
+Sphere's Financial Approver / Decision Maker chain, gathered by the span-gather rule: where
+this surface offers a context-isolated subagent (probe it, C13), ONE spawn covering ALL
+rows the calling site needs (here: the flagged rows; §A0.1: every enumerated opp) — fewest
+spawns that fit, never per-account — reads those files and returns the relevant spans
+un-summarized, asking nothing (C15 discipline: the spawn never questions, never emits). The
+parent selects. No spawn facility → read the files inline: the C13 degrade, named once in
+the run output. Drafted from evidence, never invented — thin evidence goes into the batched
+question of A3.3), the shared-body preview (per the template's §Body — the email/Team
 rendering), and the persistence diff (what will be appended to which logs).
 
 **When the resolved `team_publish` mode is `auto-with-notice`:** run the single voice
@@ -316,8 +365,9 @@ the recorded `team_publish` mode — its own question only when `gated`.)
    partial clause whenever A1's partial rule applies — the template owns the line's shape)
    · one block per CHANGED opp in the RVP's per-opp format, in the template's account
    sections, per its ordering rule — the header link from the cached Opportunity Id
-   (resolved as the log's most recent non-`unknown` Observed `Id` — the ONE log segment
-   legal to read back, per `no-shadow-store`'s identity clause) plus `{sfdc_instance_host}`,
+   (resolved per A3.0's acquisition — a changed log's fresh read, otherwise the index row's
+   `lastKnownId`; either way the log's most recent non-`unknown` Observed `Id`, the ONE log
+   segment legal to read back per `no-shadow-store`'s identity clause) plus `{sfdc_instance_host}`,
    rendering plain per the template's link rule when either is missing, never a fabricated
    URL; a dark-probe session or an mcp→manual downgrade still renders cached links —
    identity is not capability · Change Type per the template's derivation anchors (this
@@ -554,7 +604,12 @@ Salesforce account merges retire Ids. Opportunity Ids cache too — per entry in
 - Skipping renewals because they're no-track — no-track exempts step-language rules only.
 - Emitting ANYTHING from an unattended run — a mail draft, a paste block, a log entry,
   a Team/ file (the C5-exempt version beacon excepted), a question. Parking to
-  `state/sweep.json` (+ its stamp and attention line) is the only unattended output (#68).
-- Rebuilding the board from this skill, or writing any `state/` file other than
-  `sweep.json` + the two `tasks.json` fields §A0.3 names (attention line,
-  `lastUnattendedRun.sweep`) — sync/tidy own the rest.
+  `state/sweep.json` — plus §A0.3's same-batch state writes (its stamp, the
+  attention line, the `reports.sweep` merge, the `log-index.json` refresh) — is the only
+  unattended output (#68).
+- Rebuilding the board from this skill, or writing any `state/` file beyond this skill's
+  own set — `sweep.json`, the two `tasks.json` fields §A0.3 names (attention line,
+  `lastUnattendedRun.sweep`), the `run-report.json` merges §A0.3 and the finalize name, and
+  `log-index.json` at the two lock-holding sites — sync/tidy own the rest. Writing
+  `log-index.json` from a lockless pass (attended fresh sweep, §B, a delegate caller) is
+  the #173 violation the schema's writer rule exists to stop.

@@ -323,6 +323,22 @@ two independent halves with two independent writer rules (C15; mechanics in
   creates it; setup never scaffolds it (presence carries meaning — C4 bootstrap
   exception's boundary).
 
+## log-index.json (#233 — the sweep's derived log index)
+```json
+{ "generated": "ISO", "generatedBy": "sweep",
+  "rows": { "{Account}/{OppFolder}": {
+      "observed":     { "nextStep": "", "closeDate": "", "stage": "", "forecast": "", "source": "", "id": "" },
+      "lastAccepted": "string | null",
+      "lastKnownId":  "18-char | null",
+      "entryDate":    "YYYY-MM-DD",
+      "logBytes":     0 } } }
+```
+One row per opportunity `Next_Step_Log.md`: the log tail's deterministic projection (the §A6 entry format is a fixed grammar). `observed` = the last Observed snapshot's segments verbatim (`id` may be `unknown`); `lastAccepted` = the last accepted line (null when none); `lastKnownId` = the most recent non-`unknown` Observed Id — the A6.2 link value, which on a manual-tier log sits EARLIER than the last snapshot; never the string `unknown` (null when no real Id has ever been observed); `entryDate` = the last entry's date; `logBytes` = the file's byte size at write — the staleness check (the log is append-only by contract, so size is a monotone version counter). A size-preserving hand-edit is #214's root-drift class — doctor's spot check (#235), never the hot path's.
+
+**The history-cache restriction:** the index caches the log tail's already-legal HISTORY read and inherits its restrictions verbatim — consumers use rows ONLY where the log tail is legal today (`no-shadow-store`'s next-step-history clause): A3's comparison baselines, A6.2's changed-block composition (the `Old:` line verbatim and the Change Type derivation's observation-deltas-vs-prior-entry anchor), and A6.2's link Id. Never read back as current deal-state — current state comes from the tier's authoritative intake, every run.
+
+Regenerable derived cache (the `accounts.json` pattern): deleting it loses nothing — the read protocol (workos-next-steps A3.0) degrades LOUD to the full inline fan-out and the next lock-holding sweep write rebuilds it. **Writers are lock-holders only**, and both already hold the C4 lock (pass `sweep`): the unattended park's write batch (§A0.3 — refresh + first-build) and Finalize's persistence batch (rows it appended; Discard writes no rows). The attended fresh sweep, §B, and delegate-caller appends NEVER write it (#173 — they hold no lock); their appends are the next read's changed set, caught by the size check. Validator: `log-index` in `ci/state-rules.js`; fixtures good + red under `ci/fixtures/state/`.
+
 ## state/handoff.md + state/handoffs/ (#245 — the session→session handoff)
 
 The ONE markdown state file. `state/handoff.md` holds ONLY the current handoff (target

@@ -224,7 +224,11 @@ Draft: `{ "id": "", "to": "", "subject": "", "body": "", "source": "", "pendingR
 weekly sweep under the C4 lock (pass `sweep`): `{ generatedAt, tier: "mcp|logs",
 coverage: "full|partial", coverageNote, rows[], emailPreview{subject,body},
 persistenceDiff }`; each row `{ opp, account, bucket: current|next|later, class,
-flags[], unknowns[], proposedLine, notesBlock, closeDateProposal, observedSnapshot }`.
+flags[], unknowns[], proposedLine, notesBlock, closeDateProposal, observedSnapshot, scope? }`.
+`scope: "in-scope" | "observe-only"` (#266) — the row's disposition at generation
+time. Absent (a pre-#266 park) ≡ re-derive at finalize. An observe-only row parks with
+`proposedLine: ""` and no `notesBlock`/`closeDateProposal` — it rides as an observation
+for the persistence batch and is never presented as a decision.
 Finalize and Discard rewrite `parked` to null. Park writes are machine staging under
 C5's state-store clause (the same class as unattended pendingApprovals queueing).
 Attention derivation: a park's existence ⇔ the parked-sweep attention line (spec §6b).
@@ -284,11 +288,13 @@ two independent halves with two independent writer rules (C15; mechanics in
   written ONLY by the lock-holding unattended run as part of its final state batch
   before tombstone release. Attended runs never write it. Each entry:
   `{ at, localDate?, version, surface, outcome: "completed|blocked",
-  counts: {auto, queue}, queueByClass, unknowns?, leaves?, tier?, coverage?,
+  counts: {auto, queue}, queueByClass, unknowns?, leaves?, tier?, coverage?, scope?,
   blockReason (non-empty iff blocked; null or omitted otherwise), summary }`
   (`localDate` — omit when unresolved, the stamp's rule; present ⇒ a real calendar date,
   not merely YYYY-MM-DD-shaped). `tier` and `coverage`, when present, carry sweep.json's
-  own vocabularies verbatim — `mcp|logs` and `full|partial`. `counts.queue`/`queueByClass`
+  own vocabularies verbatim — `mcp|logs` and `full|partial`. `scope: {inScope, observeOnly}`
+  (#266, sweep-only, absent-tolerant — a pre-#266 report stays valid): the disposition
+  counts of the reported run. `counts.queue`/`queueByClass`
   count items newly raised OR dedupe-refreshed this run (parks: decision units staged this
   run), and **`counts.queue` equals the sum of `queueByClass`** — the RUN_REPORT line
   renders both, and §Promotion reads the classes as evidence. `unknowns`/`leaves` are
@@ -302,7 +308,9 @@ two independent halves with two independent writer rules (C15; mechanics in
   tag would violate C6): a `pendingApprovals` item's class IS its `kind` (extension
   kinds count as `extension`); an intake park row's class is its `verdict` mapped
   `move → intake-move`, `copy → intake-copy` (LEAVE rows count into `leaves`, never a
-  class); a sweep park row emits one unit per decision it carries — `proposedLine` →
+  class); a sweep park row emits one unit per NON-EMPTY decision field it carries
+  (#266: an observe-only row — `proposedLine: ""`, no notes/close-date fields — emits
+  zero units) — `proposedLine` →
   `next-step-line`, `closeDateProposal` → `close-date-proposal`, `notesBlock` →
   `notes-block`, park `emailPreview` → `email-preview`; `unknowns[]` totals into
   `unknowns`. Closed list: the validator's `QUEUE_CLASSES` — and **closed PER PASS**
@@ -331,11 +339,17 @@ two independent halves with two independent writer rules (C15; mechanics in
       "lastAccepted": "string | null",
       "lastKnownId":  "18-char | null",
       "entryDate":    "YYYY-MM-DD",
-      "logBytes":     0 } } }
+      "logBytes":     0,
+      "stamp":        true } } }
 ```
-One row per opportunity `Next_Step_Log.md`: the log tail's deterministic projection (the §A6 entry format is a fixed grammar). `observed` = the last Observed snapshot's segments verbatim (`id` may be `unknown`); `lastAccepted` = the last accepted line (null when none); `lastKnownId` = the most recent non-`unknown` Observed Id — the A6.2 link value, which on a manual-tier log sits EARLIER than the last snapshot; never the string `unknown` (null when no real Id has ever been observed); `entryDate` = the last entry's date; `logBytes` = the file's byte size at write — the staleness check (the log is append-only by contract, so size is a monotone version counter). A size-preserving hand-edit is #214's root-drift class — doctor's spot check (#235), never the hot path's.
+One row per opportunity `Next_Step_Log.md`: the log tail's deterministic projection (the §A6 entry format is a fixed grammar). `observed` = the last Observed snapshot's segments verbatim (`id` may be `unknown`); `lastAccepted` = the last accepted line (null when none); `lastKnownId` = the most recent non-`unknown` Observed Id — the A6.2 link value, which on a manual-tier log sits EARLIER than the last snapshot; never the string `unknown` (null when no real Id has ever been observed); `entryDate` = the last entry's date; `logBytes` = the file's byte size at write — the staleness check (the log is append-only by contract, so size is a monotone version counter). `stamp` (#266, optional, absent ≡ false): true ⇔ the log tail AFTER the last
+`sweep`-headed entry carries a live `Surface: next-sweep` stamp at write time. Maintained
+ONLY by the two lock-holding writers: set from the write-time tail read; written absent
+once a sweep observation for that log lands (consumed). A3.0's precedence governs reads —
+a fresh tail read always beats the flag. A size-preserving hand-edit is #214's root-drift class — doctor's spot check (#235), never the hot path's.
 
-**The history-cache restriction:** the index caches the log tail's already-legal HISTORY read and inherits its restrictions verbatim — consumers use rows ONLY where the log tail is legal today (`no-shadow-store`'s next-step-history clause): A3's comparison baselines, A6.2's changed-block composition (the `Old:` line verbatim and the Change Type derivation's observation-deltas-vs-prior-entry anchor), and A6.2's link Id. Never read back as current deal-state — current state comes from the tier's authoritative intake, every run.
+**The history-cache restriction:** the index caches the log tail's already-legal HISTORY read and inherits its restrictions verbatim — consumers use rows ONLY where the log tail is legal today (`no-shadow-store`'s next-step-history clause): A3's comparison baselines, A6.2's changed-block composition (the `Old:` line verbatim and the Change Type derivation's observation-deltas-vs-prior-entry anchor), and A6.2's link Id, **and A2's scope disposition reads the
+`Surface: next-sweep` stamp (#266 — a routing marker, never deal-state)**. Never read back as current deal-state — current state comes from the tier's authoritative intake, every run.
 
 Regenerable derived cache (the `accounts.json` pattern): deleting it loses nothing — the read protocol (workos-next-steps A3.0) degrades LOUD to the full inline fan-out and the next lock-holding sweep write rebuilds it. **Writers are lock-holders only**, and both already hold the C4 lock (pass `sweep`): the unattended park's write batch (§A0.3 — refresh + first-build) and Finalize's persistence batch (rows it appended; Discard writes no rows). The attended fresh sweep, §B, and delegate-caller appends NEVER write it (#173 — they hold no lock); their appends are the next read's changed set, caught by the size check. Validator: `log-index` in `ci/state-rules.js`; fixtures good + red under `ci/fixtures/state/`.
 

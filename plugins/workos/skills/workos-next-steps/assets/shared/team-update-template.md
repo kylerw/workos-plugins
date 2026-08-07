@@ -28,7 +28,7 @@ at_risk_renewals:
   - "{Account} · {status one-liner}"
 ---
 
-3 open opps reviewed · 2 changed · 1 kept
+3 open opps reviewed · 2 changed · 1 kept · 2 in scope · 1 observed-quiet
 
 ## Acme Health
 
@@ -54,10 +54,12 @@ at_risk_renewals:
 ## Body
 
 Body order is fixed: the coverage line first — one line, NON-BULLETED, before any
-section: `{N} open opps reviewed · {M} changed · {K} kept[ — partial: {what was
-missing}]` (counts cover every enumerated opp; the partial clause appended whenever the
-sweep's partial rule applies — a floor sweep never emits a body that silently claims
-full coverage). Then one `## {Account}` SECTION per account with changed opps —
+section: `{N} open opps reviewed · {M} changed · {K} kept · {S} in scope · {N−S}
+observed-quiet[ — partial: {what was missing}]` (counts cover every enumerated opp; the
+partial clause appended whenever the sweep's partial rule applies — a floor sweep never
+emits a body that silently claims full coverage). `{S}` counts in-scope rows (#266);
+observed-quiet = kept rows that were out of scope; counts still cover every enumerated
+opp. Then one `## {Account}` SECTION per account with changed opps —
 accounts ordered by their top opp's imminent-close → stalled → ACV rank; within a
 section, one top-level BULLET per changed opp in that sort, every data point a nested
 sub-bullet. Then the loud unlinked-opps line when the rule below says it renders; then

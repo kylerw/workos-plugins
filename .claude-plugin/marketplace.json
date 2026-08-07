@@ -9,7 +9,7 @@
       "name": "workos",
       "source": "./plugins/workos",
       "description": "WorkOS v1: workos-setup (init + doctor), workos-sync (daily driver + board), workos-next-steps (weekly sweep + locked-format lines)",
-      "version": "2026-08-rc43"
+      "version": "2026-08-rc44"
     }
   ]
 }

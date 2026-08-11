@@ -73,6 +73,12 @@ is "issues found," never green-with-asterisks** (C13):
    (optional equipment)`. Present but NOT imported → a finding, one-line fix: add
    `@voice.md` to the root CLAUDE.md import line beside `@user.md`.**
 3. **Integrations:** probe each configured one with a harmless read (C13). **Probe
+   shape (#279): a list-shaped read (one result) over a content search, and the verdict
+   keys on the CALL, never the hit count — a successful read returning zero results is
+   capability PRESENT; only an error, an absence, or a refusal is dark. Search-shaped
+   reads carry date- and permission-dependent empty paths (a chat-message search scans
+   only the most-recently-modified chats on some permission tiers) and read dark on
+   healthy connectors.** **Probe
    evidence is scoped to THIS doctor run (#156): a verdict may cite only a call made
    during this run.** Activity earlier in the conversation, in a prior pass, or in
    another skill is NOT evidence and never yields `ok` — re-probe unconditionally even

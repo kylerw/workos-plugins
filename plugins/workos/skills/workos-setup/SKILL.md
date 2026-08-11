@@ -115,10 +115,15 @@ memory-root scaffolding, no config regeneration, no state, no lock. Everything m
 lives in the session and the user's own root file — never an engine file, never an
 issue or PR (C1).
 
-1. **Probe (C13):** mail-search + chat-search on this surface (harmless one-result
-   reads). Either absent → offer the floor path (C7) instead of stopping: "paste 3–5
-   sent emails per audience (manager / customer / internal) and I'll derive from
-   those" — from pasted text the rest of this flow is identical.
+1. **Probe (C13):** mail-search + a chat LIST on this surface (harmless one-result
+   reads). The chat probe is list-shaped — list conversations, one result — never a
+   chat-message search: search's date-scoped and permission-fallback paths scan only
+   the most-recently-modified chats and legitimately return zero hits on a healthy
+   connector (#279), so a search's empty result is noise, not absence. Verdicts key
+   on the CALL, never the hit count: error or missing capability → dark; a successful
+   read with zero results → present. Either dark → offer the floor path (C7) instead
+   of stopping: "paste 3–5 sent emails per audience (manager / customer / internal)
+   and I'll derive from those" — from pasted text the rest of this flow is identical.
 1a. **Usage log (open):** append the `open` record per `assets/shared/usage-log.md`
    (`mode`: `voice-bootstrap`; `passId` — this pass holds no lock). Append the matching
    `close` as the pass's last action, after step 8's audible close — the POSITION, not the

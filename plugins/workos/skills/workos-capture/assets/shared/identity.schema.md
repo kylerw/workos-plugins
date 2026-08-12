@@ -26,6 +26,7 @@ that hardcodes any of them fails review.
 | `boilerplate_schema` | integer | engine-owned generation marker for `core.md`'s GENERATED boilerplate — the current value is the LAST row of the changelog table below (one number, one place); bumped by the engine whenever that boilerplate gains, loses, or changes a section, never by a user, and every bump adds a row. Distinct from the engine version, which records only WHEN setup last ran | **Absent ≡ `0`** (written before the marker existed) — checked when present, never flagged for being absent by §C.2; §C.5 owns its currency |
 | `scheduled_task_ids` | map | optional `{sync?, sweep?}` — the platform's ids for the two exact-recipe scheduled tasks (setup §A6.2), captured at `setup`/`doctor` when the platform reveals them; embedded into the board (as `taskIds`, schema §tasks.json meta) for the shell's `runScheduledTask` rung | Absent map, or an absent per-kind id → that scheduled-run rung is simply absent — never a doctor finding |
 | `board_queue_tool` | string | optional — the probe-A (#14) verified tool name for the board's `state/board-queue/` file-create rung, embedded into the board (as `boardQueueTool`); written ONLY by that adoption step | Absent until probe A passes → rung 1 stays dormant — never a doctor finding |
+| `m365_provider` | string | optional — the adopted connector serving this user's M365-class reads (mail/calendar/chat/files), e.g. `graph-personal` (fictional); MUST name a member of `integrations`; written ONLY by setup's explicit provider question (`set my m365 provider`, workos-setup §G), never guessed or auto-detected, never asked on the default init path; setup PRESERVES it on regeneration; a custom-mode narrowing that removes the named connector from `integrations` CLEARS this key in the same write, named in the confirmation line. NOT generated boilerplate — no `boilerplate_schema` bump | Absent ≡ `ms365` — the standard connector is the provider wherever adopted; never flagged for absence |
 
 **`boilerplate_schema` changelog** — the source of truth for what a stale `core.md` is
 missing. `doctor` §C.5 names the delta from this table; without it the check could only
@@ -45,6 +46,17 @@ Runtime rule: a configured capability is still **probed before first use each se
 ("presence is not capability"); a probe failure downgrades to the missing-value behavior
 for that run (unless a key's row states a different probe-failure behavior —
 `intake_sources` does) and is reported by `doctor`.
+
+**M365 provider resolution (the `m365_provider` row):** a skill gating on an M365-class
+read (mail/calendar/chat/files) resolves its connector through `m365_provider` (absent ≡
+`ms365`) and probes it under the runtime rule above, list-shaped with the verdict keyed
+on the CALL, never the hit count (#279). Provider dark this session → fall back to
+`ms365` where adopted and exposed, announced as ONE named line — "m365 provider `{name}`
+dark this session — falling back to ms365" — never silently; neither alive → that gate's
+existing missing-integration behavior. Sub-capabilities the provider may not serve (an
+online-meeting transcript resource, a mailbox-settings read) probe individually on first
+use — alive-for-calendar, dark-for-transcripts takes the consuming skill's existing
+configured-but-failing loud skip, not the whole-provider fallback.
 
 **User-space guarantee (ownership is by file):** the engine consumes ONLY the keys above,
 from the generated block in `core.md` — which is wholly engine-owned and regenerated

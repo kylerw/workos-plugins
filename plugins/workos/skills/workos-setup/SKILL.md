@@ -67,6 +67,10 @@ plugin's skill folder. Never resolve `assets/` in the memory root or project fol
    user-approved (§F). **Read `assets/modes/align.md` and follow it — that file is
    authoritative for this mode. Do not proceed from this summary.** Attended-only: an
    invoking prompt carrying the unattended marker → refuse, name the reason, stop.
+8. **`set my m365 provider`** — record which ADOPTED connector serves M365-class reads
+   (§G); absent ≡ `ms365`. One C11 question, one whole-file config regeneration.
+   Attended-only: an invoking prompt carrying the unattended marker → refuse, name the
+   reason, stop.
 
 **"Today" comes from the surface-provided date.** Every question is asked through the
 platform's structured-question tool so the options are SUBMITTABLE — a prose-rendered
@@ -207,6 +211,34 @@ byte-untouched by this mode, always.
    — this check's surface-provided date and sample count — so pasting the block restarts
    §C.2's 60-day clock; a file with no dated header gets none added (hand-authored files
    stay ageless by design).
+
+## §G. M365 provider — `set my m365 provider`
+
+Explicitly invoked, attended-only; no memory-root scaffolding, no account work, no
+state, no lock. The key's semantics live in `assets/shared/identity.schema.md` (the
+`m365_provider` row + §M365 provider resolution) — this mode only writes it.
+
+1. **Read `core.md`.** Absent or unparseable → stop and say so, offering
+   `init my workspace` (the §A2 guard's rule: never narrow, never guess). Take
+   `integrations` and the current `m365_provider` (absent ≡ `ms365`).
+2. **One C11 question over the ADOPTED set only** — never the exposed surface (adoption
+   happened at §A2's delta gate; this mode never widens): recommended default leading —
+   "standard (`ms365`)", which clears the key — then each other adopted connector as its
+   own option, escape hatch last ("keep it as it is"). The current value is named in the
+   question text. An adopted set that overflows C11's option ceiling pages: the first
+   page carries standard + "another adopted connector →" + the escape; the follow-up
+   lists the rest, one pick.
+3. **Write, as ONE whole-file regeneration** (the generated block rewritten whole — a
+   half-applied state is unreachable): standard → the key is REMOVED; a connector → 
+   `m365_provider: {name}`. Every other key is PRESERVED per its own schema row.
+   Confirmation line: "m365 provider: {name | standard (ms365)} — rerun 'set my m365
+   provider' to change."
+4. **Usage log:** append the `open` record per `assets/shared/usage-log.md` (`mode`:
+   `provider-set`; `passId` — this pass holds no lock) once the config resolves; append
+   the matching `close` as the pass's last action, after the confirmation line — the
+   POSITION, not the write: a run ended at the escape hatch still ran and still closes.
+   Use that document's outcome mapping. Do not restate the mapping here. A failed append
+   is never fatal: report it in the run output and continue.
 
 ## Anti-patterns — never
 

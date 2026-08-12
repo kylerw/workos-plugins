@@ -33,7 +33,9 @@ timezone resolution order; OMITTED when unresolved, never guessed) · `user` · 
   `integrations` · `sfdc-tier` · `version` · `team-publication` · `state` ·
   `approvals-queue` · `scheduled-tasks` · `unattended-runs` · `run-reports` ·
   `scheduled-capture`. `integrations` keys are
-  exactly `ms365` · `graph` · `hinotes` · `sfdc-mcp` · `other` — a connector not in the
+  exactly `ms365` · `graph` · `hinotes` · `sfdc-mcp` · `m365-alt` · `other` — `m365-alt`
+  is the configured non-`ms365` M365 provider (identity schema `m365_provider`), its
+  actual name dropped on purpose; a connector not in the
   list logs as `other`, its name dropped on purpose. **Several unlisted connectors share
   the one `other` key: the worst verdict wins**, ordered `finding` > `refused` > `skip` >
   `info` > `ok` (both halves of a refusal already count as findings in doctor's tally;

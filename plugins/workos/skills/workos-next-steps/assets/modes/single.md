@@ -21,8 +21,9 @@ Reached only via workos-next-steps SKILL.md mode 2 — never standalone; Step 0,
 3. **Gather context (silently, gated by `{integrations}`):** `Account_Notes.md` Open
    Commitments + Strategy Notes; `Contacts.md` for canonical names/titles (never guessed);
    `Sphere_of_Influence.md` for who should be named; hinotes (only if configured)
-   date-bounded from the prior step's leading date or last 14 days; ms365 mail/calendar
-   same bound. Missing files or absent tools → skip silently.
+   date-bounded from the prior step's leading date or last 14 days; mail/calendar via
+   the resolved M365 provider (`assets/shared/identity.schema.md` §M365 provider
+   resolution), same bound. Missing files or absent tools → skip silently.
 4. **Confirm the intake fields once** (structured options): account · opportunity + owner ·
    prior step (three states: confirmed-live / confirmed-blank / unconfirmed) · **current
    CloseDate** (+ stage/forecast when known) · new context · future action date · contacts

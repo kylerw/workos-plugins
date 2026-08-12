@@ -96,6 +96,14 @@ is "issues found," never green-with-asterisks** (C13):
    recorded set` (#201; a config already carrying connectors adopted before the delta gate
    existed stays that way under #124's retention, so the line that reports the probing carries
    the remedy — the same rule §A2's integrations line follows).
+   **Provider sanity (`m365_provider`, when the key is present):** naming a connector
+   not in `integrations` → FINDING, fix = `set my m365 provider` (workos-setup §G). A
+   probe pass that resolved M365-class reads through the fallback (provider dark,
+   `ms365` answering) → one INFO line naming it — the §M365 provider resolution rule's
+   own announcement, surfaced here. **Recording:** the configured non-`ms365` provider
+   logs under `m365-alt` (the usage-log closed vocabulary), its actual name dropped on
+   purpose; `ms365` logs as itself. An absent key is never flagged (absent ≡ `ms365`,
+   the schema row).
 4. **Salesforce tier sanity:** `mcp` tier → the probe read works on a surface that
    exposes MCPs. Apply check 3's split here too, all three outcomes: no MCPs exposed on
    this surface → INFO; refused by policy → FINDING quoting the refusal;

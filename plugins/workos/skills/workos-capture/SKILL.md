@@ -123,8 +123,9 @@ identically; there is no park path.
 
 ## MEETING — recorded consolidation
 
-1. **Identify the meeting:** if not already named — with `ms365` configured and probing
-   (C13): the most recent PAST calendar event with an external attendee, within the last
+1. **Identify the meeting:** if not already named — with the resolved M365 provider
+   configured and probing (C13; `assets/shared/identity.schema.md` §M365 provider
+   resolution): the most recent PAST calendar event with an external attendee, within the last
    7 days; without it (or probe failing — loud skip): ask (C11) for account, date, a short
    meeting label, and the meeting window — start AND end (or start + duration, default
    30 min), since correlation needs a full window. Confirm account, time, attendees before
@@ -139,7 +140,9 @@ identically; there is no park path.
    absent, never mentioned):
    - **gong** (only if `gong` is in `{integrations}`): account/deal query scoped to the
      meeting's calendar day.
-   - **teams transcript** (part of `ms365` — gated on `ms365`, not a separate key): the
+   - **teams transcript** (an M365-class read — gated on the resolved provider per
+     §M365 provider resolution, not a separate key; transcript-read is a sub-capability,
+     probed on first use): the
      calendar event's attached online-meeting transcript resource. No resource attached →
      quietly no record for this meeting; a resource that EXISTS but fails to read → a
      loud named skip. Content already retrieved before a failure is KEPT and used,

@@ -94,6 +94,8 @@ re-asked; that is the promise this preamble keeps. Three invocation modes:
   **Enumerate everything exposed REGARDLESS of decline state, and adopting a connector here
   CLEARS its `adopt-integration:{name}` key from `declined_offers` in the same write (#201)** —
   a decline made at the default gate is durable, not permanent, and this is the one path back.
+  A narrowing that removes the connector named by `m365_provider` CLEARS that key in the
+  same write, named in the confirmation line (the schema row's clearing rule).
 
 The chosen set is echoed on its own line inside the config confirmation below — **both
 branches of it, the derived one and the asked one** — as
@@ -133,7 +135,9 @@ to change it travels with the line that reports it.
    end and still closes. Use that document's outcome mapping. Do not restate the mapping
    here. A failed append is never fatal: report it in the run output and continue.
 2. `fiscal_q1_start_month` — one question, once.
-3. `timezone` — one question, once (C11): with `ms365` in the active set, read the
+3. `timezone` — one question, once (C11): with the resolved M365 provider in the active
+   set (`assets/shared/identity.schema.md` §M365 provider resolution; a provider with no
+   mailbox-settings read → the no-preselect path below), read the
    mailbox timezone (probe, C13) and offer its IANA equivalent as the default option —
    preselect ONLY when the mailbox value maps uniquely to one IANA zone (CLDR
    windowsZones mapping, region from the mailbox locale); ambiguous, regionless, or

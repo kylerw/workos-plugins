@@ -53,7 +53,14 @@ missing. Attended runs and Tidy never write it — but every rewrite of `tasks.j
 PRESERVES the whole map verbatim, and state baselining (sync Step 0.5) never scaffolds
 it. `teamsScan` (optional; #51): per-chat harvest high-water marks + the consecutive
 incomplete-pass counter; machine bookkeeping, sync-written, preserved like any
-baseline-external field.
+baseline-external field. `missStreak` counts consecutive passes that left a REACHABLE
+cursored chat unread (Teams budget exhausted, or rate-limited) — never passes where the
+integration merely lacks a surface (team channels, full-history search), nor passes where
+the scan's window left chats unreached with budget to spare: those are `system`-class
+attention lines, not streak (#290). A cursor is a stored watermark, not a reach control:
+moving one backward does not widen what the chat scan returns — its date filter applies
+INSIDE the scan's recency window; only a per-chat read (or server-side search) changes
+reach. Cursors advance per chat, on completion, by whichever read completed the chat.
 
 Rules: task ids unique across all lanes · **date-driven signals** (`due-date`, `meeting-prep`)
 MUST carry `due` · **judgment signals** (`waiting-them`, `deal-advancing`, `admin`) MUST NOT

@@ -206,10 +206,21 @@ close summary — never silent. Unconfigured sources are never mentioned at all.
   `lastFullSync`), newest first; advance a chat's cursor to its scan time only AFTER
   that chat completes, so a rate-limited pass RESUMES where it stopped instead of
   restarting at 0/N. Pace the reads (small batches; on a 429 honor Retry-After once,
-  then loud-skip the rest of the pass). Outbound cap 15 unchanged. A pass that ends
-  Teams-incomplete increments `teamsScan.missStreak` (a completed pass resets it to 0)
-  and the attention line carries the streak: "Teams coverage incomplete —
-  {missStreak} consecutive passes."
+  then loud-skip the rest of the pass). Outbound cap 15 unchanged. **`missStreak`
+  measures whether the pass did everything the integration allows — never whether the
+  integration can see everything that exists (#290).** A pass ends Teams-**incomplete**
+  only when it exhausted its Teams budget, or loud-skipped on a rate limit, while at
+  least one cursored chat stayed **unread** (reached by no harvest read this pass): that
+  increments `teamsScan.missStreak`, and the attention line names what was left and
+  why — exact template: "Teams coverage incomplete — {N} cursored chats unread
+  ({budget exhausted|rate limit}) — {missStreak} consecutive passes." A pass that
+  reached every cursored chat within budget is **complete** and resets `missStreak`
+  to 0. Two things NEVER touch the streak: surfaces the integration exposes but cannot
+  read (team channels, full-history search), and cursored chats the scan did not
+  reach while budget remained — each is a capability gap, one `system`-class
+  `attention[]` line ("{N} cursored chats outside the scan's reach"), never a miss.
+  A cursor is a stored watermark, not a reach control: moving one backward never
+  widens what the scan returns.
 - **Meeting notes** (if bridged): recordings since `lastFullSync`, summaries +
   action-item candidates.
 - **Dialogue:** whatever the user tells this session, first-class.

@@ -213,14 +213,33 @@ close summary — never silent. Unconfigured sources are never mentioned at all.
   least one cursored chat stayed **unread** (reached by no harvest read this pass): that
   increments `teamsScan.missStreak`, and the attention line names what was left and
   why — exact template: "Teams coverage incomplete — {N} cursored chats unread
-  ({budget exhausted|rate limit}) — {missStreak} consecutive passes." A pass that
-  reached every cursored chat within budget is **complete** and resets `missStreak`
-  to 0. Two things NEVER touch the streak: surfaces the integration exposes but cannot
-  read (team channels, full-history search), and cursored chats the scan did not
-  reach while budget remained — each is a capability gap, one `system`-class
-  `attention[]` line ("{N} cursored chats outside the scan's reach"), never a miss.
-  A cursor is a stored watermark, not a reach control: moving one backward never
-  widens what the scan returns.
+  ({budget exhausted|rate limit|scan truncated}) — {missStreak} consecutive passes."
+  A pass that reached every cursored chat within budget is **complete** and resets
+  `missStreak` to 0. Two things NEVER touch the streak: surfaces the integration
+  exposes but cannot read (team channels, full-history search), and cursored chats the
+  scan did not reach while budget remained — each is a capability gap, one
+  `system`-class `attention[]` line ("{N} cursored chats outside the scan's reach"),
+  never a miss. A cursor is a stored watermark, not a reach control: moving one
+  backward never widens what the scan returns.
+  **Coverage report (#293) — when the chat scan returns one (a `coverage` block carrying
+  `truncated`, `chatsSkipped`, `scannedThrough`, `resultsCapped`/`nextAfter`), READ
+  it; never infer reach from the cursor map.** Call the scan with `after` = the OLDEST
+  cursor in the map (else `lastFullSync`); while `resultsCapped` is true, call again
+  with `after` = `nextAfter` and dedupe on message id (`after` is inclusive — one
+  boundary duplicate is expected); every call counts against the outbound cap. Then, per
+  cursored chat, keep only messages after THAT chat's cursor. A chat is **covered** this
+  pass when it appears in the results, or when its cursor is at or after
+  `scannedThrough` (any newer message would have placed the chat inside the scanned
+  range). Covered chats advance to the scan time; a chat cut short (the loop stopped on
+  the outbound cap with `resultsCapped` still true) advances only to its newest returned
+  message. `truncated: false` with every cursored chat covered ⇒ **complete**.
+  Otherwise the uncovered chats are the unread set — spend remaining budget on per-chat
+  thread reads for them, oldest cursor first (a read whose oldest returned message is at
+  or before the cursor covers the chat and advances it to the scan time; one that is not
+  leaves the cursor where it was) — then apply the streak rule above with reason
+  `scan truncated`. `chatsSkipped` > 0 is one `system` line ("{N} chats skipped by
+  the scan — unreadable"), never streak. An integration with no coverage report keeps
+  the inference path above unchanged.
 - **Meeting notes** (if bridged): recordings since `lastFullSync`, summaries +
   action-item candidates.
 - **Dialogue:** whatever the user tells this session, first-class.

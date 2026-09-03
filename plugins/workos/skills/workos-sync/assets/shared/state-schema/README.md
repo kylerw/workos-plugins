@@ -61,6 +61,14 @@ attention lines, not streak (#290). A cursor is a stored watermark, not a reach 
 moving one backward does not widen what the chat scan returns — its date filter applies
 INSIDE the scan's recency window; only a per-chat read (or server-side search) changes
 reach. Cursors advance per chat, on completion, by whichever read completed the chat.
+When the chat scan returns a coverage report (#293: `truncated`, `chatsSkipped`,
+`scannedThrough`, `resultsCapped`/`nextAfter`), the sync reads it instead of inferring:
+a chat is covered when it appears in the results or its cursor is at or after
+`scannedThrough`; covered chats advance to the scan time, a chat cut short by the outbound
+cap advances only to its newest returned message, uncovered chats get a bounded per-chat
+read and otherwise keep their cursor; `missStreak` follows `truncated` (reason `scan
+truncated`), and `chatsSkipped` is a `system` line. The scan's `after` is the OLDEST cursor
+in the map, so a stale cursor widens the window rather than being skipped.
 
 Rules: task ids unique across all lanes · **date-driven signals** (`due-date`, `meeting-prep`)
 MUST carry `due` · **judgment signals** (`waiting-them`, `deal-advancing`, `admin`) MUST NOT

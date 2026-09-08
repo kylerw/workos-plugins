@@ -155,7 +155,8 @@ to change it travels with the line that reports it.
    (live defect 2026-07-30: a regen over user-populated sources preserved them and
    skipped the add — doctor then prescribed the same init in a loop):
    (a) carry forward every existing user entry verbatim (the schema's preservation
-   rule);
+   rule; step 5b may amend an entry's `pattern` on a confirmed pick, named in the
+   confirmation);
    (b) an entry resolving to `{memory_root}/Intake` that is not already the mandated
    shape → CONVERT it to the mandated entry
    (kind → `staged`, label → `intake`; a retention override keyed to the old label
@@ -176,8 +177,64 @@ to change it travels with the line that reports it.
    each path (or mounted folder name on a managed surface) as typed — never guessed —
    and record entries with `kind`; each entry's `label` derives from the folder name
    (unique-ified, confirmed in the same pass); the escape option "my screenshots
-   aren't named like the default" collects a `pattern` template (the schema's
-   literal-token grammar).
+   aren't named like the default" collects a `pattern` template in the schema's
+   literal-token grammar (anchored to the whole basename; one optional LEADING `*` = any
+   prefix; #295) — a defective template (missing token, `*` not first, time tokens
+   before date tokens) re-asks naming the defect, never written. A screenshots-kind
+   entry added here runs step 5b right after its path is collected, so a fresh install
+   on an app-prefixed capture tool gets the right pattern from the start (the "current"
+   pattern there is the default).
+5b. **Pattern check (#295) — EVERY screenshots-kind entry, every config write** (carried
+   forward by 5(a) or added this run), after step 5's ensure and optional question and
+   BEFORE the config confirmation — its outcome is one line of that confirmation, so a
+   pattern change is rendered before it is written (C14). A capture tool that renames
+   its output takes correlation dark silently at capture time; this step catches it at
+   setup time.
+   (a) Resolve the folder on this surface (C13: path first, then mounted-folder name).
+   Unreachable → outcome line "{label}: not reachable from here — pattern not sampled",
+   no question, entry unchanged.
+   (b) Sample the newest ≤5 immediate-child regular files THAT SNIFF per the schema's
+   timestamp sniff (`intake_sources` row) — newest by modification time where the
+   surface exposes it, else by the sniffed instant; non-sniffing files are skipped and
+   counted in the outcome line ("{k} non-timestamped files skipped" — k = files passed
+   over while walking newest-first by modification time; under sniffed-instant ordering,
+   k = every non-sniffing immediate child).
+   No sniffable file → outcome line "{label}: no timestamped files to sample", no
+   question.
+   (c) Derive. Per sample: prefix = the text before the date; stamp = the date, the
+   date/time separator, and the time, tokenized AS FOUND (`YYYY-MM-DD` vs `YYYYMMDD`; the
+   separator verbatim; `HHMMSS` vs `HH{sep}MM{sep}SS`); suffix = the text after the time.
+   The candidate's SHAPE (stamp + suffix) is the DOMINANT shape among the samples (tie →
+   the newest sample's shape); samples of another shape are counted ("{j} of {n} have a
+   different shape" — this and the {k} count are appended in parentheses to the outcome
+   line when nonzero; on the question path, to the question's first sentence). Prefix: literal when EVERY file in the folder
+   sharing that shape carries the same prefix, otherwise `*` followed by the longest
+   common TRAILING run of those prefixes (`msedge_` / `ms-teams_` / `POWERPNT_` → `*_`;
+   nothing in common → bare `*`; a tail containing a token string → bare `*`) — sampling alone would derive a false literal from five
+   captures of one app; a literal prefix that itself contains a token string (YYYY, MM,
+   DD, HH, SS) → the `*` form. Candidate = prefix + tokenized stamp + suffix.
+   (d) Compare to the current effective pattern (the entry's `pattern`, else the
+   default); m = how many of the n samples the current pattern matches. NO question when
+   the candidate equals the current pattern, or when the current pattern matches every
+   dominant-shape sample and is not NARROWER than the candidate (a literal-prefix
+   current against a `*`-led candidate IS narrower — the folder holds other prefixes of
+   that shape) — outcome line "{label}: pattern {current} fits the newest files ({m} of
+   {n} match)". Otherwise, when `declined_offers:` carries
+   `pattern-candidate:{label}:{candidate}` → outcome line "{label}: pattern {current}
+   kept — candidate {candidate} declined ({m} of {n} newest match)", no question; else
+   ONE question (C11): "{label}: the newest {n} files look like {candidate}; the current
+   pattern {current} matches {m} of them{, but the folder holds other prefixes of that
+   shape — appended when m = n}. 1. Switch to {candidate} (recommended) / 2. Keep
+   {current} — don't offer this candidate again / 3. I'll type a template". Option 3
+   validates against the grammar
+   (defect → re-ask naming it). Options 1/3 write the entry's `pattern`, rendered in the
+   config confirmation as "{label} pattern: {old} → {new}". Option 2 RECORDS the
+   `declined_offers:` key `pattern-candidate:{label}:{candidate}` — the candidate
+   segment is the template VERBATIM and the key is written QUOTED (a leading `*` or a
+   space is safe inside quotes; compare unquoted) — (the #70 pattern — re-offered only
+   when the derived candidate changes, since a new candidate is a new key; "let me
+   re-decide" reopens) — outcome line "{label}: pattern {current} kept ({m} of {n}
+   newest match)".
 6. `sfdc_instance_host` — **`mcp` tier only** (the invocation mode already resolved the
    tier; `manual` and floor runs never see this question), and only when the key is
    absent with no `sfdc-instance-host` decline recorded. One question (C11): "Record

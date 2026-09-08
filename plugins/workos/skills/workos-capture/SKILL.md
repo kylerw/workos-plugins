@@ -197,24 +197,51 @@ attended-only, so correlation may always ask.
 2. **Scan** EVERY resolving screenshots-kind source and union the hits (immediate children
    only, regular files, window endpoints inclusive; when >1 source resolves, each hit shows
    its source label). Only filenames matching the source's timestamp pattern participate —
-   a LITERAL TOKEN TEMPLATE, not regex, not glob: literal text plus the tokens YYYY MM DD
-   HH MM SS, case-sensitive, matched against the basename (extension ignored). Default:
-   `Screenshot YYYY-MM-DD HHMMSS`. A template missing any token → treated as the default
-   with one loud line. Non-matching files are ignored. Read each matching name as a local
-   wall-clock instant per `timezone` and compare inside the window. A
+   the schema's LITERAL TOKEN TEMPLATE (`intake_sources` row: not regex, not glob; literal
+   text plus the six tokens YYYY MM DD HH MM SS, case-sensitive), ANCHORED to the whole
+   basename (extension ignored — the template consumes the entire basename, never a
+   substring), with ONE optional LEADING `*` meaning any literal prefix including none
+   (`*_YYYY-MM-DD_HHMMSS` matches `msedge_2026-03-14_091500.png`; nothing may trail the
+   template — `msedge_2026-03-14_091500 (2).png` does not match). Default:
+   `Screenshot YYYY-MM-DD HHMMSS`. A template missing any token, or carrying `*` anywhere
+   but first, or time tokens before date tokens → treated as the default with one loud
+   line naming the defect (#295). Non-matching files are ignored — never silently when
+   in-window (the guard below). Read each matching name as a local wall-clock instant
+   per `timezone` and compare inside the window. A
    fall-back-DST-ambiguous timestamp matches BOTH candidate instants — include it flagged
    "(DST-ambiguous)"; a nonexistent-hour timestamp (spring-forward gap) has NO valid
    instant — one structured question: 1. Interpret with the pre-transition offset /
    2. Post-transition offset / 3. I'll type the corrected time / 4. Exclude this file.
+   **Stale-pattern guard (#295) — per source, after the scan:** take the source's
+   immediate-child regular files that did NOT match the pattern, SNIFF each per the
+   schema's timestamp sniff (`intake_sources` row — engine-owned, never a participation
+   filter), read the sniffed instant exactly as a matched name is read (a DST-ambiguous
+   stamp counts when EITHER candidate instant is in the window; a nonexistent-hour stamp
+   is not counted), and count those inside the window. Count ≥1 and this source
+   contributed ZERO in-window hits → emit the loud line for this source (it stands in
+   place of step 3's no-hits line when the union is empty; otherwise it follows the hits
+   pages): "{label}: 0 files match pattern {effective pattern} but {N} file(s) in window
+   {HH:MM}–{HH:MM} carry a timestamp the pattern excludes (e.g. {basename}) — the
+   pattern may be stale; rerun setup (`init my workspace`) — its pattern check offers
+   the derived template" (the window carries the date when it spans two dates, step 3's
+   rule; {effective pattern} is the default when the stored template is defective).
+   Count ≥1 with ≥1 hit → the hits page as normal, plus ONE info line after the last
+   page: "{label}: {N} more in-window file(s) don't match pattern {effective pattern}
+   (e.g. {basename}) — attach by hand, or rerun setup (`init my workspace`) if a
+   different tool named them". Count 0 → nothing added. The guard never asks, never
+   includes an excluded file, never edits config (setup owns the key, C2); >1 source →
+   one line per source.
 3. **Pick:** hits page in groups of ≤3, ONE structured question per page (C11) — the
    platform's multi-select counts as one decision where the question tool supports it;
    where it doesn't, one hit per question. Every page carries "none on this page / done".
    After the last page: one confirmation line — "proceeding with {N} selected". Options
    render `{filename} · {HH:MM:SS} · {size}` (+ the DATE whenever the window spans two
    dates · + source label when >1 source · dimensions only when cheaply available).
-   Same-second twins stay distinguishable by filename. No hits → one line stating the
-   window used ("no captures 14:55–15:35 — check the log time if that looks wrong"),
-   move on.
+   Same-second twins (different prefixes under a `*`-led pattern, or different sources)
+   stay distinguishable by filename and label; a same-second ` (N)` twin from one tool
+   does not match (anchored) and is named by the guard. No hits → one line stating the
+   window used ("no captures 14:55–15:35 — check the log time if that looks wrong"), or
+   step 2's guard line(s) in its place when the guard fired; move on.
 4. **Rename:** propose a semantic name per selected file
    (`{prefix}_{YYYY-MM-DD}_{short label}_{topic}.{source ext}`, Step 0.3's prefix
    resolution); the user approves or edits each in the same flow. Proposed names

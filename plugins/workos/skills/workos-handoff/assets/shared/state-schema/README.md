@@ -10,14 +10,14 @@ the bundle); `.pass-lock.json` is protocol, validated live (doctor step 7, spike
 
 ## tasks.json
 ```json
-{ "generated": "ISO", "generatedBy": "sync|tidy|sweep|intake",
+{ "generated": "ISO", "generatedBy": "sync|tidy|sweep|intake|triage|review",
   "lastFullSync": "ISO", "lastTidy": "ISO",
   "lastUnattendedRun": { "sync": { "at": "ISO", "localDate": "YYYY-MM-DD?", "surface": "cowork|claude-code", "version": "" }, "sweep": { "…same shape…": "" } },
   "teamsScan": { "cursors": { "{chatId}": "ISO" }, "missStreak": 0 },
   "pendingApprovals": [ { "id": "", "kind": "", "target": "", "summary": "", "diff": "", "raisedBy": "", "raisedAt": "ISO", "lastSeenAt": "ISO" } ],
   "dayTask": { "id": "", "date": "YYYY-MM-DD", "context": "",
     "queue": [ { "rank": 1, "taskId": "?", "title": "", "account": "", "signal": "", "due": "YYYY-MM-DD?" } ] },
-  "attention": [ { "class": "system|action", "text": "one line", "source": "sync|sweep|tidy|intake" } ],
+  "attention": [ { "class": "system|action", "text": "one line", "source": "sync|sweep|tidy|intake|inbox" } ],
   "lanes": { "NICE": [ { "id": "", "title": "", "signal": "", "context": "", "due": "YYYY-MM-DD?" } ] } }
 ```
 Attention entry classes (CI-validated in `ci/state-rules.js`):
@@ -44,7 +44,7 @@ them.
 
 `lastUnattendedRun` (optional; #67/#68/#52): a MAP keyed by unattended pass kind —
 `sync` (workos-sync), `sweep` (workos-next-steps), and `intake` (workos-intake's
-stage-and-park — classification runs unattended; every filing stays attended). Each writer MERGES its own key and preserves every other key verbatim; it
+stage-and-park — classification runs unattended; every filing stays attended) and `triage` (workos-inbox's unattended triage pass, #315). Each writer MERGES its own key and preserves every other key verbatim; it
 is both the same-day dedupe evidence and the cross-surface version record. `localDate`
 is computed at WRITE time per identity.schema.md's full `timezone` resolution order
 and OMITTED when unresolved; readers compare `localDate` only, never recompute from
@@ -94,7 +94,7 @@ derivations from `due`/`start` (C6); the board computes them, no pass refreshes 
   neither read nor appended this pass → loud SKIP: no new `appr-` ids this pass (existing
   items still merge/apply/exit). Pre-convention ids in live files stay valid.
 - **Kinds (normative):** `closure · task-rewrite · task-drop · unsuppression ·
-  hygiene-move · hygiene-drop · intake-move · intake-copy · intake-delete` (task-drop = S3
+  hygiene-move · hygiene-drop · intake-move · intake-copy · intake-delete · inbox-archive · inbox-task-new · inbox-note · inbox-domain · inbox-route` (task-drop = S3
   deletion proposals; extensions allowed; engine skills ignore unknown kinds when applying,
   never when merging). Intake kinds additionally carry (extension fields,
   baseline-ignored): a size/mtime `fingerprint` (+content hash for deletes),
@@ -103,7 +103,7 @@ derivations from `due`/`start` (C6); the board computes them, no pass refreshes 
   kinds APPLY only inside workos-intake's own gate — in any OTHER skill's backlog render
   (sync S7.1, tidy) they appear as ONE aggregate line (`{N} intake items queued — say
   'run intake'`) with NO per-item outcomes offered: no apply, no decline, no retire; the
-  items stay queued untouched.**
+  items stay queued untouched.** **Inbox kinds (#315) follow the same boundary: they APPLY only inside `workos-inbox`'s review pass; every other skill renders ONE line (`{N} inbox items staged — say 'review inbox'`) with no per-item outcomes. `inbox-*` kinds carry ids/guards/reason codes only (C6 Inbox-state clause); `closure` is reused unchanged when the evidence is a mail or an Outlook action. A `closure` with `raisedBy: inbox` is an inbox item for this boundary: it counts in that aggregate line and applies only in workos-inbox review (with its paired `inbox-note`). Cross-pass closures: another pass whose raise matches a pending inbox-raised `closure` by kind+target does NOT dedupe-update it (it cannot render it) — it raises nothing and the item stays in the inbox aggregate line; workos-inbox, likewise, never raises a second id over another pass's pending `closure` (it stages only the paired `inbox-note`).**
 - **Targets (normative — ONE recipe, applied at raise, dedupe, decline, suppression
   matching, and merge-purge):** compare as
   `lowercase(memory-root-relative path, forward slashes, trailing slashes stripped)`;
@@ -115,7 +115,10 @@ derivations from `due`/`start` (C6); the board computes them, no pass refreshes 
   the rule for every kind; downloads/screenshots sources live outside the memory root, and
   the `staged` source (`intake/…`) lives inside it, same form either way. The intake `fingerprint` extension field
   is `{size}:{mtime ISO, UTC Z form}` (+ `:{hash}` when hashed) — the UTC capture rule
-  lives in the intake skill's sweep step 1 (#94).
+  lives in the intake skill's sweep step 1 (#94). Inbox targets (#315): `inbox-archive` =
+  the message's immutable id; `inbox-task-new` / `inbox-route` = its `conversationId`;
+  `closure` / `inbox-note` = the task id; `inbox-domain` = the lowercase domain, or the
+  lowercase full address for an internal list.
 - **Dedupe on raise:** same normalized `kind`+`target` as a pending item → update that
   item's `summary`/`diff` and `lastSeenAt`; id kept; **`raisedAt` immutable** (the age
   signal). Never a duplicate. A dedupe update emits NO raise pointer — only a NEW id does
@@ -265,7 +268,9 @@ new again); reconsiderAt past → the maintain pass re-surfaces it.
 `reconsiderAt: null` = AGELESS (staged `intake/` targets only — the mandated label
 makes the scope decidable): never re-surfaced by expiry; a changed fingerprint still
 re-enters classification. Absent `intake` field
-= valid, reads as empty (no migration).
+= valid, reads as empty (no migration). `inbox` entries (#315) are workos-inbox's
+decisions: `{ kind: "domain-ignore|override", target, decidedAt: ISO, reconsiderAt: ISO|null }`
+(`target` = a domain, a sender family, an internal list address, or — review declines — a message's immutable id (archive item) or a `conversationId` (task or route proposal); `null` = never reconsidered). Absent `inbox` = valid, reads as empty.
 
 ## intake.json (#61 — watermarks · #179 — the parked staged manifest)
 ```json
@@ -293,13 +298,48 @@ derives its optional "intake overdue" attention line from watermark age vs the
 configured NON-STAGED retention thresholds (staged sources are resurface-governed and
 excluded) — sync never runs intake, never writes this file.
 
+## inbox.json (#315 — workos-inbox state)
+```json
+{ "generated": "ISO", "generatedBy": "inbox", "lastTriage": "ISO|null", "lastReview": "ISO|null",
+  "items": [ { "immutableId": "", "pile": "me|partner|waiting|fyi|route|archive", "reasonCode": "",
+    "firstSeenAt": "ISO", "guard": "?", "taskId": "?", "tagged": "ISO?", "flagged": "ISO?" } ],
+  "taskLinks": { "{taskId}": ["{immutableId}"] },
+  "ruleCounters": { "{senderFamily}": { "nights": 0, "lastAt": "ISO" } } }
+```
+- **Writers:** the `triage` and `review` passes of workos-inbox only, read-modify-write under
+  the C4 lock, restamping `generated` and `generatedBy: "inbox"`. Both watermarks are
+  `null` until the pass first completes; `lastTriage` is the mail harvest watermark that
+  sync's own mail harvest starts after.
+- **No content (C6 Inbox-state clause):** ids, piles, reason codes, guards, timestamps, and
+  `ruleCounters`' sender-family keys only.
+  The validator rejects `subject`, `body`, `preview`, `from`, `sender`, `to` on any
+  item — subjects and sender names render live from Graph (C5 Mail-metadata clause bounds
+  what the pass may write back to the mailbox).
+- **Supersede (spec §8 rule 1):** each triage run re-derives from the mailbox and
+  merge-purges its own un-reviewed inbox kinds in `pendingApprovals` by kind+target (the
+  target recipe below); an item still valid keeps its `immutableId` and `firstSeenAt`.
+  A skipped night grows nothing.
+- **`tagged` / `flagged`** (optional ISO): when this skill last set the item's own category /
+  follow-up flag (dropped when the skill clears its flag). Ownership evidence only: absent →
+  the category/flag is not the skill's, so it is never cleared and its removal is no signal.
+- **`taskLinks`:** task id → the immutable ids that evidence it (arrays, never a bare
+  string). **`ruleCounters`:** per sender family, archive `nights` (int ≥ 0) — +1 per local date
+  on which triage staged ≥1 archive for the family, reset to 0 only by an active
+  `suppressed.inbox` override on it (or a shown rule suggestion) — and `lastAt`; drives the
+  rule suggestion.
+- **No stored counts:** the staged total is derived from `pendingApprovals` and
+  `run-report.json`, never stored here (a stored derivable would violate C6).
+- **Apply boundary:** see the Kinds paragraph above. Archive moves carry a `guard` and
+  apply only in review (C14 Mail-archive clause); `run-report.json` `reports.triage` is
+  closed to the C15 triage `queueClass` set.
+
 ## run-report.json (#206 — unattended run reports + drain instrumentation)
 
-`{ generated, generatedBy: "sync|tidy|sweep|intake", reports: {…}, drainStats: {…} }` —
+`{ generated, generatedBy: "sync|tidy|sweep|intake|triage", reports: {…}, drainStats: {…} }` —
 two independent halves with two independent writer rules (C15; mechanics in
 `assets/shared/unattended-execution.md`):
 
-- **`reports`** — latest UNATTENDED run per pass, keys ⊆ {`sync`, `sweep`, `intake`};
+- **`reports`** — latest UNATTENDED run per pass, keys ⊆ {`sync`, `sweep`, `intake`, `triage`};
   written ONLY by the lock-holding unattended run as part of its final state batch
   before tombstone release. Attended runs never write it. Each entry:
   `{ at, localDate?, version, surface, outcome: "completed|blocked",
@@ -331,7 +371,7 @@ two independent halves with two independent writer rules (C15; mechanics in
   `unknowns`. Closed list: the validator's `QUEUE_CLASSES` — and **closed PER PASS**
   inside `reports` (the validator's `PASS_CLASSES`): sync reports the `pendingApprovals`
   kinds it raises, sweep reports its four decision units, intake reports its two park
-  verdicts. `extension` is legal in every pass — the relief valve. `intake-delete`
+  verdicts, triage reports its inbox kinds (+ `closure`). `extension` is legal in every pass — the relief valve. `intake-delete`
   appears in NO reports set: deletes are decided at the intake finalize, so that class
   accrues only in `drainStats`. `drainStats` stays flat over the whole `QUEUE_CLASSES`
   list — one counter per class, whichever gate decided it.
@@ -387,7 +427,7 @@ Resume reads `state/handoff.md` and writes nothing. Validator: `validateHandoffM
 (`ci/state-rules.js`), fixtures under `ci/fixtures/state/handoff/`.
 
 ## .pass-lock.json (persistent file, transient meaning — see spike 4)
-Live: `{ "pass": "sync|tidy|sweep|intake|handoff", "startedAt": "ISO", "surface": "cowork|claude-code",
+Live: `{ "pass": "sync|tidy|sweep|intake|triage|review|handoff", "startedAt": "ISO", "surface": "cowork|claude-code",
 "runId": "..." }`. Released: the same object plus `"released": true, "releasedAt": "ISO"`.
 Tombstone ⇔ `released` is exactly `true`; anything else is a live lock. A tombstone reads
 as FREE at acquire and is the file's healthy resting state; nothing in the engine deletes

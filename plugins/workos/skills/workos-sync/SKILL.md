@@ -198,8 +198,11 @@ source that fails its probe is a **loud SKIP**: recorded in `attention[]`, named
 close summary — never silent. Unconfigured sources are never mentioned at all.
 
 - **Calendar:** today + the next business day, full list.
-- **Inbox delta:** since `lastFullSync`, newest first, cap 20, subject/snippet triage.
-- **Sent delta:** since `lastFullSync`, newest first, cap 20 — completed-action evidence.
+- **Inbox delta:** since the LATER of `lastFullSync` and `state/inbox.json → lastTriage` (#315 — mail
+  workos-inbox already classified is not re-triaged here; absent or unparseable file, or
+  `lastTriage` null ≡ `lastFullSync`, unchanged), newest first, cap 20, subject/snippet triage.
+- **Sent delta:** same start (the later of `lastFullSync` and `lastTriage`), newest first, cap 20 —
+  completed-action evidence.
 - **Teams DMs** (if configured — #51 incremental): scan ONLY chats with activity since
   that chat's `teamsScan.cursors` mark when present, else `lastFullSync` — this rule
   governs BOTH chat selection and the read window (a cursor never clamps forward to
@@ -390,7 +393,12 @@ line).
    confirmed contact rows/header changes (contact-resolution) ·
    **the full `pendingApprovals` backlog** (this is sync's surfacing step — a user who
    never runs tidy still sees it here; intake kinds render as the aggregate line +
-   pointer per the schema's apply boundary — never per-item here). **Format the gate
+   pointer per the schema's apply boundary — never per-item here. **Inbox items (#315) render
+   the same way, as ONE line next to the intake line: `{N} inbox items staged — say 'review
+   inbox'` — N counts every `inbox-*` kind AND every `closure` with `raisedBy: inbox` (schema
+   apply boundary); none of them is re-validated, listed, or applied here, and an
+   inbox-raised closure never appears under PROPOSED CLOSURES or the backlog's per-item
+   list. A `closure` raised by sync or any other source still renders and gates normally.**) **Format the gate
    like the close summary: a
    header + bulleted list per section, blank lines between sections — never one
    paragraph** (live-test friction 2026-07-16: the gate rendered as a wall of text).
@@ -560,7 +568,10 @@ brief-building.
    is banned phrasing). Destructive items gate PER ITEM (C14); non-destructive items
    may share one structured pass (C11). Intake-kind items are the exception: the
    aggregate line + pointer only (schema apply boundary) — no per-item outcomes in
-   Tidy; apply happens solely in workos-intake's gate. Apply what's approved (this is
+   Tidy; apply happens solely in workos-intake's gate. **Inbox-kind items and `closure`
+   items with `raisedBy: inbox` (#315) are the same exception: counted into the one line
+   `{N} inbox items staged — say 'review inbox'`, never applied, declined, or retired in Tidy;
+   apply happens solely in workos-inbox review.** Apply what's approved (this is
    a state write — ownership check first). Per-item outcomes: apply / decline / leave pending — plus retired when the finding no
    longer validates (schema exits). Declines and retires land in the same write batch as
    applies; every exit appends its journal pointer (an APPEND-ONLY journal write — the

@@ -236,7 +236,7 @@ is "issues found," never green-with-asterisks** (C13):
    scheduled day → "the task may be executing a pre-sweep bundle snapshot — offer
    (C11-gated) to re-create it (#52)."**
 10. **Last unattended runs (#52/#67/#68) — report-only, never a finding by itself:**
-    for EACH key of `state/tasks.json → lastUnattendedRun` ({sync, sweep, intake}): one line,
+    for EACH key of `state/tasks.json → lastUnattendedRun` ({sync, sweep, intake, triage}): one line,
     values verbatim: `last unattended {key}: {at} ({localDate}, or "no local date") on
     {surface} — bundle {version}`. Empty/absent map → `no unattended runs recorded
     yet` (informational). When an entry's {version} differs from THIS bundle's
@@ -252,7 +252,7 @@ is "issues found," never green-with-asterisks** (C13):
     absent → one line, `no run reports yet` (informational — the first eligible
     lock-holder creates it; setup never scaffolds it). Present → validate against
     schema §run-report.json; a validation failure is a finding naming the first error.
-    Then one line per pass in {sync, sweep, intake}: the entry's
+    Then one line per pass in {sync, sweep, intake, triage}: the entry's
     `{outcome} {at} ({localDate}) — auto {n} · queued {n}` verbatim, or an honest
     `no {pass} report recorded` line. **Freshness (the wedged-schedule catch) — judged
     on COMPLETIONS, never on presence:** `reports` holds the latest run per pass, so a
@@ -280,6 +280,22 @@ is "issues found," never green-with-asterisks** (C13):
     FINDING: "scheduled capture will refuse every run (C15 — capture is not an
     unattended pass); pause or delete the task in the platform UI." Doctor never
     touches it.
+13. **Inbox domains (#315) — id `inbox-domains`:** no mcp-graph mail surface this session
+    (no tool named `outlook_mail_folders`, matched on the suffix — C13) → **INFO**
+    "inbox triage not available on this surface" and the check ends; no finding, and
+    `inbox_*` / `account_domains` keys are never flagged for being absent. Otherwise
+    read `account_domains` and every `Accounts/{slug}/Contacts.md`'s email domains
+    (excluding the internal tenant domain and free-mail domains — init 5c(b)'s seed
+    exclusions, so a seeded map reports clean — and every `state/suppressed.json`
+    `inbox` `domain-ignore` target: the user already answered it). FINDING for each external domain found in a
+    Contacts.md that no `account_domains` entry lists ("{domain} ({slug}) not in
+    account_domains — run `init my workspace` or answer inbox's domain ask"), and for each
+    `type: account` map entry naming a slug with no `Accounts/{slug}/` folder (orphaned —
+    the folder is the source of truth; fix by removing the entry). `type: partner` entries
+    are never orphans: partners have no account folder, so the orphan test skips them.
+    Both gaps clean → ok. A `Contacts.md` that cannot be read → skip that account's domain
+    comparison and continue with the rest; if EVERY account's `Contacts.md` is unreadable
+    the check is a loud SKIP (reason stated), never ok. Report-only; doctor never writes the map.
 
 **At the close of the run, append the `doctor` record** per `assets/shared/usage-log.md`:
 `counts` from this run's tally, `checks` as check id → verdict, `integrations` as

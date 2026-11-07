@@ -29,10 +29,10 @@ timezone resolution order; OMITTED when unresolved, never guessed) · `user` · 
   (check id → verdict), and `integrations` (connector → verdict). Verdicts are `ok` |
   `info` | `finding` | `refused` | `skip`. **Keys are closed vocabularies, not shapes**
   (#172 — a slug rule bounds characters, not vocabulary: an account name slugifies
-  clean). `checks` keys are exactly doctor §C's twelve ids — `memory-root` · `config` ·
+  clean). `checks` keys are exactly doctor §C's thirteen ids — `memory-root` · `config` ·
   `integrations` · `sfdc-tier` · `version` · `team-publication` · `state` ·
   `approvals-queue` · `scheduled-tasks` · `unattended-runs` · `run-reports` ·
-  `scheduled-capture`. `integrations` keys are
+  `scheduled-capture` · `inbox-domains`. `integrations` keys are
   exactly `ms365` · `graph` · `hinotes` · `sfdc-mcp` · `m365-alt` · `other` — `m365-alt`
   is the configured non-`ms365` M365 provider (identity schema `m365_provider`), its
   actual name dropped on purpose; a connector not in the

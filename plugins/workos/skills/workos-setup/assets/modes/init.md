@@ -235,6 +235,37 @@ to change it travels with the line that reports it.
    when the derived candidate changes, since a new candidate is a new key; "let me
    re-decide" reopens) — outcome line "{label}: pattern {current} kept ({m} of {n}
    newest match)".
+5c. **Inbox triage setup (#315) — only when the mcp-graph mail surface probes present
+   (C13: a tool named `outlook_mail_folders` is listed — match on the suffix, the same
+   probe as workos-inbox Step 0.5(a); call it once for the category list). Absent → this
+   whole step is SKIPPED SILENTLY: no question, no mention, no config key written.**
+   Never writes `inbox_autonomy_level` (user-edited only; Absent ≡ 0). Every question is
+   structured (C11); answers write to the keys named, in the same confirmation as the rest
+   of the config.
+   (a) **Categories.** Print the checklist from `inbox_categories` (absent ≡ the six
+   defaults) with suggested colors — Me red · Partner orange · Waiting yellow · FYI blue ·
+   Route purple · Archive gray — and say category creation is the user's, in Outlook. Then
+   "1. Created them — check now / 2. Later (default — inbox triage will name what is
+   missing)". On 1, re-read `masterCategories` via `outlook_mail_folders` and name every
+   category still missing; offer the same two options again once, never loop.
+   (b) **`account_domains` seed.** Collect the email domains found in each existing
+   account's `Accounts/{slug}/Contacts.md`, EXCLUDING the user's own internal tenant domain
+   (the domain of the signed-in mailbox address) and free-mail domains. One confirm showing
+   slug → domains: "1. Seed these (default) / 2. Skip — inbox will ask per unknown domain".
+   On 1 write `account_domains` entries as `{type: account, domains: [..]}` — merging into
+   an existing map, never overwriting a user-set entry. No accounts or no external domains
+   yet → one line "no account contacts to seed from yet — doctor's inbox-domains check will
+   name the gap" and move on.
+   (c) **Leadership and internal mailboxes.** Ask for leadership senders (people whose mail
+   is never auto-archived) and internal broadcast/enablement mailboxes: "1. Add leadership
+   senders — I'll type them / 2. Add internal broadcast or enablement mailboxes — I'll type
+   them / 3. Both / 4. Skip (default)". Typed values only, never guessed; leadership
+   writes `inbox_leadership`, mailboxes extend the `awareness` family of `inbox_patterns`
+   (a family replaces its seed, so write the seed's patterns plus the typed addresses).
+   (d) **Scheduled task.** Print, for the user to create in their platform's scheduler, the
+   prompt `triage my inbox (scheduled, unattended)` and suggest a weekday 5:30p run.
+   The time lives only in the scheduler (C3) — setup records no time in config and does not
+   create the task.
 6. `sfdc_instance_host` — **`mcp` tier only** (the invocation mode already resolved the
    tier; `manual` and floor runs never see this question), and only when the key is
    absent with no `sfdc-instance-host` decline recorded. One question (C11): "Record

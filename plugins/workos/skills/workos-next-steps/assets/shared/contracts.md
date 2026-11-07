@@ -25,16 +25,16 @@ Cadence lives in scheduled-task configuration, not in skill logic.
 checks for a running sibling; the locking mechanism and stale-lock recovery follow the
 Phase 0 spike's recorded design. `state/` files have exactly one writer per run — the
 lock-holding pass, whichever skill holds it (pass vocabulary: sync · tidy · sweep ·
-intake); outside the lock, skills and artifacts read, never write (wording refreshed
+intake · triage · review — extended 2026-11-04, #315); outside the lock, skills and artifacts read, never write (wording refreshed
 2026-07-22, #70 — "other skills" predated next-steps/intake becoming legitimate
 lock-holding writers). **Board-click exception (#73):** the board artifact may CREATE unique-named files under `state/board-queue/` only (create-only — never modify, delete, or touch any other `state/` path; shape and naming per the schema README's board-queue contract); draining them is pass-only work under this lock. **Bootstrap exception (#81):** on a root
 where one of the four scaffold files — `state/tasks.json`, `meetings.json`, `drafts.json`,
 `suppressed.json` (empty shapes per the schema README) — does not yet exist, `setup` may
 CREATE it (create-only — an existing file is never touched, and every later write is
-lock-governed). No other `state/` file is covered: `sweep.json`, `intake.json`, and
+lock-governed). No other `state/` file is covered: `sweep.json`, `intake.json`, `inbox.json`, and
 board-queue files belong to their passes, and their mere presence carries meaning.
 Doctor's tombstone write stays separately sanctioned by the stale-lock-recovery sentence
-above. (added 2026-07-22, #81)
+above. (added 2026-07-22, #81; `inbox.json` and the `triage`/`review` passes added 2026-11-04, #315)
 
 **C5 · draft-before-write** — A human approves content before it is written, published, or
 staged for an external surface — shown the actual artifact, not a description of it.
@@ -61,6 +61,7 @@ staging (`state/intake.json` `parked`, #179) are ungated machine staging under t
 — the attended finalize's single consolidated gate remains the
 sole approval for everything staged (cross-ref generalized 2026-07-22, #70 — the register
 never points at skill-internal section names). A durable board-click record (C4's board-queue exception) IS the approval for the reversible task mutation it names — the drain renders a receipt, not a second gate; destructive actions stay gated (C14).
+**Mail-metadata clause (#315):** applying or removing a skill's own configured mail categories and setting or clearing follow-up flags are reversible bookkeeping — ungated and unattended-legal; mail moves, task closures, new tasks, and account notes keep the gate. The server's own preview+confirm still runs. (added 2026-11-04, #315)
 
 **C6 · no-shadow-store** — Never store a copy of an authoritative source's current state,
 and never store a derived value next to its source (scores/signals compute at render time).
@@ -68,7 +69,7 @@ and never store a derived value next to its source (scores/signals compute at re
 deal-state — cacheable with provenance (`source/confidence/last_verified`) and an
 invalidation rule. **next-step-history clause:** an append-only dated record of observations
 and approved outputs is a history, not a shadow — permitted, but never read back as current
-state.
+state. **Inbox-state clause (#315):** `state/inbox.json` stores immutable ids, piles, reason codes, guards, and timestamps only — never subjects, bodies, previews, or per-message sender/recipient fields (render live from Graph); sender-family keys (a domain or list address) are allowed as rule-counter keys and override targets. (added 2026-11-04, #315; sender-family keys 2026-11-06)
 
 **C7 · salesforce-read-only-and-optional** — No write path to Salesforce exists at any tier;
 outputs are paste-ready and never claimed as written. Salesforce access is OPTIONAL:
@@ -120,6 +121,8 @@ per item, never wholesale, even when displayed inside a consolidated pass. **Boa
 answered audibly in the gate turn itself ("gating {N} items, all rendered above"): is
 everything this approval writes rendered in THIS turn, at its required fidelity? Any
 "no" → render now, then ask.
+**Mail-archive clause (#315):** a mail move to the Archive folder is reversible, not destructive: every item is rendered (compact: sender · truncated subject · reason), and approval may be given per sender family. Moves anywhere else stay per item. (added 2026-11-04, #315)
+
 **C15 · unattended-classification** — An unattended run (`(scheduled, unattended)`
 marker) never asks a question and never waits on a gated action: every decision
 classifies AUTO (C5's ungated set, nothing wider) / QUEUE (persisted to the pass's
@@ -132,6 +135,8 @@ exactly one RUN_REPORT line, with one named exception — the same-day dedupe sk
 QUEUE decisions are COUNTED under a `queueClass` from a closed
 per-pass vocabulary — derived at report time from fields the record already carries,
 never written onto it (C6); class promotion to AUTO is a reviewed amendment naming the
-class, backed by recorded drain outcomes. (added 2026-08-01, #206)
+class, backed by recorded drain outcomes. (added 2026-08-01, #206) The `triage` pass's
+vocabulary is its `pendingApprovals` kinds: `closure · inbox-archive · inbox-task-new ·
+inbox-note · inbox-domain · inbox-route · extension`. (added 2026-11-04, #315)
 
 <!-- END CONTRACTS -->

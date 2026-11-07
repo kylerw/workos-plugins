@@ -44,7 +44,7 @@ begins — its two-line output stands alone; no RUN_REPORT line, no report entry
 - completed: `RUN_REPORT {pass} completed — auto {n} · queued {n} [{queueClass: n, …}] ({version} on {surface})`
 - blocked: `RUN_REPORT {pass} blocked — {blockReason} ({version} on {surface})`
 
-Pre-lock exits (§BLOCK cases 1–3) emit the blocked line to run output only — no state
+Pre-lock exits (§BLOCK cases 1–3 and 5) emit the blocked line to run output only — no state
 is written without the lock. Lock-holding runs ALSO merge their `reports.{pass}` entry
 into `state/run-report.json` (shape: schema §run-report.json) as part of the final
 state batch.
@@ -100,8 +100,13 @@ per class decided this gate, `approved += a`, `declined += d`, and `drains += 1`
    empty in the same batch and write that rule's attention line + journal pointer.
    Those two writes, and nothing else, are what "write nothing beyond the report"
    permits here; the corrupt core file is never rewritten.
+5. **workos-inbox triage without the mail-write server** — pre-lock: the connector
+   lists no `outlook_mail_folders`; emit the run header, the skill's one-line exit, then
+   `RUN_REPORT triage blocked — mail-write server (mcp-graph) not on this connector ({version} on {surface})`,
+   and stop — no lock, no state, no usage record. (Added 2026-11-05, #315 — the
+   enumeration's required spec touch.)
 
-Accepted residual, named: the three pre-lock BLOCKs leave no durable trace on the root —
+Accepted residual, named: the four pre-lock BLOCKs leave no durable trace on the root —
 their line lands only in the scheduled chat. Doctor's freshness check covers the
 wedged-schedule class; the scheduled-capture guard covers case 1 where the scheduler is
 enumerable.

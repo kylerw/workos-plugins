@@ -25,7 +25,7 @@ Attention entry classes (CI-validated in `ci/state-rules.js`):
 | class | covers |
 |---|---|
 | `system` | beacon/version outcomes, integration-dark notices, stale-snapshot flags, surface facts, harvest caps |
-| `action` | parked-sweep line, approvals-pending count, intake-overdue, anything asking the user to act |
+| `action` | parked-sweep line, approvals-pending count, intake-overdue, uncaptured meetings (#328), anything asking the user to act |
 
 **Note:** legacy plain strings remain valid during transition — the shell renders them as
 `action` (visibility-preserving — v1 rendered every line loud). A full sync rebuilds the
@@ -216,7 +216,8 @@ render, never stored under these keys; `ci/validate-board.sh` scans embedded boa
 ## meetings.json
 ```json
 { "generated": "ISO", "meetings": [ { "id": "", "lane": "NICE", "start": "ISO",
-    "displayTime": "", "title": "", "who": "", "signals": { "external": true },
+    "displayTime": "", "title": "", "who": "", "domains": ["acmehealth.example"],
+    "signals": { "external": true },
     "prep": false, "recap": false, "objective": "", "brief": {}, "briefPending": false,
     "cancelled": "true? (a cancelled meeting is marked, never deleted — the board strikes it through)" } ] }
 ```
@@ -224,7 +225,29 @@ Rules: `signals` is the ONLY importance representation — `importance`, `tier`,
 are banned field names (weights live in the board, applied at render). Known signal keys:
 `revenue, external, youLead, decision, risk`. **`prep`/`recap` live ONLY as the top-level
 booleans** (the writable flags from the selection flow) — never duplicated as signal keys.
-Briefs carry `builtAt` (ISO) so the board can date them.
+Briefs carry `builtAt` (ISO) so the board can date them. **`domains`** (#328) is calendar-owned like `title`/`who`: the lowercase email domains of the attendees and organizer other than the user's own, deduped and sorted, refreshed on every harvest of the event — never an address (CI-enforced). Absent on meetings merged before #328.
+
+### Meeting → account resolution
+
+The one written rule (#328) for "which account is this meeting?" — sync derives it at
+render time and stores no result (C6).
+
+1. **Domain → account.** A domain resolves to the `account_domains` entry listing it with
+   `type: account`. That entry's slug resolves to the folder under `Accounts/` whose name,
+   lowercased with every run of non-alphanumeric characters replaced by `-` and leading or
+   trailing `-` trimmed, equals the slug. Zero or several folders → unresolved. A
+   `type: partner` domain never resolves to an account.
+2. **Meeting by domains.** The meeting's `domains` resolving (rule 1) to exactly one
+   account → that account. Two or more accounts → **unresolved** (never split, never the
+   first). None → rule 3.
+3. **Meeting by title.** The account folder names and configured `account_aliases`
+   entries found in the title (case-insensitive, whole words; an unconfigured initialism is
+   not a match) point to exactly one distinct account → that account. Otherwise unresolved.
+
+Example: `domains: ["acmehealth.example", "partnerx.example"]` with
+`account_domains: {acme-health: {type: account, domains: [acmehealth.example]},
+partner-x: {type: partner, domains: [partnerx.example]}}` and folder `Accounts/Acme Health/`
+→ `Acme Health`.
 
 ## drafts.json
 ```json

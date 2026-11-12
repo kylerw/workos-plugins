@@ -301,6 +301,12 @@ cap reached → one `attention[]` line ("harvest capped: {what was left}") — n
   (e.g. `11:00a`) — never a raw UTC timestamp** (live-test defect 2026-07-16: the board
   displayed "15:00 UTC" meetings). Prep defaults: external attendee · no prior history ·
   user organizes/presents · account has an active pursuit.
+- **Domains + external (#328):** from each harvested event's attendee and organizer
+  addresses, write `domains` per the schema README (calendar-owned — refreshed every
+  harvest of that event; the user's own domain excluded; never an address). Then set
+  `signals.external: true` when any `domains` entry appears in any `account_domains`
+  entry, `type: account` or `type: partner`. This rule only sets the signal — it never
+  clears one set by prior selection. `account_domains` absent → no change from today.
 - **Attended:** present the next-business-day list once (C11): "1. Accept prep flags as
   shown / 2. Adjust — tell me add/drop / 3. Prep everything / 4. Prep nothing."
   **Unattended:** apply the defaults silently, set `briefPending: true` on newly flagged
@@ -446,7 +452,16 @@ line).
    sources are resurface-governed and excluded from this derivation, and with no
    non-staged source configured the line never renders; exact line `intake
    overdue — last sweep {date or "never"}; say '{run intake when never, else intake
-   check}'` (sync never runs intake)). Same batch: update `state/run-report.json →
+   check}'` (sync never runs intake), uncaptured meetings (#328) — DERIVED: a meeting in
+   `meetings.json` counts when it is not `cancelled`, its `start` is at least 1 hour in the
+   past (meetings carry no end time) and within the last 14 days, it resolves to one account
+   per the schema README §Meeting → account resolution, and that account's `02_Meetings/`
+   has no folder named `{YYYY-MM-DD}_*` or `{PREFIX}_{YYYY-MM-DD}_*` (`{PREFIX}` from
+   `account_file_prefixes`) for the meeting's local date — local date per identity.schema.md
+   `timezone` resolution; unresolved → the line is skipped with one `system` line naming
+   the missing timezone (one listing per candidate account per pass); exact line `{N} uncaptured meetings ·
+   {A} account(s) · since {YYYY-MM-DD of the earliest} — say 'capture the meeting'`, class
+   `action`, absent when N is 0 (`recap` is never written by this rule)). Same batch: update `state/run-report.json →
    drainStats` per `assets/shared/unattended-execution.md` §Drain instrumentation (a
    pendingApprovals item's class is its `kind`; extension kinds count as `extension`).
    Tidy's approval step applies this same sentence.
@@ -588,7 +603,8 @@ brief-building.
    Same for the intake-overdue line AND the parked-intake line (both from
    `state/intake.json`, same rules as S7.2 — parked-intake present ⇔ `parked` non-null,
    exact line per S7.2). Each re-derived entry is the typed `{class, text, source}`
-   record per S7.2's typing rule.
+   record per S7.2's typing rule. The uncaptured-meetings line (S7.2) is sync-only — Tidy
+   carries it forward verbatim (its read-set excludes account folders).
 4. Board rebuild only if a data block actually changed — **and "changed" includes
    `attention[]` and every tasks/meetings field the board renders; only bookkeeping
    stamps (`lastTidy`/`lastBoardDrain`) alone don't trigger** (live-test defect 2026-07-16:
@@ -698,10 +714,14 @@ lock. In an unattended run, board vocabulary is reported in the run output and s
   file-opened artifact (dead buttons — no bridge), or claiming an artifact/file write
   succeeded without checking (C9).
 - Unbounded harvests: every source is delta-since-`lastFullSync` and capped; the
-  exceptions are S4's per-brief allowance and S2's contact-resolution file reads, each
+  exceptions are S4's per-brief allowance, S2's contact-resolution file reads, and S7.2's
+  uncaptured-meetings folder listings (directory listings only, one per account with an
+  ended meeting in the 14-day window — never counted against S2's hydration cap), each
   with its own caps/bounds.
 - Dropping carried-forward queue items silently (S1/S6).
 - Prose questions — C11 governs every question in both passes, including mid-flow, and
   every question goes through the platform's structured-question tool (submittable
   options); a prose-rendered "1. … / 2. …" list is not compliant (live finding
   2026-07-16).
+- Storing an attendee address in `meetings.json`, or a resolved account on a meeting —
+  `domains` only; the account is derived (schema README §Meeting → account resolution, C6).
